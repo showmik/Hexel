@@ -405,13 +405,11 @@ namespace SpriteGenerator
             }
         }
 
-        // NEW: Keyboard shortcut support
-        // NEW: Keyboard shortcut support updated with Tool shortcuts
-        protected override void OnKeyDown(KeyEventArgs e)
+        // REPLACED: Changed from OnKeyDown to OnPreviewKeyDown to capture Arrow Keys reliably
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
+            base.OnPreviewKeyDown(e);
 
-            // Control modifier shortcuts (Undo/Redo)
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 if (e.Key == Key.Z)
@@ -424,19 +422,39 @@ namespace SpriteGenerator
                     Redo();
                     e.Handled = true;
                 }
+                // NEW: Grid Shifting shortcuts (Ctrl + Arrow Keys)
+                else if (e.Key == Key.Up)
+                {
+                    ShiftGrid(0, -1);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Down)
+                {
+                    ShiftGrid(0, 1);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Left)
+                {
+                    ShiftGrid(-1, 0);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Right)
+                {
+                    ShiftGrid(1, 0);
+                    e.Handled = true;
+                }
             }
-            // No modifier shortcuts (Tools)
             else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 // Prevent tool shortcuts from triggering if the user is typing in the Hex/Binary text boxes
                 if (Keyboard.FocusedElement is TextBox) return;
 
-                if (e.Key == Key.B)
+                if (e.Key == Key.P)
                 {
                     if (RbPencil != null) RbPencil.IsChecked = true;
                     e.Handled = true;
                 }
-                else if (e.Key == Key.G)
+                else if (e.Key == Key.F)
                 {
                     if (RbFill != null) RbFill.IsChecked = true;
                     e.Handled = true;
@@ -476,6 +494,40 @@ namespace SpriteGenerator
             }
 
             // Because Fill modifies many pixels at once, we redraw the whole grid
+            RedrawGridFromMemory();
+            UpdateTextFromGrid();
+        }
+
+        private void ShiftGrid(int offsetX, int offsetY)
+        {
+            // Save the current state so the user can Undo
+            SaveStateForUndo();
+
+            bool[] newPixels = new bool[_gridSize * _gridSize];
+
+            for (int y = 0; y < _gridSize; y++)
+            {
+                for (int x = 0; x < _gridSize; x++)
+                {
+                    // We only need to move pixels that are turned ON (true)
+                    if (_pixels[(y * _gridSize) + x])
+                    {
+                        // Calculate new X, using modulo to wrap around
+                        int newX = (x + offsetX) % _gridSize;
+                        // C# modulo can return negative numbers, so we force it positive
+                        if (newX < 0) newX += _gridSize;
+
+                        // Calculate new Y, using modulo to wrap around
+                        int newY = (y + offsetY) % _gridSize;
+                        if (newY < 0) newY += _gridSize;
+
+                        // Set the pixel at the new wrapped coordinate to true
+                        newPixels[(newY * _gridSize) + newX] = true;
+                    }
+                }
+            }
+
+            _pixels = newPixels;
             RedrawGridFromMemory();
             UpdateTextFromGrid();
         }
