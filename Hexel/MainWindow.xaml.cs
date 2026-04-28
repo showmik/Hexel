@@ -17,9 +17,28 @@ namespace SpriteGenerator
         private ToolMode _currentTool = ToolMode.Pencil;
         private int _lastClickedIndex = -1;
         private bool _isDisplayInverted = false;
+        private int _selectionEndIdx = -1;
+
+        // --- Selection & Floating State ---
+        private bool _hasActiveSelection = false;
         private bool _isSelecting = false;
         private int _selectionStartIdx = -1;
-        private int _selectionEndIdx = -1;
+
+        // Bounding box of the current selection
+        private int _selMinX = -1, _selMaxX = -1;
+        private int _selMinY = -1, _selMaxY = -1;
+
+        // Floating pixels (pixels lifted off the canvas)
+        private bool _isFloating = false;
+        private bool[,] _floatingPixels;
+        private int _floatingX = 0, _floatingY = 0;
+        private int _floatingWidth = 0, _floatingHeight = 0;
+
+        // Mouse tracking for smooth dragging
+        private bool _isDraggingSelection = false;
+        private Point _dragStartMousePos;
+        private int _dragStartFloatingX;
+        private int _dragStartFloatingY;
 
         // NEW: State Stacks for Undo/Redo
         private Stack<bool[]> _undoStack = new Stack<bool[]>();
@@ -48,6 +67,86 @@ namespace SpriteGenerator
                 _gridSize = int.Parse(item.Tag.ToString());
                 BuildGrid();
             }
+        }
+
+        private void LiftSelection()
+        {
+            if (!_hasActiveSelection || _isFloating) return;
+
+            SaveStateForUndo();
+
+            _floatingWidth = (_selMaxX - _selMinX) + 1;
+            _floatingHeight = (_selMaxY - _selMinY) + 1;
+            _floatingX = _selMinX;
+            _floatingY = _selMinY;
+            _floatingPixels = new bool[_floatingWidth, _floatingHeight];
+
+            // Copy selected pixels into the floating buffer and erase them from the main canvas
+            for (int y = _selMinY; y <= _selMaxY; y++)
+            {
+                for (int x = _selMinX; x <= _selMaxX; x++)
+                {
+                    int idx = (y * _gridSize) + x;
+                    if (_pixels[idx])
+                    {
+                        _floatingPixels[x - _selMinX, y - _selMinY] = true;
+                        _pixels[idx] = false;
+                    }
+                }
+            }
+            _isFloating = true;
+        }
+
+        private void CommitSelection()
+        {
+            if (!_hasActiveSelection) return;
+
+            if (_isFloating && _floatingPixels != null)
+            {
+                // Stamp floating pixels back onto the grid permanently
+                for (int y = 0; y < _floatingHeight; y++)
+                {
+                    for (int x = 0; x < _floatingWidth; x++)
+                    {
+                        if (_floatingPixels[x, y])
+                        {
+                            int gridX = _floatingX + x;
+                            int gridY = _floatingY + y;
+
+                            // Only apply if it hasn't been dragged off the edge of the canvas
+                            if (gridX >= 0 && gridX < _gridSize && gridY >= 0 && gridY < _gridSize)
+                            {
+                                _pixels[(gridY * _gridSize) + gridX] = true;
+                            }
+                        }
+                    }
+                }
+                _isFloating = false;
+                _floatingPixels = null;
+            }
+
+            _hasActiveSelection = false;
+            _selMinX = _selMaxX = _selMinY = _selMaxY = -1;
+            ClearSelectionVisuals();
+            RedrawGridFromMemory();
+            UpdateTextFromGrid();
+        }
+
+        private void UpdateSelectionVisualsFromBounds()
+        {
+            if (MarqueeOverlay == null) return;
+
+            double cellWidth = 400.0 / _gridSize;
+            double cellHeight = 400.0 / _gridSize;
+
+            Canvas.SetLeft(MarqueeOverlay, _selMinX * cellWidth);
+            Canvas.SetTop(MarqueeOverlay, _selMinY * cellHeight);
+
+            MarqueeOverlay.Width = ((_selMaxX - _selMinX) + 1) * cellWidth;
+            MarqueeOverlay.Height = ((_selMaxY - _selMinY) + 1) * cellHeight;
+
+            MarqueeOverlay.Visibility = Visibility.Visible;
+            _hasActiveSelection = true;
         }
 
         private void BuildGrid()
@@ -105,24 +204,43 @@ namespace SpriteGenerator
                 // --- NEW: Marquee Tool Logic (Moved OUTSIDE MouseButtonEventArgs) ---
                 if (_currentTool == ToolMode.Marquee)
                 {
+                    int x = index % _gridSize;
+                    int y = index / _gridSize;
+
                     if (Mouse.LeftButton == MouseButtonState.Pressed)
                     {
-                        // If it's a click (MouseDown), start a new selection
-                        if (e is MouseButtonEventArgs)
+                        if (e is MouseButtonEventArgs) // Initial Click Down
                         {
+                            // Check if clicked INSIDE an existing selection
+                            if (_hasActiveSelection && x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
+                            {
+                                LiftSelection(); // Pick up the pixels
+                                _isDraggingSelection = true;
+
+                                _dragStartMousePos = e.GetPosition(PixelGrid);
+                                _dragStartFloatingX = _floatingX;
+                                _dragStartFloatingY = _floatingY;
+                                return;
+                            }
+
+                            // Clicked outside: Commit the old selection and start a new box
+                            CommitSelection();
                             _isSelecting = true;
                             _selectionStartIdx = index;
-                            _selectionEndIdx = index;
-                            UpdateSelectionVisuals();
+                            _selMinX = _selMaxX = x;
+                            _selMinY = _selMaxY = y;
+                            UpdateSelectionVisualsFromBounds();
                         }
-                        // If it's movement (MouseEnter) and we are currently selecting, drag the box
-                        else if (_isSelecting)
+                        else if (_isSelecting) // Dragging to resize the box
                         {
-                            _selectionEndIdx = index;
-                            UpdateSelectionVisuals();
+                            _selMinX = Math.Min(_selectionStartIdx % _gridSize, x);
+                            _selMaxX = Math.Max(_selectionStartIdx % _gridSize, x);
+                            _selMinY = Math.Min(_selectionStartIdx / _gridSize, y);
+                            _selMaxY = Math.Max(_selectionStartIdx / _gridSize, y);
+                            UpdateSelectionVisualsFromBounds();
                         }
                     }
-                    return; // Important: Stop here so we don't accidentally run Pencil/Fill logic
+                    return;
                 }
 
                 // --- EXISTING: Handle Click-Based Tools ---
@@ -215,7 +333,20 @@ namespace SpriteGenerator
                         if (col < _gridSize)
                         {
                             int index = (row * _gridSize) + col;
-                            byteString += _pixels[index] ? "1" : "0";
+                            bool isPixelOn = _pixels[index];
+
+                            // --- NEW: Factor in floating pixels for Hex export ---
+                            if (_isFloating)
+                            {
+                                int floatLocalX = col - _floatingX;
+                                int floatLocalY = row - _floatingY;
+                                if (floatLocalX >= 0 && floatLocalX < _floatingWidth &&
+                                    floatLocalY >= 0 && floatLocalY < _floatingHeight)
+                                {
+                                    if (_floatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
+                                }
+                            }
+                            byteString += isPixelOn ? "1" : "0";
                         }
                         else
                         {
@@ -307,18 +438,30 @@ namespace SpriteGenerator
 
         private void RedrawGridFromMemory()
         {
-            for (int i = 0; i < _gridSize * _gridSize; i++)
+            for (int y = 0; y < _gridSize; y++)
             {
-                // Update Main Grid
-                if (PixelGrid.Children[i] is Border cell)
+                for (int x = 0; x < _gridSize; x++)
                 {
-                    cell.Background = _pixels[i] ? _colorOn : _colorOff;
-                }
+                    int i = (y * _gridSize) + x;
+                    bool isPixelOn = _pixels[i];
 
-                // Update Preview Grid
-                if (PreviewGrid.Children[i] is Rectangle previewRect)
-                {
-                    previewRect.Fill = _pixels[i] ? _previewOn : _previewOff;
+                    // --- NEW: Overlay floating pixels ---
+                    if (_isFloating)
+                    {
+                        int floatLocalX = x - _floatingX;
+                        int floatLocalY = y - _floatingY;
+                        if (floatLocalX >= 0 && floatLocalX < _floatingWidth &&
+                            floatLocalY >= 0 && floatLocalY < _floatingHeight)
+                        {
+                            if (_floatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
+                        }
+                    }
+
+                    if (PixelGrid.Children[i] is Border cell)
+                        cell.Background = isPixelOn ? _colorOn : _colorOff;
+
+                    if (PreviewGrid.Children[i] is Rectangle previewRect)
+                        previewRect.Fill = isPixelOn ? _previewOn : _previewOff;
                 }
             }
         }
@@ -500,12 +643,49 @@ namespace SpriteGenerator
             }
         }
 
+        protected override void OnPreviewMouseMove(MouseEventArgs e)
+        {
+            base.OnPreviewMouseMove(e);
+
+            if (_isDraggingSelection && Mouse.LeftButton == MouseButtonState.Pressed)
+            {
+                Point currentPos = e.GetPosition(PixelGrid);
+                double deltaX = currentPos.X - _dragStartMousePos.X;
+                double deltaY = currentPos.Y - _dragStartMousePos.Y;
+
+                double cellWidth = 400.0 / _gridSize;
+                double cellHeight = 400.0 / _gridSize;
+
+                // Calculate how many cells we have moved
+                int cellsMovedX = (int)Math.Round(deltaX / cellWidth);
+                int cellsMovedY = (int)Math.Round(deltaY / cellHeight);
+
+                int newX = _dragStartFloatingX + cellsMovedX;
+                int newY = _dragStartFloatingY + cellsMovedY;
+
+                if (newX != _floatingX || newY != _floatingY)
+                {
+                    _floatingX = newX;
+                    _floatingY = newY;
+                    _selMinX = _floatingX;
+                    _selMaxX = _floatingX + _floatingWidth - 1;
+                    _selMinY = _floatingY;
+                    _selMaxY = _floatingY + _floatingHeight - 1;
+
+                    UpdateSelectionVisualsFromBounds();
+                    RedrawGridFromMemory();
+                    UpdateTextFromGrid();
+                }
+            }
+        }
+
         protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
         {
             base.OnPreviewMouseUp(e);
-            if (e.ChangedButton == MouseButton.Left && _isSelecting)
+            if (e.ChangedButton == MouseButton.Left)
             {
                 _isSelecting = false;
+                _isDraggingSelection = false;
             }
         }
 
