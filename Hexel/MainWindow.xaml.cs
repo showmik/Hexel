@@ -13,9 +13,13 @@ namespace SpriteGenerator
     {
         private int _gridSize = 16;
         private bool[] _pixels;
-        private enum ToolMode { Pencil, Fill }
+        private enum ToolMode { Pencil, Fill, Marquee }
         private ToolMode _currentTool = ToolMode.Pencil;
         private int _lastClickedIndex = -1;
+        private bool _isDisplayInverted = false;
+        private bool _isSelecting = false;
+        private int _selectionStartIdx = -1;
+        private int _selectionEndIdx = -1;
 
         // NEW: State Stacks for Undo/Redo
         private Stack<bool[]> _undoStack = new Stack<bool[]>();
@@ -98,11 +102,35 @@ namespace SpriteGenerator
         {
             if (sender is Border cell && cell.Tag is int index)
             {
+                // --- NEW: Marquee Tool Logic (Moved OUTSIDE MouseButtonEventArgs) ---
+                if (_currentTool == ToolMode.Marquee)
+                {
+                    if (Mouse.LeftButton == MouseButtonState.Pressed)
+                    {
+                        // If it's a click (MouseDown), start a new selection
+                        if (e is MouseButtonEventArgs)
+                        {
+                            _isSelecting = true;
+                            _selectionStartIdx = index;
+                            _selectionEndIdx = index;
+                            UpdateSelectionVisuals();
+                        }
+                        // If it's movement (MouseEnter) and we are currently selecting, drag the box
+                        else if (_isSelecting)
+                        {
+                            _selectionEndIdx = index;
+                            UpdateSelectionVisuals();
+                        }
+                    }
+                    return; // Important: Stop here so we don't accidentally run Pencil/Fill logic
+                }
+
+                // --- EXISTING: Handle Click-Based Tools ---
                 if (e is MouseButtonEventArgs)
                 {
                     SaveStateForUndo(); // Always save state on the initial click
 
-                    // --- EXISTING: Handle Fill Tool Logic ---
+                    // Handle Fill Tool
                     if (_currentTool == ToolMode.Fill)
                     {
                         bool targetState = _pixels[index];
@@ -116,17 +144,16 @@ namespace SpriteGenerator
                         return;
                     }
 
-                    // --- NEW: Handle Shift-Click for Lines ---
+                    // Handle Shift-Click for Lines
                     if (_currentTool == ToolMode.Pencil && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
                     {
-                        // Ensure we have a valid starting point
                         if (_lastClickedIndex != -1)
                         {
                             bool newState = true;
                             if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
 
                             DrawLine(_lastClickedIndex, index, newState);
-                            _lastClickedIndex = index; // Update anchor point for the next line segment
+                            _lastClickedIndex = index;
                             return;
                         }
                     }
@@ -401,7 +428,84 @@ namespace SpriteGenerator
         {
             if (sender is RadioButton rb && rb.Tag != null)
             {
-                _currentTool = rb.Tag.ToString() == "Fill" ? ToolMode.Fill : ToolMode.Pencil;
+                string tag = rb.Tag.ToString();
+                _currentTool = tag == "Fill" ? ToolMode.Fill :
+                               tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
+
+                // If we switch away from Marquee, remove the yellow highlight box
+                if (_currentTool != ToolMode.Marquee)
+                {
+                    ClearSelectionVisuals();
+                }
+            }
+        }
+
+        private void UpdateSelectionVisuals()
+        {
+            if (_selectionStartIdx == -1 || _selectionEndIdx == -1 || MarqueeOverlay == null) return;
+
+            // 1. Get grid coordinates
+            int startX = _selectionStartIdx % _gridSize;
+            int startY = _selectionStartIdx / _gridSize;
+            int endX = _selectionEndIdx % _gridSize;
+            int endY = _selectionEndIdx / _gridSize;
+
+            // 2. Find the bounds
+            int minX = Math.Min(startX, endX);
+            int maxX = Math.Max(startX, endX);
+            int minY = Math.Min(startY, endY);
+            int maxY = Math.Max(startY, endY);
+
+            // 3. Calculate physical screen dimensions
+            // The grid is 400x400, so we divide by gridSize to get the physical size of one cell
+            double cellWidth = 400.0 / _gridSize;
+            double cellHeight = 400.0 / _gridSize;
+
+            // 4. Update the overlay rectangle's position and size
+            Canvas.SetLeft(MarqueeOverlay, minX * cellWidth);
+            Canvas.SetTop(MarqueeOverlay, minY * cellHeight);
+
+            // Add +1 because if min and max are the same (1 cell selected), the width should be 1 full cell
+            MarqueeOverlay.Width = ((maxX - minX) + 1) * cellWidth;
+            MarqueeOverlay.Height = ((maxY - minY) + 1) * cellHeight;
+
+            // 5. Show the rectangle
+            MarqueeOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void ClearSelectionVisuals()
+        {
+            _isSelecting = false;
+            _selectionStartIdx = -1;
+            _selectionEndIdx = -1;
+
+            // Hide the overlay rectangle
+            if (MarqueeOverlay != null)
+            {
+                MarqueeOverlay.Visibility = Visibility.Hidden;
+            }
+
+            // Cleanup: In case any cells are stuck with yellow borders from the old code, reset them.
+            // You can eventually remove this loop once you've confirmed the old grid highlights are gone.
+            SolidColorBrush normalBorder = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222222"));
+            if (PixelGrid?.Children == null) return;
+
+            for (int i = 0; i < _gridSize * _gridSize; i++)
+            {
+                if (PixelGrid.Children.Count > i && PixelGrid.Children[i] is Border borderCell)
+                {
+                    borderCell.BorderBrush = normalBorder;
+                    borderCell.BorderThickness = new Thickness(1);
+                }
+            }
+        }
+
+        protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
+        {
+            base.OnPreviewMouseUp(e);
+            if (e.ChangedButton == MouseButton.Left && _isSelecting)
+            {
+                _isSelecting = false;
             }
         }
 
@@ -449,7 +553,47 @@ namespace SpriteGenerator
                 // Prevent tool shortcuts from triggering if the user is typing in the Hex/Binary text boxes
                 if (Keyboard.FocusedElement is TextBox) return;
 
-                if (e.Key == Key.P)
+                // Delete selected pixels
+                if (e.Key == Key.Delete || e.Key == Key.Back)
+                {
+                    if (_currentTool == ToolMode.Marquee && _selectionStartIdx != -1 && _selectionEndIdx != -1)
+                    {
+                        SaveStateForUndo();
+
+                        int startX = _selectionStartIdx % _gridSize;
+                        int startY = _selectionStartIdx / _gridSize;
+                        int endX = _selectionEndIdx % _gridSize;
+                        int endY = _selectionEndIdx / _gridSize;
+
+                        int minX = Math.Min(startX, endX);
+                        int maxX = Math.Max(startX, endX);
+                        int minY = Math.Min(startY, endY);
+                        int maxY = Math.Max(startY, endY);
+
+                        // Turn off any pixels inside the bounding box
+                        for (int i = 0; i < _gridSize * _gridSize; i++)
+                        {
+                            int x = i % _gridSize;
+                            int y = i / _gridSize;
+                            if (x >= minX && x <= maxX && y >= minY && y <= maxY)
+                            {
+                                _pixels[i] = false;
+                            }
+                        }
+
+                        RedrawGridFromMemory();
+                        UpdateTextFromGrid();
+                        e.Handled = true;
+                    }
+                }
+                // Tool Shortcuts
+                else if (e.Key == Key.M) // New shortcut for Marquee
+                {
+                    if (RbMarquee != null) RbMarquee.IsChecked = true;
+                    e.Handled = true;
+                }
+
+                else if (e.Key == Key.P)
                 {
                     if (RbPencil != null) RbPencil.IsChecked = true;
                     e.Handled = true;
@@ -494,6 +638,38 @@ namespace SpriteGenerator
             }
 
             // Because Fill modifies many pixels at once, we redraw the whole grid
+            RedrawGridFromMemory();
+            UpdateTextFromGrid();
+        }
+
+        private void BtnInvert_Click(object sender, RoutedEventArgs e)
+        {
+            SaveStateForUndo();
+
+            // 1. Invert the sprite memory
+            for (int i = 0; i < _pixels.Length; i++)
+            {
+                _pixels[i] = !_pixels[i];
+            }
+
+            // 2. Toggle the display state
+            _isDisplayInverted = !_isDisplayInverted;
+
+            // 3. Update the OLED container backgrounds
+            if (_isDisplayInverted)
+            {
+                // Set entire OLED screen to Cyan
+                OledBorder.Background = _previewOn;
+                PreviewGrid.Background = _previewOn;
+            }
+            else
+            {
+                // Revert back to the default dark OLED colors
+                OledBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#050505"));
+                PreviewGrid.Background = new SolidColorBrush(Colors.Black);
+            }
+
+            // 4. Redraw the pixels
             RedrawGridFromMemory();
             UpdateTextFromGrid();
         }
