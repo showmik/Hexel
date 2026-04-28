@@ -349,10 +349,12 @@ namespace SpriteGenerator
         }
 
         // NEW: Keyboard shortcut support
+        // NEW: Keyboard shortcut support updated with Tool shortcuts
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
 
+            // Control modifier shortcuts (Undo/Redo)
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 if (e.Key == Key.Z)
@@ -363,6 +365,23 @@ namespace SpriteGenerator
                 else if (e.Key == Key.Y)
                 {
                     Redo();
+                    e.Handled = true;
+                }
+            }
+            // No modifier shortcuts (Tools)
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                // Prevent tool shortcuts from triggering if the user is typing in the Hex/Binary text boxes
+                if (Keyboard.FocusedElement is TextBox) return;
+
+                if (e.Key == Key.B)
+                {
+                    if (RbPencil != null) RbPencil.IsChecked = true;
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.G)
+                {
+                    if (RbFill != null) RbFill.IsChecked = true;
                     e.Handled = true;
                 }
             }
