@@ -15,6 +15,7 @@ namespace SpriteGenerator
         private bool[] _pixels;
         private enum ToolMode { Pencil, Fill }
         private ToolMode _currentTool = ToolMode.Pencil;
+        private int _lastClickedIndex = -1;
 
         // NEW: State Stacks for Undo/Redo
         private Stack<bool[]> _undoStack = new Stack<bool[]>();
@@ -101,22 +102,37 @@ namespace SpriteGenerator
                 {
                     SaveStateForUndo(); // Always save state on the initial click
 
-                    // --- NEW: Handle Fill Tool Logic ---
+                    // --- EXISTING: Handle Fill Tool Logic ---
                     if (_currentTool == ToolMode.Fill)
                     {
                         bool targetState = _pixels[index];
                         bool newState = targetState;
 
-                        // Left click fills with ON, Right click fills with OFF
                         if (Mouse.LeftButton == MouseButtonState.Pressed) newState = true;
                         else if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
 
                         ApplyFloodFill(index, targetState, newState);
-                        return; // Exit out, we don't want to run Pencil logic
+                        _lastClickedIndex = index; // Update anchor point
+                        return;
+                    }
+
+                    // --- NEW: Handle Shift-Click for Lines ---
+                    if (_currentTool == ToolMode.Pencil && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+                    {
+                        // Ensure we have a valid starting point
+                        if (_lastClickedIndex != -1)
+                        {
+                            bool newState = true;
+                            if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
+
+                            DrawLine(_lastClickedIndex, index, newState);
+                            _lastClickedIndex = index; // Update anchor point for the next line segment
+                            return;
+                        }
                     }
                 }
 
-                // --- EXISTING: Pencil Tool Logic ---
+                // --- EXISTING: Standard Pencil Tool Logic ---
                 if (_currentTool == ToolMode.Pencil)
                 {
                     bool stateChanged = false;
@@ -142,6 +158,9 @@ namespace SpriteGenerator
                         }
 
                         UpdateTextFromGrid();
+
+                        // Track this as the last edited pixel so lines can connect to it
+                        _lastClickedIndex = index;
                     }
                 }
             }
@@ -275,6 +294,44 @@ namespace SpriteGenerator
                     previewRect.Fill = _pixels[i] ? _previewOn : _previewOff;
                 }
             }
+        }
+
+        private void DrawLine(int startIdx, int endIdx, bool state)
+        {
+            int x0 = startIdx % _gridSize;
+            int y0 = startIdx / _gridSize;
+            int x1 = endIdx % _gridSize;
+            int y1 = endIdx / _gridSize;
+
+            int dx = Math.Abs(x1 - x0);
+            int dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1;
+            int sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+
+            while (true)
+            {
+                int currentIndex = (y0 * _gridSize) + x0;
+                _pixels[currentIndex] = state;
+
+                if (x0 == x1 && y0 == y1) break;
+
+                int e2 = 2 * err;
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x0 += sx;
+                }
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+
+            // Update the UI and text once the full line is calculated in memory
+            RedrawGridFromMemory();
+            UpdateTextFromGrid();
         }
 
         private void BtnClear_Click(object sender, RoutedEventArgs e)
