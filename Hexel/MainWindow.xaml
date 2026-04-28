@@ -1,0 +1,214 @@
+﻿<Window x:Class="SpriteGenerator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ESP32 Sprite Studio"
+        MinHeight="600"
+        MinWidth="900"
+        Height="750"
+        Width="1100"
+        Background="#1E1E1E">
+
+    <Window.Resources>
+        <Style x:Key="HeaderStyle"
+               TargetType="TextBlock">
+            <Setter Property="Foreground"
+                    Value="#00FFCC" />
+            <Setter Property="FontWeight"
+                    Value="Bold" />
+            <Setter Property="Margin"
+                    Value="0,0,0,5" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="380"
+                              MinWidth="250"
+                              MaxWidth="600" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0"
+              Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,15">
+                <TextBlock Text="Canvas Size:"
+                           Style="{StaticResource HeaderStyle}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0" />
+                <ComboBox x:Name="CmbGridSize"
+                          Width="100"
+                          SelectionChanged="CmbGridSize_SelectionChanged"
+                          Padding="5,2">
+                    <ComboBoxItem Content="2x2"
+                                  Tag="2" />
+                    <ComboBoxItem Content="4x4"
+                                  Tag="4" />
+                    <ComboBoxItem Content="8x8"
+                                  Tag="8" />
+                    <ComboBoxItem Content="16x16"
+                                  Tag="16"
+                                  IsSelected="True" />
+                    <ComboBoxItem Content="24x24"
+                                  Tag="24" />
+                    <ComboBoxItem Content="32x32"
+                                  Tag="32" />
+                </ComboBox>
+            </StackPanel>
+
+            <Viewbox Grid.Row="1"
+                     Stretch="Uniform"
+                     Margin="10">
+                <Border BorderBrush="#444"
+                        BorderThickness="2"
+                        Background="#111">
+                    <UniformGrid x:Name="PixelGrid"
+                                 Width="400"
+                                 Height="400"
+                                 Background="#333" />
+                </Border>
+            </Viewbox>
+
+            <StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,15,0,0">
+                <Button Content="Undo"
+                        Width="70"
+                        Height="35"
+                        Margin="0,0,10,0"
+                        Background="#555555"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Click="BtnUndo_Click"
+                        Cursor="Hand" />
+
+                <Button Content="Redo"
+                        Width="70"
+                        Height="35"
+                        Margin="0,0,15,0"
+                        Background="#555555"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Click="BtnRedo_Click"
+                        Cursor="Hand" />
+                <Button Content="Clear Grid"
+                        Width="120"
+                        Height="35"
+                        Margin="0,0,15,0"
+                        Background="#FF4444"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Click="BtnClear_Click"
+                        Cursor="Hand" />
+                <Button Content="Copy HEX to Clipboard"
+                        Width="180"
+                        Height="35"
+                        Background="#007ACC"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Click="BtnCopy_Click"
+                        Cursor="Hand" />
+            </StackPanel>
+        </Grid>
+
+        <GridSplitter Grid.Column="1"
+                      Width="5"
+                      HorizontalAlignment="Stretch"
+                      Background="#333"
+                      Cursor="SizeWE" />
+
+        <Grid Grid.Column="2"
+              Margin="15,20,20,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="15" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0">
+                <TextBlock Text="OLED Preview (128x64):"
+                           Style="{StaticResource HeaderStyle}" />
+                <Border BorderBrush="#555"
+                        BorderThickness="2"
+                        Background="#050505"
+                        Width="256"
+                        Height="128"
+                        HorizontalAlignment="Left"
+                        CornerRadius="3">
+                    <Grid>
+                        <Border BorderBrush="#111"
+                                BorderThickness="1"
+                                Margin="0" />
+
+                        <UniformGrid x:Name="PreviewGrid"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
+                                     Background="#000000" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="*Sprite size shown relative to total screen area"
+                           Foreground="#888"
+                           FontSize="11"
+                           Margin="0,3,0,0" />
+            </StackPanel>
+
+            <Grid Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0"
+                           Text="Edit Binary to Update Grid:"
+                           Style="{StaticResource HeaderStyle}" />
+                <TextBox Grid.Row="1"
+                         x:Name="TxtBinary"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         FontFamily="Consolas"
+                         Background="#0A0A0A"
+                         Foreground="#00FFCC"
+                         BorderBrush="#444"
+                         Padding="10"
+                         VerticalScrollBarVisibility="Auto"
+                         TextChanged="TxtBinary_TextChanged" />
+            </Grid>
+
+            <Grid Grid.Row="4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0"
+                           Text="Edit ESP32 HEX Array:"
+                           Style="{StaticResource HeaderStyle}" />
+                <TextBox Grid.Row="1"
+                         x:Name="TxtHex"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         FontFamily="Consolas"
+                         Background="#0A0A0A"
+                         Foreground="#00FFCC"
+                         BorderBrush="#444"
+                         Padding="10"
+                         VerticalScrollBarVisibility="Auto"
+                         TextChanged="TxtHex_TextChanged" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
