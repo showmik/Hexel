@@ -41,6 +41,7 @@
                         Orientation="Horizontal"
                         HorizontalAlignment="Center"
                         Margin="0,0,0,15">
+
                 <TextBlock Text="Canvas Size:"
                            Style="{StaticResource HeaderStyle}"
                            VerticalAlignment="Center"
@@ -63,6 +64,23 @@
                     <ComboBoxItem Content="32x32"
                                   Tag="32" />
                 </ComboBox>
+
+                <TextBlock Text="Tool:"
+                           Style="{StaticResource HeaderStyle}"
+                           VerticalAlignment="Center"
+                           Margin="20,0,10,0" />
+                <RadioButton Content="Pencil"
+                             IsChecked="True"
+                             Foreground="White"
+                             VerticalAlignment="Center"
+                             Margin="0,0,10,0"
+                             Checked="Tool_Checked"
+                             Tag="Pencil" />
+                <RadioButton Content="Fill Bucket"
+                             Foreground="White"
+                             VerticalAlignment="Center"
+                             Checked="Tool_Checked"
+                             Tag="Fill" />
             </StackPanel>
 
             <Viewbox Grid.Row="1"

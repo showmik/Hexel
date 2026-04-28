@@ -13,6 +13,8 @@ namespace SpriteGenerator
     {
         private int _gridSize = 16;
         private bool[] _pixels;
+        private enum ToolMode { Pencil, Fill }
+        private ToolMode _currentTool = ToolMode.Pencil;
 
         // NEW: State Stacks for Undo/Redo
         private Stack<bool[]> _undoStack = new Stack<bool[]>();
@@ -95,35 +97,52 @@ namespace SpriteGenerator
         {
             if (sender is Border cell && cell.Tag is int index)
             {
-                // NEW: Save state on the initial MouseDown event before applying changes
                 if (e is MouseButtonEventArgs)
                 {
-                    SaveStateForUndo();
-                }
+                    SaveStateForUndo(); // Always save state on the initial click
 
-                bool stateChanged = false;
-
-                if (Mouse.LeftButton == MouseButtonState.Pressed && !_pixels[index])
-                {
-                    _pixels[index] = true;
-                    stateChanged = true;
-                }
-                else if (Mouse.RightButton == MouseButtonState.Pressed && _pixels[index])
-                {
-                    _pixels[index] = false;
-                    stateChanged = true;
-                }
-
-                if (stateChanged)
-                {
-                    cell.Background = _pixels[index] ? _colorOn : _colorOff;
-
-                    if (PreviewGrid.Children[index] is Rectangle previewRect)
+                    // --- NEW: Handle Fill Tool Logic ---
+                    if (_currentTool == ToolMode.Fill)
                     {
-                        previewRect.Fill = _pixels[index] ? _previewOn : _previewOff;
+                        bool targetState = _pixels[index];
+                        bool newState = targetState;
+
+                        // Left click fills with ON, Right click fills with OFF
+                        if (Mouse.LeftButton == MouseButtonState.Pressed) newState = true;
+                        else if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
+
+                        ApplyFloodFill(index, targetState, newState);
+                        return; // Exit out, we don't want to run Pencil logic
+                    }
+                }
+
+                // --- EXISTING: Pencil Tool Logic ---
+                if (_currentTool == ToolMode.Pencil)
+                {
+                    bool stateChanged = false;
+
+                    if (Mouse.LeftButton == MouseButtonState.Pressed && !_pixels[index])
+                    {
+                        _pixels[index] = true;
+                        stateChanged = true;
+                    }
+                    else if (Mouse.RightButton == MouseButtonState.Pressed && _pixels[index])
+                    {
+                        _pixels[index] = false;
+                        stateChanged = true;
                     }
 
-                    UpdateTextFromGrid();
+                    if (stateChanged)
+                    {
+                        cell.Background = _pixels[index] ? _colorOn : _colorOff;
+
+                        if (PreviewGrid.Children[index] is Rectangle previewRect)
+                        {
+                            previewRect.Fill = _pixels[index] ? _previewOn : _previewOff;
+                        }
+
+                        UpdateTextFromGrid();
+                    }
                 }
             }
         }
@@ -321,6 +340,14 @@ namespace SpriteGenerator
             Redo();
         }
 
+        private void Tool_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Tag != null)
+            {
+                _currentTool = rb.Tag.ToString() == "Fill" ? ToolMode.Fill : ToolMode.Pencil;
+            }
+        }
+
         // NEW: Keyboard shortcut support
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -339,6 +366,42 @@ namespace SpriteGenerator
                     e.Handled = true;
                 }
             }
+        }
+
+        private void ApplyFloodFill(int startIndex, bool targetState, bool newState)
+        {
+            // If clicking on a pixel that is already the desired color, do nothing
+            if (targetState == newState) return;
+
+            Queue<int> queue = new Queue<int>();
+            queue.Enqueue(startIndex);
+
+            while (queue.Count > 0)
+            {
+                int current = queue.Dequeue();
+
+                // Process if the pixel matches the target background we are trying to fill
+                if (_pixels[current] == targetState)
+                {
+                    _pixels[current] = newState;
+
+                    int x = current % _gridSize;
+                    int y = current / _gridSize;
+
+                    // Check Left
+                    if (x > 0) queue.Enqueue(current - 1);
+                    // Check Right
+                    if (x < _gridSize - 1) queue.Enqueue(current + 1);
+                    // Check Up
+                    if (y > 0) queue.Enqueue(current - _gridSize);
+                    // Check Down
+                    if (y < _gridSize - 1) queue.Enqueue(current + _gridSize);
+                }
+            }
+
+            // Because Fill modifies many pixels at once, we redraw the whole grid
+            RedrawGridFromMemory();
+            UpdateTextFromGrid();
         }
     }
 }
