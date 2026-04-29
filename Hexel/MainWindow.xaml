@@ -58,7 +58,8 @@
                                    FontSize="11" />
                         <ComboBox x:Name="CmbGridSize"
                                   Width="100"
-                                  SelectionChanged="CmbGridSize_SelectionChanged"
+                                  SelectedValuePath="Tag"
+                                  SelectedValue="{Binding GridSize}"
                                   Style="{StaticResource ModernComboBoxStyle}"
                                   Padding="8,4"
                                   Background="{DynamicResource Theme.BackgroundBrush}"
@@ -277,7 +278,7 @@
                             HorizontalAlignment="Right"
                             Style="{StaticResource ModernButtonStyle}"
                             Background="#0284C7"
-                            Click="BtnCopy_Click" />
+                            Command="{Binding CopyHexCommand}" />
                 </Grid>
             </Border>
         </Grid>
@@ -306,15 +307,43 @@
                     <Border x:Name="OledBorder"
                             BorderBrush="{DynamicResource Theme.BackgroundBrush}"
                             BorderThickness="4"
-                            Background="{DynamicResource Theme.CanvasBackgroundBrush}"
                             Width="256"
                             Height="128"
                             HorizontalAlignment="Left"
                             CornerRadius="6">
-                        <Grid x:Name="PreviewGridContainer"
-                              Background="{DynamicResource Theme.OledOffBrush}">
+
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background"
+                                        Value="{DynamicResource Theme.CanvasBackgroundBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDisplayInverted}"
+                                                 Value="True">
+                                        <Setter Property="Background"
+                                                Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+
+                        <Grid x:Name="PreviewGridContainer">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Background"
+                                            Value="{DynamicResource Theme.OledOffBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDisplayInverted}"
+                                                     Value="True">
+                                            <Setter Property="Background"
+                                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
                             <ItemsControl x:Name="PreviewItemsControl"
                                           ItemsSource="{Binding PreviewBrushes}"
+                                          Width="{Binding PreviewSize}"
+                                          Height="{Binding PreviewSize}"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center">
                                 <ItemsControl.ItemsPanel>

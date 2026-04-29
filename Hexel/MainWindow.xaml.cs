@@ -12,10 +12,6 @@ namespace Hexel
     {
         private ViewModels.MainViewModel ViewModel => (ViewModels.MainViewModel)DataContext;
 
-        // --- FIELDS & STATE ---
-
-       
-
         // Selection & Floating State
         private bool _hasActiveSelection, _isSelecting, _isFloating, _isDraggingSelection;
         private int _selectionStartIdx = -1, _selectionEndIdx = -1;
@@ -43,45 +39,9 @@ namespace Hexel
         {
             InitializeComponent();
             DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
-
-            // Set the initial visual scale for the OLED preview (2x multiplier)
-            PreviewItemsControl.Width = PreviewItemsControl.Height = vm.SpriteState.Size * 2;
-
-            vm.PropertyChanged += Vm_PropertyChanged;
         }
-
-        private void Vm_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ViewModels.MainViewModel.IsDisplayInverted))
-            {
-                if (ViewModel.IsDisplayInverted)
-                {
-                    OledBorder.Background = _previewOn;
-                    PreviewGridContainer.Background = _previewOn;
-                }
-                else
-                {
-                    OledBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#020617"));
-                    PreviewGridContainer.Background = new SolidColorBrush(Colors.Black);
-                }
-            }
-        }
-
 
         // --- UI CONTROLS & TOOLBAR ---
-
-        private void CmbGridSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ViewModel == null) return;
-            if (CmbGridSize.SelectedItem is ComboBoxItem item && item.Tag != null)
-            {
-                int newSize = int.Parse(item.Tag.ToString());
-                ViewModel.InitializeGrid(newSize);
-
-                // Maintain the 2x visual scale for the OLED preview
-                PreviewItemsControl.Width = PreviewItemsControl.Height = newSize * 2;
-            }
-        }
 
         private void Tool_Checked(object sender, RoutedEventArgs e)
         {
@@ -99,13 +59,6 @@ namespace Hexel
                 }
             }
         }
-
-        private void BtnCopy_Click(object sender, RoutedEventArgs e)
-        {
-            Clipboard.SetText(TxtHex.Text);
-            MessageBox.Show("Copied!");
-        }
-
 
         // --- CORE CANVAS INTERACTION ---
 
@@ -382,8 +335,12 @@ namespace Hexel
                 double deltaX = currentPos.X - _dragStartMousePos.X;
                 double deltaY = currentPos.Y - _dragStartMousePos.Y;
 
-                double cellWidth = 400.0 / ViewModel.SpriteState.Size;
-                double cellHeight = 400.0 / ViewModel.SpriteState.Size;
+                // Replace with this:
+                double gridWidth = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
+                double gridHeight = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
+
+                double cellWidth = gridWidth / ViewModel.SpriteState.Size;
+                double cellHeight = gridHeight / ViewModel.SpriteState.Size;
 
                 int cellsMovedX = (int)Math.Round(deltaX / cellWidth);
                 int cellsMovedY = (int)Math.Round(deltaY / cellHeight);

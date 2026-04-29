@@ -14,6 +14,8 @@ namespace Hexel.ViewModels
         private readonly IDrawingService _drawingService;
         private readonly IHistoryService _historyService;
         private readonly System.Threading.SynchronizationContext _uiContext;
+        private readonly IClipboardService _clipboardService;
+        private readonly IDialogService _dialogService;
 
         private bool _isUpdatingProgrammatically = false;
         // Brushes used for UI representation
@@ -121,6 +123,24 @@ namespace Hexel.ViewModels
             }
         }
 
+        private int _gridSize = 16;
+        public int GridSize
+        {
+            get => _gridSize;
+            set
+            {
+                if (SetProperty(ref _gridSize, value))
+                {
+                    InitializeGrid(value);
+                    // Notify the UI that the preview size needs to update too
+                    OnPropertyChanged(nameof(PreviewSize));
+                }
+            }
+        }
+
+        // Replaces the "vm.SpriteState.Size * 2" math from your code-behind
+        public int PreviewSize => GridSize * 2;
+
         private bool _isDisplayInverted = false;
         public bool IsDisplayInverted
         {
@@ -133,14 +153,29 @@ namespace Hexel.ViewModels
         public IRelayCommand ClearCommand { get; }
         public IRelayCommand InvertCommand { get; }
         public IRelayCommand DeleteSelectionCommand { get; }
+        public IRelayCommand CopyHexCommand { get; }
 
-        public MainViewModel(ICodeGeneratorService codeGen, IDrawingService drawingService, IHistoryService historyService)
+        public MainViewModel(ICodeGeneratorService codeGen,
+                             IDrawingService drawingService,
+                             IHistoryService historyService,
+                             IClipboardService clipboardService,
+                             IDialogService dialogService)
         {
             _uiContext = System.Threading.SynchronizationContext.Current ?? new System.Threading.SynchronizationContext();
 
             _codeGen = codeGen ?? throw new ArgumentNullException(nameof(codeGen));
             _drawingService = drawingService ?? throw new ArgumentNullException(nameof(drawingService));
             _historyService = historyService ?? throw new ArgumentNullException(nameof(historyService));
+
+            _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+
+            // Initialize the command:
+            CopyHexCommand = new RelayCommand(() =>
+            {
+                _clipboardService.SetText(TxtHex);
+                _dialogService.ShowMessage("Copied!");
+            });
 
             SpriteState = new SpriteState(16);
             InitializeGrid(16);

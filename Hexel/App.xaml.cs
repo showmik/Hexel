@@ -31,6 +31,9 @@ namespace Hexel
             services.AddSingleton<IDrawingService, DrawingService>();
             services.AddSingleton<IHistoryService, HistoryService>();
 
+            services.AddSingleton<IClipboardService, ClipboardService>();
+            services.AddSingleton<IDialogService, DialogService>();
+
             services.AddSingleton<MainViewModel>();
             services.AddTransient<MainWindow>(sp => new MainWindow(sp.GetRequiredService<MainViewModel>()));
         }
