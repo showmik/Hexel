@@ -160,6 +160,18 @@
                     </RadioButton.Content>
                 </RadioButton>
 
+                <RadioButton x:Name="RbLine"
+                             Style="{StaticResource IconToolButtonStyle}"
+                             GroupName="Tools"
+                             Checked="Tool_Checked"
+                             Tag="Line"
+                             ToolTip="Line Tool (L)">
+                    <RadioButton.Content>
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              Data="M4 14L14 4" />
+                    </RadioButton.Content>
+                </RadioButton>
+
                 <RadioButton x:Name="RbFill"
                              Style="{StaticResource IconToolButtonStyle}"
                              GroupName="Tools"

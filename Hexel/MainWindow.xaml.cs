@@ -17,6 +17,12 @@ namespace Hexel
         // UI State
         private int _lastClickedIndex = -1;
 
+        // Line Tool State
+        private bool _isDrawingLine;
+        private int _lineStartIdx = -1;
+        private int _lineCurrentIdx = -1;
+        private bool _lineDrawState;
+
         // Selection & Floating State
         private bool _hasActiveSelection, _isSelecting, _isFloating, _isDraggingSelection;
         private bool _pendingTextUpdateDuringDrag = false;
@@ -91,7 +97,8 @@ namespace Hexel
             {
                 string tag = rb.Tag.ToString();
                 ViewModel.CurrentTool = tag == "Fill" ? ToolMode.Fill :
-                                        tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
+                                        tag == "Marquee" ? ToolMode.Marquee :
+                                        tag == "Line" ? ToolMode.Line : ToolMode.Pencil;
 
                 if (ViewModel.CurrentTool != ToolMode.Marquee)
                 {
@@ -119,6 +126,25 @@ namespace Hexel
                 {
                     HandleMarqueeTool(e, index);
                     return;
+                }
+
+                // --- UPDATED LINE TOOL LOGIC ---
+                if (ViewModel.CurrentTool == ToolMode.Line)
+                {
+                    if (e is MouseButtonEventArgs args)
+                    {
+                        _isDrawingLine = true;
+                        _lineStartIdx = index;
+                        _lineCurrentIdx = index;
+                        _lineDrawState = args.LeftButton == MouseButtonState.Pressed;
+                        if (args.RightButton == MouseButtonState.Pressed) _lineDrawState = false;
+
+                        ViewModel.PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+
+                        // CRITICAL: Capture the mouse to ensure we don't drop events when moving fast
+                        Mouse.Capture(PixelGridContainer);
+                    }
+                    return; // Stop here, dragging is handled globally in OnPreviewMouseMove
                 }
 
                 if (e is MouseButtonEventArgs)
@@ -380,6 +406,36 @@ namespace Hexel
         protected override void OnPreviewMouseMove(MouseEventArgs e)
         {
             base.OnPreviewMouseMove(e);
+
+            // --- NEW LINE TOOL DRAG TRACKING ---
+            if (_isDrawingLine)
+            {
+                Point pos = e.GetPosition(PixelGridContainer);
+                int size = ViewModel.SpriteState.Size;
+
+                if (PixelGridContainer.ActualWidth > 0 && PixelGridContainer.ActualHeight > 0)
+                {
+                    double cellWidth = PixelGridContainer.ActualWidth / size;
+                    double cellHeight = PixelGridContainer.ActualHeight / size;
+
+                    int x = (int)(pos.X / cellWidth);
+                    int y = (int)(pos.Y / cellHeight);
+
+                    // Clamp to grid boundaries so the line stops at the edge safely
+                    x = Math.Max(0, Math.Min(size - 1, x));
+                    y = Math.Max(0, Math.Min(size - 1, y));
+
+                    int hoverIndex = (y * size) + x;
+
+                    // Only trigger a visual redraw if the mouse actually entered a new cell
+                    if (_lineCurrentIdx != hoverIndex)
+                    {
+                        _lineCurrentIdx = hoverIndex;
+                        ViewModel.PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    }
+                }
+            }
+
             if (_isDraggingSelection && Mouse.LeftButton == MouseButtonState.Pressed)
             {
                 Point currentPos = e.GetPosition(PixelGridContainer);
@@ -414,6 +470,22 @@ namespace Hexel
         protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
         {
             base.OnPreviewMouseUp(e);
+
+            // --- UPDATED LINE TOOL COMMIT ---
+            if (_isDrawingLine)
+            {
+                _isDrawingLine = false;
+                Mouse.Capture(null); // Release the mouse lock
+
+                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                {
+                    ViewModel.DrawLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    _lastClickedIndex = _lineCurrentIdx; // Ensure shift-click still works from this endpoint
+                }
+                _lineStartIdx = -1;
+                _lineCurrentIdx = -1;
+            }
+
             if (e.ChangedButton == MouseButton.Left)
             {
                 // NEW: Release the mouse capture if we were holding it
@@ -474,6 +546,10 @@ namespace Hexel
                 else if (e.Key == Key.M) { if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.M) { if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.L) { if (RbLine != null) RbLine.IsChecked = true; e.Handled = true; }
             }
         }
     }

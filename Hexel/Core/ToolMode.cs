@@ -3,6 +3,7 @@
     public enum ToolMode
     {
         Pencil,
+        Line,
         Fill,
         Marquee
     }

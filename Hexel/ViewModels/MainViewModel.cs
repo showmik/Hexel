@@ -184,6 +184,41 @@ namespace Hexel.ViewModels
             UpdateTextOutputs();
         }
 
+        public void PreviewLine(int startIdx, int endIdx, bool newState)
+        {
+            // Reset to current committed state to clear any previous preview line
+            RedrawGridFromMemory();
+
+            // Calculate the preview line (Bresenham's line algorithm)
+            int size = SpriteState.Size;
+            int x0 = startIdx % size;
+            int y0 = startIdx / size;
+            int x1 = endIdx % size;
+            int y1 = endIdx / size;
+
+            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+
+            var previewColor = newState ? _colorOn : _colorOff;
+            var previewPrev = newState ? _previewOn : _previewOff;
+
+            while (true)
+            {
+                int i = (y0 * size) + x0;
+
+                // Only update brushes for the visual preview (don't save to SpriteState yet)
+                if (PixelBrushes[i] != previewColor) PixelBrushes[i] = previewColor;
+                if (PreviewBrushes[i] != previewPrev) PreviewBrushes[i] = previewPrev;
+
+                if (x0 == x1 && y0 == y1) break;
+
+                int e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+        }
+
         public void InitializeGrid(int size)
         {
             SpriteState = new SpriteState(size);
