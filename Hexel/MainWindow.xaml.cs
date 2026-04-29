@@ -26,39 +26,18 @@ namespace Hexel
         private Point _dragStartMousePos;
         private int _dragStartFloatingX, _dragStartFloatingY;
 
-        // Visual Brushes
-        private readonly SolidColorBrush _colorOff = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
         private readonly SolidColorBrush _colorOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFCC"));
-        private readonly SolidColorBrush _previewOff = new SolidColorBrush(Colors.Black);
+        private readonly SolidColorBrush _colorOff = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
         private readonly SolidColorBrush _previewOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFFF"));
+        private readonly SolidColorBrush _previewOff = new SolidColorBrush(Colors.Black);
 
         public MainWindow(ViewModels.MainViewModel vm)
         {
             InitializeComponent();
             DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
-            BuildGridUI();
 
-            // FIX: Targeted UI updates. If only 1 pixel changes, only update 1 UI element.
-            vm.PixelBrushes.CollectionChanged += (s, e) =>
-            {
-                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Replace)
-                {
-                    int i = e.NewStartingIndex;
-                    if (i >= 0 && i < PixelGrid.Children.Count && PixelGrid.Children[i] is Border cell)
-                        cell.Background = vm.PixelBrushes[i];
-                }
-                else UpdateUIFromVM();
-            };
-
-            vm.PreviewBrushes.CollectionChanged += (s, e) =>
-            {
-                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Replace)
-                {
-                    int i = e.NewStartingIndex;
-                    if (i >= 0 && i < PreviewGrid.Children.Count && PreviewGrid.Children[i] is Rectangle rect)
-                        rect.Fill = vm.PreviewBrushes[i];
-                }
-            };
+            // Set the initial visual scale for the OLED preview (2x multiplier)
+            PreviewItemsControl.Width = PreviewItemsControl.Height = vm.SpriteState.Size * 2;
 
             vm.PropertyChanged += Vm_PropertyChanged;
         }
@@ -70,66 +49,32 @@ namespace Hexel
                 if (ViewModel.IsDisplayInverted)
                 {
                     OledBorder.Background = _previewOn;
-                    PreviewGrid.Background = _previewOn;
+                    PreviewGridContainer.Background = _previewOn;
                 }
                 else
                 {
                     OledBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#050505"));
-                    PreviewGrid.Background = new SolidColorBrush(Colors.Black);
+                    PreviewGridContainer.Background = new SolidColorBrush(Colors.Black);
                 }
-            }
-        }
-
-        private void UpdateUIFromVM()
-        {
-            if (ViewModel == null || PixelGrid == null || PreviewGrid == null) return;
-
-            for (int i = 0; i < PixelGrid.Children.Count && i < ViewModel.PixelBrushes.Count; i++)
-            {
-                if (PixelGrid.Children[i] is Border cell) cell.Background = ViewModel.PixelBrushes[i];
-            }
-            for (int i = 0; i < PreviewGrid.Children.Count && i < ViewModel.PreviewBrushes.Count; i++)
-            {
-                if (PreviewGrid.Children[i] is Rectangle rect) rect.Fill = ViewModel.PreviewBrushes[i];
             }
         }
 
         private void CmbGridSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (PixelGrid == null || PreviewGrid == null || ViewModel == null) return;
+            if (ViewModel == null) return;
             if (CmbGridSize.SelectedItem is ComboBoxItem item && item.Tag != null)
             {
-                ViewModel.InitializeGrid(int.Parse(item.Tag.ToString()));
-                BuildGridUI();
-                UpdateUIFromVM();
+                int newSize = int.Parse(item.Tag.ToString());
+                ViewModel.InitializeGrid(newSize);
+
+                // Maintain the 2x visual scale for the OLED preview
+                PreviewItemsControl.Width = PreviewItemsControl.Height = newSize * 2;
             }
-        }
-
-        private void BuildGridUI()
-        {
-            int size = ViewModel.SpriteState.Size;
-            PixelGrid.Rows = PixelGrid.Columns = size;
-            PreviewGrid.Rows = PreviewGrid.Columns = size;
-            PixelGrid.Children.Clear();
-            PreviewGrid.Children.Clear();
-
-            PreviewGrid.Width = PreviewGrid.Height = size * 2;
-
-            for (int i = 0; i < size * size; i++)
-            {
-                Border pixelCell = new Border { Background = _colorOff, BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222222")), BorderThickness = new Thickness(1), Tag = i };
-                pixelCell.MouseDown += Pixel_Interaction;
-                pixelCell.MouseEnter += Pixel_Interaction;
-                PixelGrid.Children.Add(pixelCell);
-                PreviewGrid.Children.Add(new Rectangle { Fill = _previewOff });
-            }
-
-            PixelGrid.UpdateLayout();
-            if (MarqueeOverlay != null) System.Windows.Controls.Panel.SetZIndex(MarqueeOverlay, 100);
         }
 
         private void Pixel_Interaction(object sender, MouseEventArgs e)
         {
+            // The XAML AlternationIndex automatically assigns the correct index to the Tag property
             if (sender is Border cell && cell.Tag is int index)
             {
                 if (_currentTool == ToolMode.Marquee)
@@ -138,7 +83,6 @@ namespace Hexel
                     return;
                 }
 
-                // FIX: Only save state to the undo history when initially clicking, NOT while dragging
                 if (e is MouseButtonEventArgs)
                 {
                     ViewModel.SaveStateForUndo();
@@ -170,7 +114,6 @@ namespace Hexel
                     {
                         bool targetState = isDrawing;
 
-                        // e is MouseButtonEventArgs means this is the very first click (MouseDown)
                         if (e is MouseButtonEventArgs)
                         {
                             if (ViewModel.SpriteState.Pixels[index] != targetState)
@@ -182,10 +125,8 @@ namespace Hexel
                             _lastClickedIndex = index;
                             ViewModel.UpdateTextOutputs();
                         }
-                        // Otherwise, it's a MouseEnter event (Dragging)
                         else
                         {
-                            // Interpolate a line between the last pixel and this one to catch skipped pixels
                             if (_lastClickedIndex != -1 && _lastClickedIndex != index)
                             {
                                 ViewModel.DrawLineContinuous(_lastClickedIndex, index, targetState);
@@ -198,6 +139,7 @@ namespace Hexel
             }
         }
 
+        // --- MARQUEE TOOL & SELECTION LOGIC ---
         private void HandleMarqueeTool(MouseEventArgs e, int index)
         {
             int size = ViewModel.SpriteState.Size;
@@ -213,7 +155,7 @@ namespace Hexel
                         ViewModel.SaveStateForUndo();
                         LiftSelection();
                         _isDraggingSelection = true;
-                        _dragStartMousePos = e.GetPosition(PixelGrid);
+                        _dragStartMousePos = e.GetPosition(PixelGridContainer);
                         _dragStartFloatingX = _floatingX;
                         _dragStartFloatingY = _floatingY;
                         return;
@@ -262,8 +204,6 @@ namespace Hexel
                 }
             }
             _isFloating = true;
-
-            // --> NEW: Send the floating data to the ViewModel
             ViewModel.SyncFloatingState(_isFloating, _floatingPixels, _floatingX, _floatingY, _floatingWidth, _floatingHeight);
         }
 
@@ -296,9 +236,7 @@ namespace Hexel
             _hasActiveSelection = false;
             _selMinX = _selMaxX = _selMinY = _selMaxY = -1;
 
-            // --> NEW: Clear the floating data in the ViewModel
             ViewModel.SyncFloatingState(false, null, 0, 0, 0, 0);
-
             ClearSelectionVisuals();
             ViewModel.RedrawGridFromMemory();
             ViewModel.UpdateTextOutputs();
@@ -307,8 +245,8 @@ namespace Hexel
         private void UpdateSelectionVisualsFromBounds()
         {
             if (MarqueeOverlay == null) return;
-            double gridWidth = (PixelGrid != null && PixelGrid.ActualWidth > 0) ? PixelGrid.ActualWidth : 400.0;
-            double gridHeight = (PixelGrid != null && PixelGrid.ActualHeight > 0) ? PixelGrid.ActualHeight : 400.0;
+            double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
+            double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
 
             double cellWidth = gridWidth / ViewModel.SpriteState.Size;
             double cellHeight = gridHeight / ViewModel.SpriteState.Size;
@@ -337,7 +275,7 @@ namespace Hexel
             base.OnPreviewMouseMove(e);
             if (_isDraggingSelection && Mouse.LeftButton == MouseButtonState.Pressed)
             {
-                Point currentPos = e.GetPosition(PixelGrid);
+                Point currentPos = e.GetPosition(PixelGridContainer);
                 double deltaX = currentPos.X - _dragStartMousePos.X;
                 double deltaY = currentPos.Y - _dragStartMousePos.Y;
 
@@ -360,8 +298,6 @@ namespace Hexel
                     _selMaxY = _floatingY + _floatingHeight - 1;
 
                     UpdateSelectionVisualsFromBounds();
-
-                    // --> NEW: Update ViewModel before redrawing
                     ViewModel.SyncFloatingState(_isFloating, _floatingPixels, _floatingX, _floatingY, _floatingWidth, _floatingHeight);
                     ViewModel.RedrawGridFromMemory();
                 }

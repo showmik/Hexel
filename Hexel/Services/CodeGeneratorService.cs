@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 using Hexel.Core;
 
@@ -9,16 +10,16 @@ namespace Hexel.Services
     {
         public (string Binary, string Hex) GenerateExportStrings(SpriteState state, bool isFloating, bool[,] floatingPixels, int floatX, int floatY, int floatW, int floatH)
         {
-            List<string> binList = new List<string>();
-            List<string> hexList = new List<string>();
+            var binBuilder = new StringBuilder();
+            var hexList = new List<string>();
             int bytesPerRow = (int)Math.Ceiling(state.Size / 8.0);
 
             for (int row = 0; row < state.Size; row++)
             {
-                string fullRowBinary = "";
+                var fullRowBinary = new StringBuilder();
                 for (int chunk = 0; chunk < bytesPerRow; chunk++)
                 {
-                    string byteString = "";
+                    var byteString = new StringBuilder(8);
                     for (int bit = 0; bit < 8; bit++)
                     {
                         int col = (chunk * 8) + bit;
@@ -36,31 +37,31 @@ namespace Hexel.Services
                                     if (floatingPixels[localX, localY]) isPixelOn = true;
                                 }
                             }
-                            byteString += isPixelOn ? "1" : "0";
+                            byteString.Append(isPixelOn ? "1" : "0");
                         }
                         else
                         {
-                            byteString += "0";
+                            byteString.Append("0");
                         }
                     }
-                    fullRowBinary += byteString + " ";
-                    hexList.Add($"0x{Convert.ToInt32(byteString, 2):X2}");
+                    fullRowBinary.Append(byteString).Append(" ");
+                    hexList.Add($"0x{Convert.ToInt32(byteString.ToString(), 2):X2}");
                 }
-                binList.Add($"// Row {row,2}: {fullRowBinary}");
+                binBuilder.AppendLine($"// Row {row,2}: {fullRowBinary}");
             }
 
-            string hexFormatted = "";
+            var hexFormatted = new StringBuilder();
             for (int i = 0; i < hexList.Count; i++)
             {
-                hexFormatted += hexList[i] + ", ";
-                if ((i + 1) % bytesPerRow == 0) hexFormatted += "\n  ";
+                hexFormatted.Append(hexList[i]).Append(", ");
+                if ((i + 1) % bytesPerRow == 0) hexFormatted.AppendLine().Append("  ");
             }
 
             string hexFinal = $"const unsigned char sprite_{state.Size}x{state.Size}[] PROGMEM = {{\n  " +
-                              hexFormatted.TrimEnd(' ', ',', '\n') +
+                              hexFormatted.ToString().TrimEnd(' ', ',', '\n', '\r') +
                               "\n};";
 
-            return (string.Join("\n", binList), hexFinal);
+            return (binBuilder.ToString().TrimEnd('\r', '\n'), hexFinal);
         }
 
         public async System.Threading.Tasks.Task<(string Binary, string Hex)> GenerateExportStringsAsync(SpriteState state, bool isFloating, bool[,] floatingPixels, int floatX, int floatY, int floatW, int floatH)

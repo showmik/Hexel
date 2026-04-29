@@ -193,9 +193,29 @@
                         BorderThickness="2"
                         Background="#111">
                     <Grid Width="400"
-                          Height="400">
-                        <UniformGrid x:Name="PixelGrid"
-                                     Background="#333" />
+                          Height="400"
+                          x:Name="PixelGridContainer">
+                        <ItemsControl ItemsSource="{Binding PixelBrushes}"
+                                      AlternationCount="100000">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="{Binding SpriteState.Size}"
+                                                 Columns="{Binding SpriteState.Size}"
+                                                 Background="#333" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding}"
+                                            BorderBrush="#222"
+                                            BorderThickness="1"
+                                            Tag="{Binding Path=(ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}"
+                                            MouseDown="Pixel_Interaction"
+                                            MouseEnter="Pixel_Interaction" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
                         <Canvas IsHitTestVisible="False"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch">
@@ -294,14 +314,28 @@
                         Height="128"
                         HorizontalAlignment="Left"
                         CornerRadius="3">
-                    <Grid>
+                    <Grid x:Name="PreviewGridContainer"
+                          Background="#000000">
                         <Border BorderBrush="#111"
                                 BorderThickness="1"
                                 Margin="0" />
-                        <UniformGrid x:Name="PreviewGrid"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"
-                                     Background="#000000" />
+
+                        <ItemsControl x:Name="PreviewItemsControl"
+                                      ItemsSource="{Binding PreviewBrushes}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="{Binding SpriteState.Size}"
+                                                 Columns="{Binding SpriteState.Size}" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Rectangle Fill="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </Grid>
                 </Border>
                 <TextBlock Text="*Sprite size shown relative to total screen area"

@@ -242,18 +242,27 @@ namespace Hexel.ViewModels
         {
             if (_isUpdatingProgrammatically) return;
             _isUpdatingProgrammatically = true;
-            var (binary, hex) = await _codeGen.GenerateExportStringsAsync(SpriteState, IsFloating, FloatingPixels, FloatingX, FloatingY, FloatingWidth, FloatingHeight);
-            _txtBinary = binary;
-            _txtHex = hex;
-            OnPropertyChanged(nameof(TxtBinary));
-            OnPropertyChanged(nameof(TxtHex));
+
+            // Run the generation logic on a background thread (keeps the UI unblocked)
+            var (binary, hex) = await _codeGen.GenerateExportStringsAsync(
+                SpriteState, IsFloating, FloatingPixels, FloatingX, FloatingY, FloatingWidth, FloatingHeight);
+
+            // Marshal the results back to the main UI thread securely
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                _txtBinary = binary;
+                _txtHex = hex;
+                OnPropertyChanged(nameof(TxtBinary));
+                OnPropertyChanged(nameof(TxtHex));
+            });
+
             _isUpdatingProgrammatically = false;
         }
 
         // Backwards-compatible synchronous wrapper
         public void UpdateTextOutputs()
         {
-            // fire-and-forget; prefer awaiting UpdateTextOutputsAsync where possible
+            // Fire-and-forget is now safe because the inner method explicitly handles UI thread marshaling
             _ = UpdateTextOutputsAsync();
         }
 
