@@ -310,33 +310,89 @@
                     Style="{StaticResource PanelStyle}"
                     Margin="0,15,0,0"
                     Padding="12">
-                <Grid>
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center">
-                        <Button Content="Undo"
-                                Width="80"
-                                Margin="0,0,10,0"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Command="{Binding UndoCommand}" />
-                        <Button Content="Redo"
-                                Width="80"
-                                Margin="0,0,20,0"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Command="{Binding RedoCommand}" />
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center">
 
-                        <Button Content="Invert"
-                                Width="90"
-                                Margin="0,0,15,0"
+                    <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding UndoCommand}"
+                                ToolTip="Undo"
+                                Width="40"
+                                Height="40"
                                 Style="{StaticResource ModernButtonStyle}"
-                                Background="{DynamicResource Theme.InvertButtonBackgroundBrush}"
-                                Command="{Binding InvertCommand}" />
-                        <Button Content="Clear Grid"
-                                Width="100"
+                                Padding="0"
+                                Margin="0,0,6,0">
+                            <TextBlock Text="&#xE10E;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="16" />
+                        </Button>
+                        <Button Command="{Binding RedoCommand}"
+                                ToolTip="Redo"
+                                Width="40"
+                                Height="40"
                                 Style="{StaticResource ModernButtonStyle}"
-                                Background="{DynamicResource Theme.ClearButtonBackgroundBrush}"
-                                Command="{Binding ClearCommand}" />
+                                Padding="0">
+                            <TextBlock Text="&#xE10D;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="16" />
+                        </Button>
                     </StackPanel>
-                </Grid>
+
+                    <Rectangle Width="2"
+                               Fill="{DynamicResource Theme.PanelBorderBrush}"
+                               Margin="15,4"
+                               RadiusX="1"
+                               RadiusY="1" />
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Invert"
+                                Command="{Binding InvertCommand}"
+                                ToolTip="Invert Grid"
+                                Width="90"
+                                Height="40"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="10 0"
+                                Margin="0,0,10,0"
+                                Background="{DynamicResource Theme.InvertButtonBackgroundBrush}">
+                        </Button>
+                        <Button Content="Clear Canvas" Command="{Binding ClearCommand}"
+                                ToolTip="Clear Grid"
+                                Width="90"
+                                Height="40"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="10 0"
+                                Background="{DynamicResource Theme.ClearButtonBackgroundBrush}">
+                        </Button>
+                    </StackPanel>
+
+                    <Rectangle Width="2"
+                               Fill="{DynamicResource Theme.PanelBorderBrush}"
+                               Margin="15,4"
+                               RadiusX="1"
+                               RadiusY="1" />
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding CopyHexCommand}"
+                                ToolTip="Copy HEX to Clipboard"
+                                Height="40"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="12,0"
+                                Background="{DynamicResource Theme.CopyButtonBackgroundBrush}"
+                                Foreground="{DynamicResource Theme.TextInverseBrush}">
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="&#xE8C8;"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="16"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="Copy HEX"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                </StackPanel>
             </Border>
         </Grid>
 
@@ -477,15 +533,6 @@
                                  Padding="10"
                                  VerticalScrollBarVisibility="Auto" />
                     </Border>
-
-                    <Button Grid.Row="2"
-                            Content="Copy HEX to Clipboard"
-                            Height="36"
-                            HorizontalAlignment="Stretch"
-                            Style="{StaticResource ModernButtonStyle}"
-                            Background="{DynamicResource Theme.CopyButtonBackgroundBrush}"
-                            Foreground="{DynamicResource Theme.TextInverseBrush}"
-                            Command="{Binding CopyHexCommand}" />
                 </Grid>
             </Border>
         </Grid>
