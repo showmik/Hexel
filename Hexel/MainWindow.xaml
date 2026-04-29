@@ -232,7 +232,7 @@
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch">
                                 <Rectangle x:Name="MarqueeOverlay"
-                                           Stroke="#FCD34D"
+                                           Stroke="{DynamicResource Theme.WarningBrush}"
                                            StrokeThickness="2"
                                            StrokeDashArray="4,4"
                                            Visibility="Hidden"
@@ -260,16 +260,18 @@
                                 Margin="0,0,15,0"
                                 Style="{StaticResource ModernButtonStyle}"
                                 Command="{Binding RedoCommand}" />
+
                         <Button Content="Invert"
                                 Width="90"
                                 Margin="0,0,15,0"
                                 Style="{StaticResource ModernButtonStyle}"
-                                Background="#8B5CF6"
+                                Background="{DynamicResource Theme.InvertButtonBackgroundBrush}"
                                 Command="{Binding InvertCommand}" />
+
                         <Button Content="Clear Grid"
                                 Width="100"
                                 Style="{StaticResource ModernButtonStyle}"
-                                Background="#EF4444"
+                                Background="{DynamicResource Theme.ClearButtonBackgroundBrush}"
                                 Command="{Binding ClearCommand}" />
                     </StackPanel>
 
@@ -277,7 +279,8 @@
                             Width="190"
                             HorizontalAlignment="Right"
                             Style="{StaticResource ModernButtonStyle}"
-                            Background="#0284C7"
+                            Background="{DynamicResource Theme.CopyButtonBackgroundBrush}"
+                            Foreground="{DynamicResource Theme.TextInverseBrush}"
                             Command="{Binding CopyHexCommand}" />
                 </Grid>
             </Border>
@@ -335,7 +338,7 @@
                                         <DataTrigger Binding="{Binding IsDisplayInverted}"
                                                      Value="True">
                                             <Setter Property="Background"
-                                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                                                    Value="{DynamicResource Theme.OledOnBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -391,7 +394,7 @@
                                  FontFamily="{DynamicResource Theme.CodeFont}"
                                  FontSize="13"
                                  Background="Transparent"
-                                 Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                                 Foreground="{DynamicResource Theme.CodeTxtBrush}"
                                  BorderThickness="0"
                                  Padding="10"
                                  VerticalScrollBarVisibility="Auto" />
@@ -423,7 +426,7 @@
                                  FontFamily="{DynamicResource Theme.CodeFont}"
                                  FontSize="13"
                                  Background="Transparent"
-                                 Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                                 Foreground="{DynamicResource Theme.CodeTxtBrush}"
                                  BorderThickness="0"
                                  Padding="10"
                                  VerticalScrollBarVisibility="Auto" />

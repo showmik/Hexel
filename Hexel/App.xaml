@@ -8,44 +8,72 @@
                 <ResourceDictionary Source="Themes/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <Color x:Key="Color.Background">#0F172A</Color>
+            <Color x:Key="Color.Background">#3d405b</Color>
             <Color x:Key="Color.PanelBackground">#1E293B</Color>
             <Color x:Key="Color.PanelBorder">#334155</Color>
-        <Color x:Key="Color.PrimaryAccent">#38BDF8</Color>
-        <Color x:Key="Color.TextMain">#F8FAFC</Color>
-        <Color x:Key="Color.TextMuted">#94A3B8</Color>
+            <Color x:Key="Color.CanvasBackground">#020617</Color>
+            <Color x:Key="Color.TextMain">#F8FAFC</Color>
+            <Color x:Key="Color.TextMuted">#94A3B8</Color>
+            <Color x:Key="Color.TextInverse">#0F172A</Color>
+            <Color x:Key="Color.CodeTxt">#8696AD</Color>
+            <Color x:Key="Color.PrimaryAccent">#ECBEB4</Color>
+            <Color x:Key="Color.SelectionBackground">#F4796B</Color>
+            <Color x:Key="Color.Danger">#F4796B</Color>
+            <Color x:Key="Color.Warning">#F2E94E</Color>
+            <Color x:Key="Color.OledBackground">#000000</Color>
+            <Color x:Key="Color.OledForeground">#74B3CE</Color>
+            <Color x:Key="Color.InvertButtonBackground">#008DD5</Color>
+            <Color x:Key="Color.ClearButtonBackground">#FE4A49</Color>
+            <Color x:Key="Color.CopyButtonBackground">#8BB174</Color>
+            <Color x:Key="Color.ThumbBackground">#1e293b</Color>
+            <Color x:Key="Color.ScrollBar">#8696AD</Color>
 
-        <Color x:Key="Color.CanvasBackground">#020617</Color>
-        <Color x:Key="Color.OledBackground">#000000</Color>
+            <SolidColorBrush x:Key="Theme.InvertButtonBackgroundBrush"
+                             Color="{StaticResource Color.InvertButtonBackground}" />
+            <SolidColorBrush x:Key="Theme.ClearButtonBackgroundBrush"
+                             Color="{StaticResource Color.ClearButtonBackground}" />
+            <SolidColorBrush x:Key="Theme.CopyButtonBackgroundBrush"
+                             Color="{StaticResource Color.CopyButtonBackground}" />
+            <SolidColorBrush x:Key="Theme.BackgroundBrush"
+                             Color="{StaticResource Color.Background}" />
+            <SolidColorBrush x:Key="Theme.PanelBackgroundBrush"
+                             Color="{StaticResource Color.PanelBackground}" />
+            <SolidColorBrush x:Key="Theme.PanelBorderBrush"
+                             Color="{StaticResource Color.PanelBorder}" />
+            <SolidColorBrush x:Key="Theme.CanvasBackgroundBrush"
+                             Color="{StaticResource Color.CanvasBackground}" />
 
-        <SolidColorBrush x:Key="Theme.BackgroundBrush"
-                         Color="{StaticResource Color.Background}" />
-        <SolidColorBrush x:Key="Theme.PanelBackgroundBrush"
-                         Color="{StaticResource Color.PanelBackground}" />
-        <SolidColorBrush x:Key="Theme.PanelBorderBrush"
-                         Color="{StaticResource Color.PanelBorder}" />
-        <SolidColorBrush x:Key="Theme.PrimaryAccentBrush"
-                         Color="{StaticResource Color.PrimaryAccent}" />
-        <SolidColorBrush x:Key="Theme.TextMainBrush"
-                         Color="{StaticResource Color.TextMain}" />
-        <SolidColorBrush x:Key="Theme.TextMutedBrush"
-                         Color="{StaticResource Color.TextMuted}" />
-        <SolidColorBrush x:Key="Theme.CanvasBackgroundBrush"
-                         Color="{StaticResource Color.CanvasBackground}" />
+            <SolidColorBrush x:Key="Theme.TextMainBrush"
+                             Color="{StaticResource Color.TextMain}" />
+            <SolidColorBrush x:Key="Theme.TextMutedBrush"
+                             Color="{StaticResource Color.TextMuted}" />
+            <SolidColorBrush x:Key="Theme.TextInverseBrush"
+                             Color="{StaticResource Color.TextInverse}" />
+            <SolidColorBrush x:Key="Theme.CodeTxtBrush"
+                             Color="{StaticResource Color.CodeTxt}" />
 
-        <SolidColorBrush x:Key="Theme.OledOffBrush"
-                         Color="{StaticResource Color.OledBackground}" />
-        <SolidColorBrush x:Key="Theme.OledOnBrush"
-                         Color="{StaticResource Color.PrimaryAccent}" />
+            <SolidColorBrush x:Key="Theme.ThumbBackgroundBrush"
+                             Color="{StaticResource Color.ThumbBackground}" />
+            <SolidColorBrush x:Key="Theme.ScrollBarBrush"
+                             Color="{StaticResource Color.ScrollBar}" />
 
-        <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}"
-                         Color="{StaticResource Color.PanelBackground}" />
-        <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
-                         Color="{StaticResource Color.Background}" />
+            <SolidColorBrush x:Key="Theme.PrimaryAccentBrush"
+                             Color="{StaticResource Color.PrimaryAccent}" />
+            <SolidColorBrush x:Key="Theme.SelectionBackgroundBrush"
+                             Color="{StaticResource Color.SelectionBackground}" />
 
-        <FontFamily x:Key="Theme.MainFont">Segoe UI, Helvetica Neue, sans-serif</FontFamily>
-        <FontFamily x:Key="Theme.CodeFont">Consolas, Courier New, monospace</FontFamily>
+            <SolidColorBrush x:Key="Theme.DangerBrush"
+                             Color="{StaticResource Color.Danger}" />
+            <SolidColorBrush x:Key="Theme.WarningBrush"
+                             Color="{StaticResource Color.Warning}" />
+
+            <SolidColorBrush x:Key="Theme.OledOffBrush"
+                             Color="{StaticResource Color.OledBackground}" />
+            <SolidColorBrush x:Key="Theme.OledOnBrush"
+                             Color="{StaticResource Color.OledForeground}" />
+
+            <FontFamily x:Key="Theme.MainFont">Segoe UI, Helvetica Neue, sans-serif</FontFamily>
+            <FontFamily x:Key="Theme.CodeFont">Consolas, Courier New, monospace</FontFamily>
         </ResourceDictionary>
-
     </Application.Resources>
 </Application>

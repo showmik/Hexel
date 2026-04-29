@@ -64,7 +64,7 @@
             <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                          Value="True">
                 <Setter Property="Stroke"
-                        Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                        Value="White" />
             </DataTrigger>
             <Trigger Property="IsMouseOver"
                      Value="True">
@@ -108,7 +108,7 @@
                         <Trigger Property="IsChecked"
                                  Value="True">
                             <Setter Property="Background"
-                                    Value="#0C4A6E" />
+                                    Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
                             <Setter Property="BorderBrush"
                                     Value="{DynamicResource Theme.PrimaryAccentBrush}" />
                         </Trigger>
@@ -158,11 +158,6 @@
         </Setter>
     </Style>
 
-    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}"
-                     Color="#1E293B" />
-    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
-                     Color="#0F172A" />
-
     <Style TargetType="ComboBoxItem">
         <Setter Property="Background"
                 Value="{DynamicResource Theme.PanelBackgroundBrush}" />
@@ -190,7 +185,7 @@
                         <Trigger Property="IsSelected"
                                  Value="True">
                             <Setter Property="Background"
-                                    Value="#0C4A6E" />
+                                    Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
                             <Setter Property="Foreground"
                                     Value="{DynamicResource Theme.PrimaryAccentBrush}" />
                         </Trigger>
@@ -297,7 +292,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Border Background="{DynamicResource Theme.PanelBorderBrush}"
+                    <Border Background="{DynamicResource Theme.ThumbBackgroundBrush}"
                             CornerRadius="3"
                             Margin="2" />
                 </ControlTemplate>
@@ -307,7 +302,7 @@
 
     <Style TargetType="ScrollBar">
         <Setter Property="Background"
-                Value="{DynamicResource Theme.BackgroundBrush}" />
+                Value="{DynamicResource Theme.ScrollBarBrush}" />
         <Setter Property="BorderThickness"
                 Value="0" />
         <Setter Property="Width"
