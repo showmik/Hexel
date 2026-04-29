@@ -44,21 +44,49 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Orientation="Horizontal"
-                                Grid.Column="0"
-                                Margin="0,0,30,0">
-                        <TextBlock Text="CANVAS SIZE"
+                                Grid.Column="0">
+                        <TextBlock Text="FILE"
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"
                                    FontSize="11" />
+                        <Button Content="Save"
+                                Width="60"
+                                Margin="0,0,8,0"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Command="{Binding SaveCommand}"
+                                Padding="8,4" />
+                        <Button Content="Load"
+                                Width="60"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Command="{Binding LoadCommand}"
+                                Padding="8,4" />
+                    </StackPanel>
 
+                    <Rectangle Grid.Column="1"
+                               Width="2"
+                               Fill="{DynamicResource Theme.PanelBorderBrush}"
+                               Margin="20,4,20,4"
+                               RadiusX="1"
+                               RadiusY="1" />
+
+                    <StackPanel Orientation="Horizontal"
+                                Grid.Column="2">
+                        <TextBlock Text="CANVAS"
+                                   Style="{StaticResource HeaderStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"
+                                   FontSize="11" />
                         <ComboBox x:Name="CmbGridSize"
-                                  Width="100"
+                                  Width="85"
                                   SelectedValuePath="Tag"
                                   SelectedValue="{Binding GridSize}"
                                   Style="{StaticResource ModernComboBoxStyle}"
@@ -80,7 +108,6 @@
                             <ComboBoxItem Content="32x32"
                                           Tag="32" />
                         </ComboBox>
-
                         <CheckBox Content="Show Grid"
                                   IsChecked="{Binding ShowGridLines}"
                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
@@ -88,8 +115,15 @@
                                   Margin="15,0,0,0" />
                     </StackPanel>
 
+                    <Rectangle Grid.Column="3"
+                               Width="2"
+                               Fill="{DynamicResource Theme.PanelBorderBrush}"
+                               Margin="20,4,20,4"
+                               RadiusX="1"
+                               RadiusY="1" />
+
                     <StackPanel Orientation="Horizontal"
-                                Grid.Column="1">
+                                Grid.Column="4">
                         <TextBlock Text="TOOLS"
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"
@@ -144,7 +178,7 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal"
-                                Grid.Column="3">
+                                Grid.Column="6">
                         <TextBlock Text="ZOOM"
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"
@@ -278,7 +312,7 @@
                     Padding="12">
                 <Grid>
                     <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Left">
+                                HorizontalAlignment="Center">
                         <Button Content="Undo"
                                 Width="80"
                                 Margin="0,0,10,0"
@@ -286,7 +320,7 @@
                                 Command="{Binding UndoCommand}" />
                         <Button Content="Redo"
                                 Width="80"
-                                Margin="0,0,15,0"
+                                Margin="0,0,20,0"
                                 Style="{StaticResource ModernButtonStyle}"
                                 Command="{Binding RedoCommand}" />
 
@@ -296,21 +330,12 @@
                                 Style="{StaticResource ModernButtonStyle}"
                                 Background="{DynamicResource Theme.InvertButtonBackgroundBrush}"
                                 Command="{Binding InvertCommand}" />
-
                         <Button Content="Clear Grid"
                                 Width="100"
                                 Style="{StaticResource ModernButtonStyle}"
                                 Background="{DynamicResource Theme.ClearButtonBackgroundBrush}"
                                 Command="{Binding ClearCommand}" />
                     </StackPanel>
-
-                    <Button Content="Copy HEX to Clipboard"
-                            Width="190"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource ModernButtonStyle}"
-                            Background="{DynamicResource Theme.CopyButtonBackgroundBrush}"
-                            Foreground="{DynamicResource Theme.TextInverseBrush}"
-                            Command="{Binding CopyHexCommand}" />
                 </Grid>
             </Border>
         </Grid>
@@ -426,12 +451,15 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
+
                     <TextBlock Grid.Row="0"
                                Text="EDIT ESP32 HEX ARRAY"
                                Style="{StaticResource HeaderStyle}" />
 
                     <Border Grid.Row="1"
+                            Margin="0,0,0,12"
                             Background="{DynamicResource Theme.BackgroundBrush}"
                             CornerRadius="6"
                             BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
@@ -449,6 +477,15 @@
                                  Padding="10"
                                  VerticalScrollBarVisibility="Auto" />
                     </Border>
+
+                    <Button Grid.Row="2"
+                            Content="Copy HEX to Clipboard"
+                            Height="36"
+                            HorizontalAlignment="Stretch"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Background="{DynamicResource Theme.CopyButtonBackgroundBrush}"
+                            Foreground="{DynamicResource Theme.TextInverseBrush}"
+                            Command="{Binding CopyHexCommand}" />
                 </Grid>
             </Border>
         </Grid>

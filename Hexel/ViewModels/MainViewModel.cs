@@ -19,6 +19,7 @@ namespace Hexel.ViewModels
         private readonly System.Threading.SynchronizationContext _uiContext;
         private readonly IClipboardService _clipboardService;
         private readonly IDialogService _dialogService;
+        private readonly IFileService _fileService;
         #endregion
 
         #region Private Fields
@@ -205,6 +206,8 @@ namespace Hexel.ViewModels
         public IRelayCommand InvertCommand { get; }
         public IRelayCommand DeleteSelectionCommand { get; }
         public IRelayCommand CopyHexCommand { get; }
+        public IRelayCommand SaveCommand { get; }
+        public IRelayCommand LoadCommand { get; }
         #endregion
 
         #region Constructor
@@ -212,17 +215,57 @@ namespace Hexel.ViewModels
                              IDrawingService drawingService,
                              IHistoryService historyService,
                              IClipboardService clipboardService,
-                             IDialogService dialogService)
+                             IDialogService dialogService,
+                             IFileService fileService)
         {
             _uiContext = System.Threading.SynchronizationContext.Current ?? new System.Threading.SynchronizationContext();
-
             _codeGen = codeGen ?? throw new ArgumentNullException(nameof(codeGen));
             _drawingService = drawingService ?? throw new ArgumentNullException(nameof(drawingService));
             _historyService = historyService ?? throw new ArgumentNullException(nameof(historyService));
             _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
 
             // Initialize commands
+            SaveCommand = new RelayCommand(() =>
+            {
+                try
+                {
+                    _fileService.SaveSprite(SpriteState);
+                }
+                catch (Exception ex)
+                {
+                    _dialogService.ShowMessage($"Error saving file: {ex.Message}");
+                }
+            });
+            
+            LoadCommand = new RelayCommand(() =>
+            {
+                try
+                {
+                    var loadedState = _fileService.LoadSprite();
+                    if (loadedState != null)
+                    {
+                        _historyService.SaveState(SpriteState); // Save current state for undo
+
+                        // Changing GridSize automatically re-initializes bitmaps and the SpriteState wrapper
+                        GridSize = loadedState.Size;
+
+                        // Inject the loaded pixels into the freshly initialized state
+                        SpriteState.Pixels = (bool[])loadedState.Pixels.Clone();
+
+                        RedrawGridFromMemory();
+                        UpdateTextOutputs();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _dialogService.ShowMessage($"Error loading file: {ex.Message}");
+                }
+            });
+
+
+
             CopyHexCommand = new RelayCommand(() =>
             {
                 _clipboardService.SetText(TxtHex);
