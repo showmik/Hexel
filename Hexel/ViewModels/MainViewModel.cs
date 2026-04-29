@@ -4,6 +4,7 @@ using Hexel.Core;
 using Hexel.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -26,6 +27,7 @@ namespace Hexel.ViewModels
         private readonly SolidColorBrush _colorOn;
         private readonly SolidColorBrush _previewOff;
         private readonly SolidColorBrush _previewOn;
+        private bool _showGridLines = true;
 
         // Core state backing fields
         private bool _isUpdatingProgrammatically = false;
@@ -74,6 +76,12 @@ namespace Hexel.ViewModels
 
         #region Properties
         // -- Core Properties --
+        public bool ShowGridLines
+        {
+            get => _showGridLines;
+            set => SetProperty(ref _showGridLines, value);
+        }
+
         public SpriteState SpriteState
         {
             get => _spriteState;
@@ -88,11 +96,13 @@ namespace Hexel.ViewModels
                 if (SetProperty(ref _gridSize, value))
                 {
                     InitializeGrid(value);
-                    // Notify the UI that the preview size needs to update too
                     OnPropertyChanged(nameof(PreviewSize));
+                    OnPropertyChanged(nameof(GridViewport)); // <-- Add this!
                 }
             }
         }
+
+        public Rect GridViewport => new Rect(0, 0, 400.0 / GridSize, 400.0 / GridSize);
 
         // Replaces the "vm.SpriteState.Size * 2" math from your code-behind
         public int PreviewSize => GridSize * 2;

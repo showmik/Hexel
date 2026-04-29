@@ -56,6 +56,7 @@
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"
                                    FontSize="11" />
+
                         <ComboBox x:Name="CmbGridSize"
                                   Width="100"
                                   SelectedValuePath="Tag"
@@ -79,6 +80,12 @@
                             <ComboBoxItem Content="32x32"
                                           Tag="32" />
                         </ComboBox>
+
+                        <CheckBox Content="Show Grid"
+                                  IsChecked="{Binding ShowGridLines}"
+                                  Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                  VerticalAlignment="Center"
+                                  Margin="15,0,0,0" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal"
@@ -207,6 +214,7 @@
                         <Grid Width="400"
                               Height="400"
                               x:Name="PixelGridContainer">
+
                             <Image x:Name="CanvasImage"
                                    Source="{Binding CanvasBitmap}"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
@@ -215,6 +223,39 @@
                                    VerticalAlignment="Stretch"
                                    MouseDown="CanvasImage_MouseDown"
                                    MouseMove="CanvasImage_MouseMove" />
+
+                            <Rectangle IsHitTestVisible="False">
+                                <Rectangle.Style>
+                                    <Style TargetType="Rectangle">
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowGridLines}"
+                                                         Value="False">
+                                                <Setter Property="Visibility"
+                                                        Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Rectangle.Style>
+                                <Rectangle.Fill>
+                                    <DrawingBrush Viewport="{Binding GridViewport}"
+                                                  ViewportUnits="Absolute"
+                                                  TileMode="Tile">
+                                        <DrawingBrush.Drawing>
+                                            <GeometryDrawing>
+                                                <GeometryDrawing.Geometry>
+                                                    <RectangleGeometry Rect="{Binding GridViewport}" />
+                                                </GeometryDrawing.Geometry>
+                                                <GeometryDrawing.Pen>
+                                                    <Pen Brush="{DynamicResource Theme.BackgroundBrush}"
+                                                         Thickness="1" />
+                                                </GeometryDrawing.Pen>
+                                            </GeometryDrawing>
+                                        </DrawingBrush.Drawing>
+                                    </DrawingBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
 
                             <Canvas IsHitTestVisible="False"
                                     HorizontalAlignment="Stretch"
