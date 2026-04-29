@@ -1,71 +1,185 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Hexel.Core;
+using Hexel.Services;
 
-namespace SpriteGenerator
+namespace Hexel
 {
     public partial class MainWindow : Window
     {
-        private int _gridSize = 16;
-        private bool[] _pixels;
-        private enum ToolMode { Pencil, Fill, Marquee }
+        // Core State
+        private SpriteState _spriteState;
+
+        // Services
+        private readonly CodeGeneratorService _codeGen = new CodeGeneratorService();
+        private readonly DrawingService _drawingService = new DrawingService();
+        private readonly HistoryService _historyService = new HistoryService();
+
+        // UI State
         private ToolMode _currentTool = ToolMode.Pencil;
         private int _lastClickedIndex = -1;
         private bool _isDisplayInverted = false;
-        private int _selectionEndIdx = -1;
+        private bool _isUpdatingProgrammatically = false;
 
-        // --- Selection & Floating State ---
-        private bool _hasActiveSelection = false;
-        private bool _isSelecting = false;
-        private int _selectionStartIdx = -1;
-
-        // Bounding box of the current selection
-        private int _selMinX = -1, _selMaxX = -1;
-        private int _selMinY = -1, _selMaxY = -1;
-
-        // Floating pixels (pixels lifted off the canvas)
-        private bool _isFloating = false;
+        // Selection & Floating State
+        private bool _hasActiveSelection, _isSelecting, _isFloating, _isDraggingSelection;
+        private int _selectionStartIdx = -1, _selectionEndIdx = -1;
+        private int _selMinX = -1, _selMaxX = -1, _selMinY = -1, _selMaxY = -1;
         private bool[,] _floatingPixels;
-        private int _floatingX = 0, _floatingY = 0;
-        private int _floatingWidth = 0, _floatingHeight = 0;
-
-        // Mouse tracking for smooth dragging
-        private bool _isDraggingSelection = false;
+        private int _floatingX, _floatingY, _floatingWidth, _floatingHeight;
         private Point _dragStartMousePos;
-        private int _dragStartFloatingX;
-        private int _dragStartFloatingY;
+        private int _dragStartFloatingX, _dragStartFloatingY;
 
-        // NEW: State Stacks for Undo/Redo
-        private Stack<bool[]> _undoStack = new Stack<bool[]>();
-        private Stack<bool[]> _redoStack = new Stack<bool[]>();
-
-        // UI Colors
+        // Visual Brushes
         private readonly SolidColorBrush _colorOff = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
         private readonly SolidColorBrush _colorOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFCC"));
-
-        // Preview Colors (OLED style)
         private readonly SolidColorBrush _previewOff = new SolidColorBrush(Colors.Black);
-        private readonly SolidColorBrush _previewOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFFF")); // Cyan OLED
-
-        private bool _isUpdatingProgrammatically = false;
+        private readonly SolidColorBrush _previewOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFFF"));
 
         public MainWindow()
         {
             InitializeComponent();
-            BuildGrid();
+            InitializeGrid(16);
+        }
+
+        private void InitializeGrid(int size)
+        {
+            _spriteState = new SpriteState(size);
+            BuildGridUI();
+            UpdateTextOutputs();
         }
 
         private void CmbGridSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (PixelGrid == null || PreviewGrid == null) return;
+
             if (CmbGridSize.SelectedItem is ComboBoxItem item && item.Tag != null)
             {
-                _gridSize = int.Parse(item.Tag.ToString());
-                BuildGrid();
+                InitializeGrid(int.Parse(item.Tag.ToString()));
+            }
+        }
+
+        private void BuildGridUI()
+        {
+            PixelGrid.Rows = PixelGrid.Columns = _spriteState.Size;
+            PreviewGrid.Rows = PreviewGrid.Columns = _spriteState.Size;
+            PixelGrid.Children.Clear();
+            PreviewGrid.Children.Clear();
+
+            PreviewGrid.Width = PreviewGrid.Height = _spriteState.Size * 2;
+
+            for (int i = 0; i < _spriteState.Size * _spriteState.Size; i++)
+            {
+                Border pixelCell = new Border { Background = _colorOff, BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222222")), BorderThickness = new Thickness(1), Tag = i };
+                pixelCell.MouseDown += Pixel_Interaction;
+                pixelCell.MouseEnter += Pixel_Interaction;
+                PixelGrid.Children.Add(pixelCell);
+
+                PreviewGrid.Children.Add(new Rectangle { Fill = _previewOff });
+            }
+        }
+
+        private void Pixel_Interaction(object sender, MouseEventArgs e)
+        {
+            if (sender is Border cell && cell.Tag is int index)
+            {
+                if (_currentTool == ToolMode.Marquee)
+                {
+                    HandleMarqueeTool(e, index);
+                    return;
+                }
+
+                if (e is MouseButtonEventArgs)
+                {
+                    _historyService.SaveState(_spriteState);
+
+                    if (_currentTool == ToolMode.Fill)
+                    {
+                        bool newState = Mouse.LeftButton == MouseButtonState.Pressed;
+                        if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
+
+                        _drawingService.ApplyFloodFill(_spriteState, index, newState);
+                        _lastClickedIndex = index;
+                        RedrawAndExport();
+                        return;
+                    }
+
+                    if (_currentTool == ToolMode.Pencil && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && _lastClickedIndex != -1)
+                    {
+                        bool newState = Mouse.LeftButton == MouseButtonState.Pressed;
+                        _drawingService.DrawLine(_spriteState, _lastClickedIndex, index, newState);
+                        _lastClickedIndex = index;
+                        RedrawAndExport();
+                        return;
+                    }
+                }
+
+                if (_currentTool == ToolMode.Pencil)
+                {
+                    bool stateChanged = false;
+                    if (Mouse.LeftButton == MouseButtonState.Pressed && !_spriteState.Pixels[index])
+                    {
+                        _spriteState.Pixels[index] = true;
+                        stateChanged = true;
+                    }
+                    else if (Mouse.RightButton == MouseButtonState.Pressed && _spriteState.Pixels[index])
+                    {
+                        _spriteState.Pixels[index] = false;
+                        stateChanged = true;
+                    }
+
+                    if (stateChanged)
+                    {
+                        UpdateSinglePixelUI(index);
+                        UpdateTextOutputs();
+                        _lastClickedIndex = index;
+                    }
+                }
+            }
+        }
+
+        // --- MARQUEE TOOL & SELECTION LOGIC ---
+
+        private void HandleMarqueeTool(MouseEventArgs e, int index)
+        {
+            int x = index % _spriteState.Size;
+            int y = index / _spriteState.Size;
+
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+            {
+                if (e is MouseButtonEventArgs)
+                {
+                    if (_hasActiveSelection && x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
+                    {
+                        LiftSelection();
+                        _isDraggingSelection = true;
+                        _dragStartMousePos = e.GetPosition(PixelGrid);
+                        _dragStartFloatingX = _floatingX;
+                        _dragStartFloatingY = _floatingY;
+                        return;
+                    }
+
+                    CommitSelection();
+                    _isSelecting = true;
+                    _selectionStartIdx = index;
+                    _selectionEndIdx = index;
+                    _selMinX = _selMaxX = x;
+                    _selMinY = _selMaxY = y;
+                    UpdateSelectionVisualsFromBounds();
+                }
+                else if (_isSelecting)
+                {
+                    _selectionEndIdx = index;
+                    _selMinX = Math.Min(_selectionStartIdx % _spriteState.Size, x);
+                    _selMaxX = Math.Max(_selectionStartIdx % _spriteState.Size, x);
+                    _selMinY = Math.Min(_selectionStartIdx / _spriteState.Size, y);
+                    _selMaxY = Math.Max(_selectionStartIdx / _spriteState.Size, y);
+                    UpdateSelectionVisualsFromBounds();
+                }
             }
         }
 
@@ -73,7 +187,7 @@ namespace SpriteGenerator
         {
             if (!_hasActiveSelection || _isFloating) return;
 
-            SaveStateForUndo();
+            _historyService.SaveState(_spriteState);
 
             _floatingWidth = (_selMaxX - _selMinX) + 1;
             _floatingHeight = (_selMaxY - _selMinY) + 1;
@@ -81,16 +195,15 @@ namespace SpriteGenerator
             _floatingY = _selMinY;
             _floatingPixels = new bool[_floatingWidth, _floatingHeight];
 
-            // Copy selected pixels into the floating buffer and erase them from the main canvas
             for (int y = _selMinY; y <= _selMaxY; y++)
             {
                 for (int x = _selMinX; x <= _selMaxX; x++)
                 {
-                    int idx = (y * _gridSize) + x;
-                    if (_pixels[idx])
+                    int idx = (y * _spriteState.Size) + x;
+                    if (_spriteState.Pixels[idx])
                     {
                         _floatingPixels[x - _selMinX, y - _selMinY] = true;
-                        _pixels[idx] = false;
+                        _spriteState.Pixels[idx] = false;
                     }
                 }
             }
@@ -103,7 +216,6 @@ namespace SpriteGenerator
 
             if (_isFloating && _floatingPixels != null)
             {
-                // Stamp floating pixels back onto the grid permanently
                 for (int y = 0; y < _floatingHeight; y++)
                 {
                     for (int x = 0; x < _floatingWidth; x++)
@@ -113,10 +225,9 @@ namespace SpriteGenerator
                             int gridX = _floatingX + x;
                             int gridY = _floatingY + y;
 
-                            // Only apply if it hasn't been dragged off the edge of the canvas
-                            if (gridX >= 0 && gridX < _gridSize && gridY >= 0 && gridY < _gridSize)
+                            if (gridX >= 0 && gridX < _spriteState.Size && gridY >= 0 && gridY < _spriteState.Size)
                             {
-                                _pixels[(gridY * _gridSize) + gridX] = true;
+                                _spriteState.Pixels[(gridY * _spriteState.Size) + gridX] = true;
                             }
                         }
                     }
@@ -129,15 +240,15 @@ namespace SpriteGenerator
             _selMinX = _selMaxX = _selMinY = _selMaxY = -1;
             ClearSelectionVisuals();
             RedrawGridFromMemory();
-            UpdateTextFromGrid();
+            UpdateTextOutputs();
         }
 
         private void UpdateSelectionVisualsFromBounds()
         {
             if (MarqueeOverlay == null) return;
 
-            double cellWidth = 400.0 / _gridSize;
-            double cellHeight = 400.0 / _gridSize;
+            double cellWidth = 400.0 / _spriteState.Size;
+            double cellHeight = 400.0 / _spriteState.Size;
 
             Canvas.SetLeft(MarqueeOverlay, _selMinX * cellWidth);
             Canvas.SetTop(MarqueeOverlay, _selMinY * cellHeight);
@@ -149,498 +260,12 @@ namespace SpriteGenerator
             _hasActiveSelection = true;
         }
 
-        private void BuildGrid()
-        {
-            if (PixelGrid == null || PreviewGrid == null) return;
-
-            _pixels = new bool[_gridSize * _gridSize];
-
-            // Setup Main Interactive Grid
-            PixelGrid.Rows = _gridSize;
-            PixelGrid.Columns = _gridSize;
-            PixelGrid.Children.Clear();
-
-            // Setup Preview Grid
-            PreviewGrid.Rows = _gridSize;
-            PreviewGrid.Columns = _gridSize;
-
-            // NEW: Lock the physical size of the preview so pixels remain a constant size.
-            // Multiplied by 2 to match the 2x scaled OLED screen border (256x128).
-            PreviewGrid.Width = _gridSize * 2;
-            PreviewGrid.Height = _gridSize * 2;
-            PreviewGrid.Children.Clear();
-
-            for (int i = 0; i < _gridSize * _gridSize; i++)
-            {
-                // Main Interactive Cell
-                Border pixelCell = new Border
-                {
-                    Background = _colorOff,
-                    BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222222")),
-                    BorderThickness = new Thickness(1),
-                    Tag = i
-                };
-
-                pixelCell.MouseDown += Pixel_Interaction;
-                pixelCell.MouseEnter += Pixel_Interaction;
-                PixelGrid.Children.Add(pixelCell);
-
-                // Preview Cell (Lightweight Rectangle)
-                // Since the UniformGrid has a strict Width/Height, these rectangles naturally scale to exactly 2x2 pixels
-                Rectangle previewCell = new Rectangle
-                {
-                    Fill = _previewOff
-                };
-                PreviewGrid.Children.Add(previewCell);
-            }
-
-            UpdateTextFromGrid();
-        }
-
-        private void Pixel_Interaction(object sender, MouseEventArgs e)
-        {
-            if (sender is Border cell && cell.Tag is int index)
-            {
-                // --- NEW: Marquee Tool Logic (Moved OUTSIDE MouseButtonEventArgs) ---
-                if (_currentTool == ToolMode.Marquee)
-                {
-                    int x = index % _gridSize;
-                    int y = index / _gridSize;
-
-                    if (Mouse.LeftButton == MouseButtonState.Pressed)
-                    {
-                        if (e is MouseButtonEventArgs) // Initial Click Down
-                        {
-                            // Check if clicked INSIDE an existing selection
-                            if (_hasActiveSelection && x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
-                            {
-                                LiftSelection(); // Pick up the pixels
-                                _isDraggingSelection = true;
-
-                                _dragStartMousePos = e.GetPosition(PixelGrid);
-                                _dragStartFloatingX = _floatingX;
-                                _dragStartFloatingY = _floatingY;
-                                return;
-                            }
-
-                            // Clicked outside: Commit the old selection and start a new box
-                            CommitSelection();
-                            _isSelecting = true;
-                            _selectionStartIdx = index;
-                            _selMinX = _selMaxX = x;
-                            _selMinY = _selMaxY = y;
-                            UpdateSelectionVisualsFromBounds();
-                        }
-                        else if (_isSelecting) // Dragging to resize the box
-                        {
-                            _selMinX = Math.Min(_selectionStartIdx % _gridSize, x);
-                            _selMaxX = Math.Max(_selectionStartIdx % _gridSize, x);
-                            _selMinY = Math.Min(_selectionStartIdx / _gridSize, y);
-                            _selMaxY = Math.Max(_selectionStartIdx / _gridSize, y);
-                            UpdateSelectionVisualsFromBounds();
-                        }
-                    }
-                    return;
-                }
-
-                // --- EXISTING: Handle Click-Based Tools ---
-                if (e is MouseButtonEventArgs)
-                {
-                    SaveStateForUndo(); // Always save state on the initial click
-
-                    // Handle Fill Tool
-                    if (_currentTool == ToolMode.Fill)
-                    {
-                        bool targetState = _pixels[index];
-                        bool newState = targetState;
-
-                        if (Mouse.LeftButton == MouseButtonState.Pressed) newState = true;
-                        else if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
-
-                        ApplyFloodFill(index, targetState, newState);
-                        _lastClickedIndex = index; // Update anchor point
-                        return;
-                    }
-
-                    // Handle Shift-Click for Lines
-                    if (_currentTool == ToolMode.Pencil && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-                    {
-                        if (_lastClickedIndex != -1)
-                        {
-                            bool newState = true;
-                            if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
-
-                            DrawLine(_lastClickedIndex, index, newState);
-                            _lastClickedIndex = index;
-                            return;
-                        }
-                    }
-                }
-
-                // --- EXISTING: Standard Pencil Tool Logic ---
-                if (_currentTool == ToolMode.Pencil)
-                {
-                    bool stateChanged = false;
-
-                    if (Mouse.LeftButton == MouseButtonState.Pressed && !_pixels[index])
-                    {
-                        _pixels[index] = true;
-                        stateChanged = true;
-                    }
-                    else if (Mouse.RightButton == MouseButtonState.Pressed && _pixels[index])
-                    {
-                        _pixels[index] = false;
-                        stateChanged = true;
-                    }
-
-                    if (stateChanged)
-                    {
-                        cell.Background = _pixels[index] ? _colorOn : _colorOff;
-
-                        if (PreviewGrid.Children[index] is Rectangle previewRect)
-                        {
-                            previewRect.Fill = _pixels[index] ? _previewOn : _previewOff;
-                        }
-
-                        UpdateTextFromGrid();
-
-                        // Track this as the last edited pixel so lines can connect to it
-                        _lastClickedIndex = index;
-                    }
-                }
-            }
-        }
-
-        private void UpdateTextFromGrid()
-        {
-            if (_isUpdatingProgrammatically) return;
-            _isUpdatingProgrammatically = true;
-
-            List<string> binList = new List<string>();
-            List<string> hexList = new List<string>();
-            int bytesPerRow = (int)Math.Ceiling(_gridSize / 8.0);
-
-            for (int row = 0; row < _gridSize; row++)
-            {
-                string fullRowBinary = "";
-
-                for (int chunk = 0; chunk < bytesPerRow; chunk++)
-                {
-                    string byteString = "";
-                    for (int bit = 0; bit < 8; bit++)
-                    {
-                        int col = (chunk * 8) + bit;
-                        if (col < _gridSize)
-                        {
-                            int index = (row * _gridSize) + col;
-                            bool isPixelOn = _pixels[index];
-
-                            // --- NEW: Factor in floating pixels for Hex export ---
-                            if (_isFloating)
-                            {
-                                int floatLocalX = col - _floatingX;
-                                int floatLocalY = row - _floatingY;
-                                if (floatLocalX >= 0 && floatLocalX < _floatingWidth &&
-                                    floatLocalY >= 0 && floatLocalY < _floatingHeight)
-                                {
-                                    if (_floatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
-                                }
-                            }
-                            byteString += isPixelOn ? "1" : "0";
-                        }
-                        else
-                        {
-                            byteString += "0";
-                        }
-                    }
-
-                    fullRowBinary += byteString + " ";
-                    int hexValue = Convert.ToInt32(byteString, 2);
-                    hexList.Add($"0x{hexValue:X2}");
-                }
-                binList.Add($"// Row {row,2}: {fullRowBinary}");
-            }
-
-            string hexFormatted = "";
-            for (int i = 0; i < hexList.Count; i++)
-            {
-                hexFormatted += hexList[i] + ", ";
-                if ((i + 1) % bytesPerRow == 0) hexFormatted += "\n  ";
-            }
-
-            TxtBinary.Text = string.Join("\n", binList);
-            TxtHex.Text = $"const unsigned char sprite_{_gridSize}x{_gridSize}[] PROGMEM = {{\n  " +
-                          hexFormatted.TrimEnd(' ', ',', '\n') +
-                          "\n};";
-
-            _isUpdatingProgrammatically = false;
-        }
-
-        private void TxtBinary_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_isUpdatingProgrammatically) return;
-            _isUpdatingProgrammatically = true;
-
-            string[] lines = TxtBinary.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            int row = 0;
-
-            foreach (string line in lines)
-            {
-                if (row >= _gridSize) break;
-
-                string dataPart = line.Contains(":") ? line.Substring(line.IndexOf(':') + 1) : line;
-                dataPart = dataPart.Replace(" ", "");
-
-                for (int col = 0; col < _gridSize; col++)
-                {
-                    _pixels[(row * _gridSize) + col] = (col < dataPart.Length) && (dataPart[col] == '1');
-                }
-                row++;
-            }
-
-            RedrawGridFromMemory();
-            _isUpdatingProgrammatically = false;
-        }
-
-        private void TxtHex_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_isUpdatingProgrammatically) return;
-            _isUpdatingProgrammatically = true;
-
-            MatchCollection matches = Regex.Matches(TxtHex.Text, @"0[xX]([0-9a-fA-F]{1,2})");
-            int bytesPerRow = (int)Math.Ceiling(_gridSize / 8.0);
-            int matchIndex = 0;
-
-            for (int row = 0; row < _gridSize; row++)
-            {
-                for (int chunk = 0; chunk < bytesPerRow; chunk++)
-                {
-                    if (matchIndex < matches.Count)
-                    {
-                        byte b = Convert.ToByte(matches[matchIndex].Groups[1].Value, 16);
-                        matchIndex++;
-
-                        for (int bit = 7; bit >= 0; bit--)
-                        {
-                            int col = (chunk * 8) + (7 - bit);
-                            if (col < _gridSize)
-                            {
-                                _pixels[(row * _gridSize) + col] = ((b >> bit) & 1) == 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            RedrawGridFromMemory();
-            _isUpdatingProgrammatically = false;
-        }
-
-        private void RedrawGridFromMemory()
-        {
-            for (int y = 0; y < _gridSize; y++)
-            {
-                for (int x = 0; x < _gridSize; x++)
-                {
-                    int i = (y * _gridSize) + x;
-                    bool isPixelOn = _pixels[i];
-
-                    // --- NEW: Overlay floating pixels ---
-                    if (_isFloating)
-                    {
-                        int floatLocalX = x - _floatingX;
-                        int floatLocalY = y - _floatingY;
-                        if (floatLocalX >= 0 && floatLocalX < _floatingWidth &&
-                            floatLocalY >= 0 && floatLocalY < _floatingHeight)
-                        {
-                            if (_floatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
-                        }
-                    }
-
-                    if (PixelGrid.Children[i] is Border cell)
-                        cell.Background = isPixelOn ? _colorOn : _colorOff;
-
-                    if (PreviewGrid.Children[i] is Rectangle previewRect)
-                        previewRect.Fill = isPixelOn ? _previewOn : _previewOff;
-                }
-            }
-        }
-
-        private void DrawLine(int startIdx, int endIdx, bool state)
-        {
-            int x0 = startIdx % _gridSize;
-            int y0 = startIdx / _gridSize;
-            int x1 = endIdx % _gridSize;
-            int y1 = endIdx / _gridSize;
-
-            int dx = Math.Abs(x1 - x0);
-            int dy = Math.Abs(y1 - y0);
-            int sx = x0 < x1 ? 1 : -1;
-            int sy = y0 < y1 ? 1 : -1;
-            int err = dx - dy;
-
-            while (true)
-            {
-                int currentIndex = (y0 * _gridSize) + x0;
-                _pixels[currentIndex] = state;
-
-                if (x0 == x1 && y0 == y1) break;
-
-                int e2 = 2 * err;
-                if (e2 > -dy)
-                {
-                    err -= dy;
-                    x0 += sx;
-                }
-                if (e2 < dx)
-                {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-
-            // Update the UI and text once the full line is calculated in memory
-            RedrawGridFromMemory();
-            UpdateTextFromGrid();
-        }
-
-        private void BtnClear_Click(object sender, RoutedEventArgs e)
-        {
-            SaveStateForUndo(); // NEW: Save state before clearing
-            Array.Clear(_pixels, 0, _pixels.Length);
-            RedrawGridFromMemory();
-            UpdateTextFromGrid();
-        }
-
-        private void BtnCopy_Click(object sender, RoutedEventArgs e)
-        {
-            Clipboard.SetText(TxtHex.Text);
-            MessageBox.Show("HEX Array copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void SaveStateForUndo()
-        {
-            // Push a clone of the current array so we don't pass a reference
-            _undoStack.Push((bool[])_pixels.Clone());
-
-            // Once a new action is taken, the redo history is no longer valid
-            _redoStack.Clear();
-        }
-
-        private void Undo()
-        {
-            if (_undoStack.Count > 0)
-            {
-                // Save current state to Redo stack before rolling back
-                _redoStack.Push((bool[])_pixels.Clone());
-
-                // Pop the last saved state
-                _pixels = _undoStack.Pop();
-
-                RedrawGridFromMemory();
-                UpdateTextFromGrid();
-            }
-        }
-
-        private void Redo()
-        {
-            if (_redoStack.Count > 0)
-            {
-                // Save current state to Undo stack before rolling forward
-                _undoStack.Push((bool[])_pixels.Clone());
-
-                // Pop the next saved state
-                _pixels = _redoStack.Pop();
-
-                RedrawGridFromMemory();
-                UpdateTextFromGrid();
-            }
-        }
-
-        private void BtnUndo_Click(object sender, RoutedEventArgs e)
-        {
-            Undo();
-        }
-
-        private void BtnRedo_Click(object sender, RoutedEventArgs e)
-        {
-            Redo();
-        }
-
-        private void Tool_Checked(object sender, RoutedEventArgs e)
-        {
-            if (sender is RadioButton rb && rb.Tag != null)
-            {
-                string tag = rb.Tag.ToString();
-                _currentTool = tag == "Fill" ? ToolMode.Fill :
-                               tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
-
-                // If we switch away from Marquee, remove the yellow highlight box
-                if (_currentTool != ToolMode.Marquee)
-                {
-                    ClearSelectionVisuals();
-                }
-            }
-        }
-
-        private void UpdateSelectionVisuals()
-        {
-            if (_selectionStartIdx == -1 || _selectionEndIdx == -1 || MarqueeOverlay == null) return;
-
-            // 1. Get grid coordinates
-            int startX = _selectionStartIdx % _gridSize;
-            int startY = _selectionStartIdx / _gridSize;
-            int endX = _selectionEndIdx % _gridSize;
-            int endY = _selectionEndIdx / _gridSize;
-
-            // 2. Find the bounds
-            int minX = Math.Min(startX, endX);
-            int maxX = Math.Max(startX, endX);
-            int minY = Math.Min(startY, endY);
-            int maxY = Math.Max(startY, endY);
-
-            // 3. Calculate physical screen dimensions
-            // The grid is 400x400, so we divide by gridSize to get the physical size of one cell
-            double cellWidth = 400.0 / _gridSize;
-            double cellHeight = 400.0 / _gridSize;
-
-            // 4. Update the overlay rectangle's position and size
-            Canvas.SetLeft(MarqueeOverlay, minX * cellWidth);
-            Canvas.SetTop(MarqueeOverlay, minY * cellHeight);
-
-            // Add +1 because if min and max are the same (1 cell selected), the width should be 1 full cell
-            MarqueeOverlay.Width = ((maxX - minX) + 1) * cellWidth;
-            MarqueeOverlay.Height = ((maxY - minY) + 1) * cellHeight;
-
-            // 5. Show the rectangle
-            MarqueeOverlay.Visibility = Visibility.Visible;
-        }
-
         private void ClearSelectionVisuals()
         {
             _isSelecting = false;
             _selectionStartIdx = -1;
             _selectionEndIdx = -1;
-
-            // Hide the overlay rectangle
-            if (MarqueeOverlay != null)
-            {
-                MarqueeOverlay.Visibility = Visibility.Hidden;
-            }
-
-            // Cleanup: In case any cells are stuck with yellow borders from the old code, reset them.
-            // You can eventually remove this loop once you've confirmed the old grid highlights are gone.
-            SolidColorBrush normalBorder = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222222"));
-            if (PixelGrid?.Children == null) return;
-
-            for (int i = 0; i < _gridSize * _gridSize; i++)
-            {
-                if (PixelGrid.Children.Count > i && PixelGrid.Children[i] is Border borderCell)
-                {
-                    borderCell.BorderBrush = normalBorder;
-                    borderCell.BorderThickness = new Thickness(1);
-                }
-            }
+            if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
         }
 
         protected override void OnPreviewMouseMove(MouseEventArgs e)
@@ -653,10 +278,9 @@ namespace SpriteGenerator
                 double deltaX = currentPos.X - _dragStartMousePos.X;
                 double deltaY = currentPos.Y - _dragStartMousePos.Y;
 
-                double cellWidth = 400.0 / _gridSize;
-                double cellHeight = 400.0 / _gridSize;
+                double cellWidth = 400.0 / _spriteState.Size;
+                double cellHeight = 400.0 / _spriteState.Size;
 
-                // Calculate how many cells we have moved
                 int cellsMovedX = (int)Math.Round(deltaX / cellWidth);
                 int cellsMovedY = (int)Math.Round(deltaY / cellHeight);
 
@@ -674,7 +298,7 @@ namespace SpriteGenerator
 
                     UpdateSelectionVisualsFromBounds();
                     RedrawGridFromMemory();
-                    UpdateTextFromGrid();
+                    UpdateTextOutputs();
                 }
             }
         }
@@ -689,150 +313,128 @@ namespace SpriteGenerator
             }
         }
 
-        // REPLACED: Changed from OnKeyDown to OnPreviewKeyDown to capture Arrow Keys reliably
+        // --- KEYBOARD SHORTCUTS ---
+
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
 
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
-                if (e.Key == Key.Z)
-                {
-                    Undo();
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Y)
-                {
-                    Redo();
-                    e.Handled = true;
-                }
-                // NEW: Grid Shifting shortcuts (Ctrl + Arrow Keys)
-                else if (e.Key == Key.Up)
-                {
-                    ShiftGrid(0, -1);
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Down)
-                {
-                    ShiftGrid(0, 1);
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Left)
-                {
-                    ShiftGrid(-1, 0);
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Right)
-                {
-                    ShiftGrid(1, 0);
-                    e.Handled = true;
-                }
+                if (e.Key == Key.Z) { _spriteState = _historyService.Undo(_spriteState); RedrawAndExport(); e.Handled = true; }
+                else if (e.Key == Key.Y) { _spriteState = _historyService.Redo(_spriteState); RedrawAndExport(); e.Handled = true; }
+                else if (e.Key == Key.Up) { _historyService.SaveState(_spriteState); _drawingService.ShiftGrid(_spriteState, 0, -1); RedrawAndExport(); e.Handled = true; }
+                else if (e.Key == Key.Down) { _historyService.SaveState(_spriteState); _drawingService.ShiftGrid(_spriteState, 0, 1); RedrawAndExport(); e.Handled = true; }
+                else if (e.Key == Key.Left) { _historyService.SaveState(_spriteState); _drawingService.ShiftGrid(_spriteState, -1, 0); RedrawAndExport(); e.Handled = true; }
+                else if (e.Key == Key.Right) { _historyService.SaveState(_spriteState); _drawingService.ShiftGrid(_spriteState, 1, 0); RedrawAndExport(); e.Handled = true; }
             }
             else if (Keyboard.Modifiers == ModifierKeys.None)
             {
-                // Prevent tool shortcuts from triggering if the user is typing in the Hex/Binary text boxes
                 if (Keyboard.FocusedElement is TextBox) return;
 
-                // Delete selected pixels
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
-                    if (_currentTool == ToolMode.Marquee && _selectionStartIdx != -1 && _selectionEndIdx != -1)
+                    if (_currentTool == ToolMode.Marquee && _hasActiveSelection)
                     {
-                        SaveStateForUndo();
-
-                        int startX = _selectionStartIdx % _gridSize;
-                        int startY = _selectionStartIdx / _gridSize;
-                        int endX = _selectionEndIdx % _gridSize;
-                        int endY = _selectionEndIdx / _gridSize;
-
-                        int minX = Math.Min(startX, endX);
-                        int maxX = Math.Max(startX, endX);
-                        int minY = Math.Min(startY, endY);
-                        int maxY = Math.Max(startY, endY);
-
-                        // Turn off any pixels inside the bounding box
-                        for (int i = 0; i < _gridSize * _gridSize; i++)
+                        _historyService.SaveState(_spriteState);
+                        for (int i = 0; i < _spriteState.Size * _spriteState.Size; i++)
                         {
-                            int x = i % _gridSize;
-                            int y = i / _gridSize;
-                            if (x >= minX && x <= maxX && y >= minY && y <= maxY)
+                            int x = i % _spriteState.Size;
+                            int y = i / _spriteState.Size;
+                            if (x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
                             {
-                                _pixels[i] = false;
+                                _spriteState.Pixels[i] = false;
                             }
                         }
-
-                        RedrawGridFromMemory();
-                        UpdateTextFromGrid();
+                        RedrawAndExport();
                         e.Handled = true;
                     }
                 }
-                // Tool Shortcuts
-                else if (e.Key == Key.M) // New shortcut for Marquee
-                {
-                    if (RbMarquee != null) RbMarquee.IsChecked = true;
-                    e.Handled = true;
-                }
-
-                else if (e.Key == Key.P)
-                {
-                    if (RbPencil != null) RbPencil.IsChecked = true;
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.F)
-                {
-                    if (RbFill != null) RbFill.IsChecked = true;
-                    e.Handled = true;
-                }
+                else if (e.Key == Key.M) { if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
             }
         }
 
-        private void ApplyFloodFill(int startIndex, bool targetState, bool newState)
+        // --- DRAWING & EXPORT ---
+
+        private void RedrawAndExport()
         {
-            // If clicking on a pixel that is already the desired color, do nothing
-            if (targetState == newState) return;
-
-            Queue<int> queue = new Queue<int>();
-            queue.Enqueue(startIndex);
-
-            while (queue.Count > 0)
-            {
-                int current = queue.Dequeue();
-
-                // Process if the pixel matches the target background we are trying to fill
-                if (_pixels[current] == targetState)
-                {
-                    _pixels[current] = newState;
-
-                    int x = current % _gridSize;
-                    int y = current / _gridSize;
-
-                    // Check Left
-                    if (x > 0) queue.Enqueue(current - 1);
-                    // Check Right
-                    if (x < _gridSize - 1) queue.Enqueue(current + 1);
-                    // Check Up
-                    if (y > 0) queue.Enqueue(current - _gridSize);
-                    // Check Down
-                    if (y < _gridSize - 1) queue.Enqueue(current + _gridSize);
-                }
-            }
-
-            // Because Fill modifies many pixels at once, we redraw the whole grid
             RedrawGridFromMemory();
-            UpdateTextFromGrid();
+            UpdateTextOutputs();
         }
 
+        private void UpdateSinglePixelUI(int index)
+        {
+            if (PixelGrid.Children[index] is Border cell) cell.Background = _spriteState.Pixels[index] ? _colorOn : _colorOff;
+            if (PreviewGrid.Children[index] is Rectangle prev) prev.Fill = _spriteState.Pixels[index] ? _previewOn : _previewOff;
+        }
+
+        private void RedrawGridFromMemory()
+        {
+            for (int y = 0; y < _spriteState.Size; y++)
+            {
+                for (int x = 0; x < _spriteState.Size; x++)
+                {
+                    int i = (y * _spriteState.Size) + x;
+                    bool isPixelOn = _spriteState.Pixels[i];
+
+                    if (_isFloating)
+                    {
+                        int floatLocalX = x - _floatingX;
+                        int floatLocalY = y - _floatingY;
+                        if (floatLocalX >= 0 && floatLocalX < _floatingWidth && floatLocalY >= 0 && floatLocalY < _floatingHeight)
+                            if (_floatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
+                    }
+
+                    if (PixelGrid.Children[i] is Border cell) cell.Background = isPixelOn ? _colorOn : _colorOff;
+                    if (PreviewGrid.Children[i] is Rectangle previewRect) previewRect.Fill = isPixelOn ? _previewOn : _previewOff;
+                }
+            }
+        }
+
+        private void UpdateTextOutputs()
+        {
+            if (_isUpdatingProgrammatically) return;
+            _isUpdatingProgrammatically = true;
+
+            var (binary, hex) = _codeGen.GenerateExportStrings(_spriteState, _isFloating, _floatingPixels, _floatingX, _floatingY, _floatingWidth, _floatingHeight);
+
+            TxtBinary.Text = binary;
+            TxtHex.Text = hex;
+
+            _isUpdatingProgrammatically = false;
+        }
+
+        private void TxtBinary_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_isUpdatingProgrammatically) return;
+            _isUpdatingProgrammatically = true;
+            _codeGen.ParseBinaryToState(TxtBinary.Text, _spriteState);
+            RedrawGridFromMemory();
+            _isUpdatingProgrammatically = false;
+        }
+
+        private void TxtHex_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_isUpdatingProgrammatically) return;
+            _isUpdatingProgrammatically = true;
+            _codeGen.ParseHexToState(TxtHex.Text, _spriteState);
+            RedrawGridFromMemory();
+            _isUpdatingProgrammatically = false;
+        }
+
+        // --- BUTTON HANDLERS ---
+        private void BtnUndo_Click(object sender, RoutedEventArgs e) { _spriteState = _historyService.Undo(_spriteState); RedrawAndExport(); }
+        private void BtnRedo_Click(object sender, RoutedEventArgs e) { _spriteState = _historyService.Redo(_spriteState); RedrawAndExport(); }
+        private void BtnClear_Click(object sender, RoutedEventArgs e) { _historyService.SaveState(_spriteState); Array.Clear(_spriteState.Pixels, 0, _spriteState.Pixels.Length); RedrawAndExport(); }
         private void BtnInvert_Click(object sender, RoutedEventArgs e)
         {
-            SaveStateForUndo();
+            // 1. Save state for undo and apply the mathematical array inversion in the service
+            _historyService.SaveState(_spriteState);
+            _drawingService.InvertGrid(_spriteState);
 
-            // 1. Invert the sprite memory
-            for (int i = 0; i < _pixels.Length; i++)
-            {
-                _pixels[i] = !_pixels[i];
-            }
-
-            // 2. Toggle the display state
+            // 2. Toggle the UI display state flag
             _isDisplayInverted = !_isDisplayInverted;
 
             // 3. Update the OLED container backgrounds
@@ -849,43 +451,26 @@ namespace SpriteGenerator
                 PreviewGrid.Background = new SolidColorBrush(Colors.Black);
             }
 
-            // 4. Redraw the pixels
-            RedrawGridFromMemory();
-            UpdateTextFromGrid();
+            // 4. Redraw the pixels and update the code boxes
+            RedrawAndExport();
         }
+        private void BtnCopy_Click(object sender, RoutedEventArgs e) { Clipboard.SetText(TxtHex.Text); MessageBox.Show("Copied!"); }
 
-        private void ShiftGrid(int offsetX, int offsetY)
+        private void Tool_Checked(object sender, RoutedEventArgs e)
         {
-            // Save the current state so the user can Undo
-            SaveStateForUndo();
-
-            bool[] newPixels = new bool[_gridSize * _gridSize];
-
-            for (int y = 0; y < _gridSize; y++)
+            if (sender is RadioButton rb && rb.Tag != null)
             {
-                for (int x = 0; x < _gridSize; x++)
+                string tag = rb.Tag.ToString();
+
+                _currentTool = tag == "Fill" ? ToolMode.Fill :
+                               tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
+
+                if (_currentTool != ToolMode.Marquee)
                 {
-                    // We only need to move pixels that are turned ON (true)
-                    if (_pixels[(y * _gridSize) + x])
-                    {
-                        // Calculate new X, using modulo to wrap around
-                        int newX = (x + offsetX) % _gridSize;
-                        // C# modulo can return negative numbers, so we force it positive
-                        if (newX < 0) newX += _gridSize;
-
-                        // Calculate new Y, using modulo to wrap around
-                        int newY = (y + offsetY) % _gridSize;
-                        if (newY < 0) newY += _gridSize;
-
-                        // Set the pixel at the new wrapped coordinate to true
-                        newPixels[(newY * _gridSize) + newX] = true;
-                    }
+                    CommitSelection();
+                    ClearSelectionVisuals();
                 }
             }
-
-            _pixels = newPixels;
-            RedrawGridFromMemory();
-            UpdateTextFromGrid();
         }
     }
 }

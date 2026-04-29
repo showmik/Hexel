@@ -1,0 +1,88 @@
+﻿using System;
+using System.Collections.Generic;
+using Hexel.Core;
+
+namespace Hexel.Services
+{
+    public class DrawingService
+    {
+        public void ApplyFloodFill(SpriteState state, int startIndex, bool newState)
+        {
+            bool targetState = state.Pixels[startIndex];
+            if (targetState == newState) return;
+
+            Queue<int> queue = new Queue<int>();
+            queue.Enqueue(startIndex);
+
+            while (queue.Count > 0)
+            {
+                int current = queue.Dequeue();
+                if (state.Pixels[current] == targetState)
+                {
+                    state.Pixels[current] = newState;
+
+                    int x = current % state.Size;
+                    int y = current / state.Size;
+
+                    if (x > 0) queue.Enqueue(current - 1);
+                    if (x < state.Size - 1) queue.Enqueue(current + 1);
+                    if (y > 0) queue.Enqueue(current - state.Size);
+                    if (y < state.Size - 1) queue.Enqueue(current + state.Size);
+                }
+            }
+        }
+
+        public void DrawLine(SpriteState state, int startIdx, int endIdx, bool newState)
+        {
+            int x0 = startIdx % state.Size;
+            int y0 = startIdx / state.Size;
+            int x1 = endIdx % state.Size;
+            int y1 = endIdx / state.Size;
+
+            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+
+            while (true)
+            {
+                state.Pixels[(y0 * state.Size) + x0] = newState;
+                if (x0 == x1 && y0 == y1) break;
+
+                int e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+        }
+
+        public void ShiftGrid(SpriteState state, int offsetX, int offsetY)
+        {
+            bool[] newPixels = new bool[state.Size * state.Size];
+
+            for (int y = 0; y < state.Size; y++)
+            {
+                for (int x = 0; x < state.Size; x++)
+                {
+                    if (state.Pixels[(y * state.Size) + x])
+                    {
+                        int newX = (x + offsetX) % state.Size;
+                        if (newX < 0) newX += state.Size;
+
+                        int newY = (y + offsetY) % state.Size;
+                        if (newY < 0) newY += state.Size;
+
+                        newPixels[(newY * state.Size) + newX] = true;
+                    }
+                }
+            }
+            state.Pixels = newPixels;
+        }
+
+        public void InvertGrid(SpriteState state)
+        {
+            for (int i = 0; i < state.Pixels.Length; i++)
+            {
+                state.Pixels[i] = !state.Pixels[i];
+            }
+        }
+    }
+}
