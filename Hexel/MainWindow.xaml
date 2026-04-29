@@ -354,7 +354,7 @@
                            Style="{StaticResource HeaderStyle}" />
                 <TextBox Grid.Row="1"
                          x:Name="TxtBinary"
-                         Text="{Binding TxtBinary, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding TxtBinary, UpdateSourceTrigger=PropertyChanged, Delay=400}"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"
                          FontFamily="Consolas"
@@ -375,7 +375,7 @@
                            Style="{StaticResource HeaderStyle}" />
                 <TextBox Grid.Row="1"
                          x:Name="TxtHex"
-                         Text="{Binding TxtHex, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding TxtHex, UpdateSourceTrigger=PropertyChanged, Delay=400}"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"
                          FontFamily="Consolas"

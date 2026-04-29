@@ -6,6 +6,8 @@ namespace Hexel.Services
 {
     public class DrawingService : IDrawingService
     {
+        private bool[] _shiftBuffer;
+
         public void ApplyFloodFill(SpriteState state, int startIndex, bool newState)
         {
             bool targetState = state.Pixels[startIndex];
@@ -56,7 +58,18 @@ namespace Hexel.Services
 
         public void ShiftGrid(SpriteState state, int offsetX, int offsetY)
         {
-            bool[] newPixels = new bool[state.Size * state.Size];
+            int totalPixels = state.Size * state.Size;
+
+            // 2. Initialize or resize the buffer ONLY if necessary
+            if (_shiftBuffer == null || _shiftBuffer.Length != totalPixels)
+            {
+                _shiftBuffer = new bool[totalPixels];
+            }
+            else
+            {
+                // 3. Clear the buffer for reuse (significantly faster than creating a new array)
+                Array.Clear(_shiftBuffer, 0, totalPixels);
+            }
 
             for (int y = 0; y < state.Size; y++)
             {
@@ -70,11 +83,13 @@ namespace Hexel.Services
                         int newY = (y + offsetY) % state.Size;
                         if (newY < 0) newY += state.Size;
 
-                        newPixels[(newY * state.Size) + newX] = true;
+                        _shiftBuffer[(newY * state.Size) + newX] = true;
                     }
                 }
             }
-            state.Pixels = newPixels;
+
+            // 4. Copy the shifted data directly back into the existing state array
+            Array.Copy(_shiftBuffer, state.Pixels, totalPixels);
         }
 
         public void InvertGrid(SpriteState state)

@@ -13,7 +13,6 @@ namespace Hexel
         private ViewModels.MainViewModel ViewModel => (ViewModels.MainViewModel)DataContext;
 
         // UI State
-        private ToolMode _currentTool = ToolMode.Pencil;
         private int _lastClickedIndex = -1;
 
         // Selection & Floating State
@@ -77,7 +76,7 @@ namespace Hexel
             // The XAML AlternationIndex automatically assigns the correct index to the Tag property
             if (sender is Border cell && cell.Tag is int index)
             {
-                if (_currentTool == ToolMode.Marquee)
+                if (ViewModel.CurrentTool == ToolMode.Marquee)
                 {
                     HandleMarqueeTool(e, index);
                     return;
@@ -87,7 +86,7 @@ namespace Hexel
                 {
                     ViewModel.SaveStateForUndo();
 
-                    if (_currentTool == ToolMode.Fill)
+                    if (ViewModel.CurrentTool == ToolMode.Fill)
                     {
                         bool newState = Mouse.LeftButton == MouseButtonState.Pressed;
                         if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
@@ -96,7 +95,7 @@ namespace Hexel
                         return;
                     }
 
-                    if (_currentTool == ToolMode.Pencil && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && _lastClickedIndex != -1)
+                    if (ViewModel.CurrentTool == ToolMode.Pencil && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && _lastClickedIndex != -1)
                     {
                         bool newState = Mouse.LeftButton == MouseButtonState.Pressed;
                         ViewModel.DrawLine(_lastClickedIndex, index, newState);
@@ -105,7 +104,7 @@ namespace Hexel
                     }
                 }
 
-                if (_currentTool == ToolMode.Pencil)
+                if (ViewModel.CurrentTool == ToolMode.Pencil)
                 {
                     bool isDrawing = Mouse.LeftButton == MouseButtonState.Pressed;
                     bool isErasing = Mouse.RightButton == MouseButtonState.Pressed;
@@ -116,12 +115,7 @@ namespace Hexel
 
                         if (e is MouseButtonEventArgs)
                         {
-                            if (ViewModel.SpriteState.Pixels[index] != targetState)
-                            {
-                                ViewModel.SpriteState.Pixels[index] = targetState;
-                                ViewModel.PixelBrushes[index] = targetState ? _colorOn : _colorOff;
-                                ViewModel.PreviewBrushes[index] = targetState ? _previewOn : _previewOff;
-                            }
+                            ViewModel.SetPixel(index, targetState);
                             _lastClickedIndex = index;
                             ViewModel.UpdateTextOutputs();
                         }
@@ -158,6 +152,10 @@ namespace Hexel
                         _dragStartMousePos = e.GetPosition(PixelGridContainer);
                         _dragStartFloatingX = _floatingX;
                         _dragStartFloatingY = _floatingY;
+
+                        // NEW: Capture the mouse to ensure we track it if it leaves the window
+                        Mouse.Capture(PixelGridContainer);
+
                         return;
                     }
                     CommitSelection();
@@ -309,9 +307,17 @@ namespace Hexel
             base.OnPreviewMouseUp(e);
             if (e.ChangedButton == MouseButton.Left)
             {
+                // NEW: Release the mouse capture if we were holding it
+                if (Mouse.Captured == PixelGridContainer)
+                {
+                    Mouse.Capture(null);
+                    // Alternatively, you can use: PixelGridContainer.ReleaseMouseCapture();
+                }
+
                 _isSelecting = false;
                 _isDraggingSelection = false;
                 ViewModel.RedrawGridFromMemory();
+
                 if (_pendingTextUpdateDuringDrag)
                 {
                     ViewModel.UpdateTextOutputs();
@@ -338,7 +344,7 @@ namespace Hexel
 
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
-                    if (_currentTool == ToolMode.Marquee && _hasActiveSelection)
+                    if (ViewModel.CurrentTool == ToolMode.Marquee && _hasActiveSelection)
                     {
                         ViewModel.SaveStateForUndo();
                         int size = ViewModel.SpriteState.Size;
@@ -366,13 +372,13 @@ namespace Hexel
 
         private void Tool_Checked(object sender, RoutedEventArgs e)
         {
-            if (sender is RadioButton rb && rb.Tag != null)
+            if (sender is RadioButton rb && rb.Tag != null && ViewModel != null)
             {
                 string tag = rb.Tag.ToString();
-                _currentTool = tag == "Fill" ? ToolMode.Fill :
-                               tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
+                ViewModel.CurrentTool = tag == "Fill" ? ToolMode.Fill :
+                                        tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
 
-                if (_currentTool != ToolMode.Marquee)
+                if (ViewModel.CurrentTool != ToolMode.Marquee)
                 {
                     CommitSelection();
                     ClearSelectionVisuals();

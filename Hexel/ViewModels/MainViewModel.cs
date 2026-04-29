@@ -13,6 +13,7 @@ namespace Hexel.ViewModels
         private readonly ICodeGeneratorService _codeGen;
         private readonly IDrawingService _drawingService;
         private readonly IHistoryService _historyService;
+        private readonly System.Threading.SynchronizationContext _uiContext;
 
         private bool _isUpdatingProgrammatically = false;
         // Brushes used for UI representation
@@ -61,9 +62,27 @@ namespace Hexel.ViewModels
             {
                 if (_isUpdatingProgrammatically) return;
                 SetProperty(ref _txtBinary, value);
-                _codeGen.ParseBinaryToState(value, SpriteState);
-                RedrawGridFromMemory();
-                UpdateTextOutputs();
+
+                // 1. Create a backup of the current state
+                var backupState = SpriteState.Clone();
+
+                try
+                {
+                    // 2. Attempt to parse the new text
+                    _codeGen.ParseBinaryToState(value, SpriteState);
+                    RedrawGridFromMemory();
+                }
+                catch (Exception)
+                {
+                    // 3. If parsing fails (e.g., malformed text), revert to the backup
+                    SpriteState = backupState;
+                    RedrawGridFromMemory(); // Ensure UI matches the reverted state
+                }
+                finally
+                {
+                    // Always update the text outputs to reflect the final state
+                    UpdateTextOutputs();
+                }
             }
         }
 
@@ -75,9 +94,23 @@ namespace Hexel.ViewModels
             {
                 if (_isUpdatingProgrammatically) return;
                 SetProperty(ref _txtHex, value);
-                _codeGen.ParseHexToState(value, SpriteState);
-                RedrawGridFromMemory();
-                UpdateTextOutputs();
+
+                var backupState = SpriteState.Clone();
+
+                try
+                {
+                    _codeGen.ParseHexToState(value, SpriteState);
+                    RedrawGridFromMemory();
+                }
+                catch (Exception)
+                {
+                    SpriteState = backupState;
+                    RedrawGridFromMemory();
+                }
+                finally
+                {
+                    UpdateTextOutputs();
+                }
             }
         }
 
@@ -95,6 +128,8 @@ namespace Hexel.ViewModels
 
         public MainViewModel(ICodeGeneratorService codeGen, IDrawingService drawingService, IHistoryService historyService)
         {
+            _uiContext = System.Threading.SynchronizationContext.Current ?? new System.Threading.SynchronizationContext();
+
             _codeGen = codeGen ?? throw new ArgumentNullException(nameof(codeGen));
             _drawingService = drawingService ?? throw new ArgumentNullException(nameof(drawingService));
             _historyService = historyService ?? throw new ArgumentNullException(nameof(historyService));
@@ -243,18 +278,17 @@ namespace Hexel.ViewModels
             if (_isUpdatingProgrammatically) return;
             _isUpdatingProgrammatically = true;
 
-            // Run the generation logic on a background thread (keeps the UI unblocked)
             var (binary, hex) = await _codeGen.GenerateExportStringsAsync(
                 SpriteState, IsFloating, FloatingPixels, FloatingX, FloatingY, FloatingWidth, FloatingHeight);
 
-            // Marshal the results back to the main UI thread securely
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            // Marshal back to the UI thread generically
+            _uiContext.Post(_ =>
             {
                 _txtBinary = binary;
                 _txtHex = hex;
                 OnPropertyChanged(nameof(TxtBinary));
                 OnPropertyChanged(nameof(TxtHex));
-            });
+            }, null);
 
             _isUpdatingProgrammatically = false;
         }
@@ -283,6 +317,16 @@ namespace Hexel.ViewModels
 
             // Updates the visual brushes (using the optimized diffing we added earlier)
             RedrawGridFromMemory();
+        }
+
+        public void SetPixel(int index, bool state)
+        {
+            if (SpriteState.Pixels[index] != state)
+            {
+                SpriteState.Pixels[index] = state;
+                PixelBrushes[index] = state ? _colorOn : _colorOff;
+                PreviewBrushes[index] = state ? _previewOn : _previewOff;
+            }
         }
     }
 }
