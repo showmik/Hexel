@@ -10,30 +10,40 @@ namespace Hexel
 {
     public partial class MainWindow : Window
     {
+        #region Properties & Fields
+
         private ViewModels.MainViewModel ViewModel => (ViewModels.MainViewModel)DataContext;
 
-        // Selection & Floating State
-        private bool _hasActiveSelection, _isSelecting, _isFloating, _isDraggingSelection;
-        private int _selectionStartIdx = -1, _selectionEndIdx = -1;
+        // --- Selection & Floating State ---
+        private bool _hasActiveSelection;
+        private bool _isSelecting;
+        private bool _isFloating;
+        private bool _isDraggingSelection;
+
+        private int _selectionStartIdx = -1;
+        private int _selectionEndIdx = -1;
         private int _selMinX = -1, _selMaxX = -1, _selMinY = -1, _selMaxY = -1;
+
         private bool[,] _floatingPixels;
         private int _floatingX, _floatingY, _floatingWidth, _floatingHeight;
+
         private Point _dragStartMousePos;
         private int _dragStartFloatingX, _dragStartFloatingY;
 
-        // Panning State
+        // --- Panning State ---
         private Point _panStartMouse;
         private Point _panStartScroll;
         private bool _isPanning;
 
-        // Brushes
+        // --- Brushes ---
         private SolidColorBrush _colorOn => (SolidColorBrush)Application.Current.Resources["Theme.PrimaryAccentBrush"];
         private SolidColorBrush _colorOff => (SolidColorBrush)Application.Current.Resources["Theme.PanelBackgroundBrush"];
         private SolidColorBrush _previewOn => (SolidColorBrush)Application.Current.Resources["Theme.OledOnBrush"];
         private SolidColorBrush _previewOff => (SolidColorBrush)Application.Current.Resources["Theme.OledOffBrush"];
 
+        #endregion
 
-        // --- CONSTRUCTOR & INITIALIZATION ---
+        #region Constructor & Initialization
 
         public MainWindow(ViewModels.MainViewModel vm)
         {
@@ -41,7 +51,9 @@ namespace Hexel
             DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
         }
 
-        // --- UI CONTROLS & TOOLBAR ---
+        #endregion
+
+        #region UI Controls & Toolbar
 
         private void Tool_Checked(object sender, RoutedEventArgs e)
         {
@@ -60,7 +72,9 @@ namespace Hexel
             }
         }
 
-        // --- CORE CANVAS INTERACTION ---
+        #endregion
+
+        #region Core Canvas Interaction
 
         private void Pixel_Interaction(object sender, MouseEventArgs e)
         {
@@ -95,8 +109,9 @@ namespace Hexel
             }
         }
 
+        #endregion
 
-        // --- MARQUEE TOOL & SELECTION LOGIC ---
+        #region Marquee Tool & Selection Logic
 
         private void HandleMarqueeTool(MouseEventArgs e, int index)
         {
@@ -122,12 +137,14 @@ namespace Hexel
 
                         return;
                     }
+
                     CommitSelection();
                     _isSelecting = true;
                     _selectionStartIdx = index;
                     _selectionEndIdx = index;
                     _selMinX = _selMaxX = x;
                     _selMinY = _selMaxY = y;
+
                     UpdateSelectionVisualsFromBounds();
                 }
                 else if (_isSelecting)
@@ -137,6 +154,7 @@ namespace Hexel
                     _selMaxX = Math.Max(_selectionStartIdx % size, x);
                     _selMinY = Math.Min(_selectionStartIdx / size, y);
                     _selMaxY = Math.Max(_selectionStartIdx / size, y);
+
                     UpdateSelectionVisualsFromBounds();
                 }
             }
@@ -165,6 +183,7 @@ namespace Hexel
                     }
                 }
             }
+
             _isFloating = true;
             ViewModel.SyncFloatingState(_isFloating, _floatingPixels, _floatingX, _floatingY, _floatingWidth, _floatingHeight);
         }
@@ -184,6 +203,7 @@ namespace Hexel
                         {
                             int gridX = _floatingX + x;
                             int gridY = _floatingY + y;
+
                             if (gridX >= 0 && gridX < size && gridY >= 0 && gridY < size)
                             {
                                 ViewModel.SpriteState.Pixels[(gridY * size) + gridX] = true;
@@ -191,6 +211,7 @@ namespace Hexel
                         }
                     }
                 }
+
                 _isFloating = false;
                 _floatingPixels = null;
             }
@@ -207,6 +228,7 @@ namespace Hexel
         private void UpdateSelectionVisualsFromBounds()
         {
             if (MarqueeOverlay == null) return;
+
             double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
             double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
 
@@ -231,12 +253,15 @@ namespace Hexel
             _isSelecting = false;
             _selectionStartIdx = -1;
             _selectionEndIdx = -1;
+
             if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
+
             ViewModel.SetSelectionBounds(false, -1, -1, -1, -1);
         }
 
+        #endregion
 
-        // --- ZOOM & PANNING LOGIC ---
+        #region Zoom & Panning Logic
 
         private void BtnZoomIn_Click(object sender, RoutedEventArgs e) => ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.2);
 
@@ -300,8 +325,9 @@ namespace Hexel
             }
         }
 
+        #endregion
 
-        // --- GLOBAL INPUT OVERRIDES (KEYS & MARQUEE DRAGGING) ---
+        #region Global Input Overrides (Keys & Marquee Dragging)
 
         protected override void OnPreviewMouseMove(MouseEventArgs e)
         {
@@ -335,7 +361,6 @@ namespace Hexel
                 double deltaX = currentPos.X - _dragStartMousePos.X;
                 double deltaY = currentPos.Y - _dragStartMousePos.Y;
 
-                // Replace with this:
                 double gridWidth = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
                 double gridHeight = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
 
@@ -390,8 +415,6 @@ namespace Hexel
                 _isSelecting = false;
                 _isDraggingSelection = false;
                 ViewModel.RedrawGridFromMemory();
-
-                // _pendingTextUpdateDuringDrag logic is completely gone from here!
             }
         }
 
@@ -406,6 +429,7 @@ namespace Hexel
                 else if (e.Key == Key.Down) { ViewModel.ShiftGrid(0, 1); e.Handled = true; }
                 else if (e.Key == Key.Left) { ViewModel.ShiftGrid(-1, 0); e.Handled = true; }
                 else if (e.Key == Key.Right) { ViewModel.ShiftGrid(1, 0); e.Handled = true; }
+
                 return; // Exit early
             }
 
@@ -416,7 +440,6 @@ namespace Hexel
 
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
-                    // Look how much cleaner this is!
                     if (ViewModel.DeleteSelectionCommand.CanExecute(null))
                     {
                         ViewModel.DeleteSelectionCommand.Execute(null);
@@ -429,5 +452,7 @@ namespace Hexel
                 else if (e.Key == Key.L) { if (RbLine != null) RbLine.IsChecked = true; e.Handled = true; }
             }
         }
+
+        #endregion
     }
 }
