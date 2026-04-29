@@ -511,16 +511,23 @@ namespace Hexel
         {
             base.OnPreviewKeyDown(e);
 
-            // Ctrl modifier commands (Undo, Redo, ShiftGrid) are now handled by XAML InputBindings!
+            // 1. Catch Ctrl+Arrow keys BEFORE the ScrollViewer swallows them
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (e.Key == Key.Up) { ViewModel.ShiftGrid(0, -1); e.Handled = true; }
+                else if (e.Key == Key.Down) { ViewModel.ShiftGrid(0, 1); e.Handled = true; }
+                else if (e.Key == Key.Left) { ViewModel.ShiftGrid(-1, 0); e.Handled = true; }
+                else if (e.Key == Key.Right) { ViewModel.ShiftGrid(1, 0); e.Handled = true; }
+                return; // Exit early
+            }
 
-            // Handle raw letter keys for tools (only if not typing in a text box)
+            // 2. Handle raw letter keys for tools (only if not typing in a text box)
             if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 if (Keyboard.FocusedElement is TextBox) return;
 
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
-                    // We will move this delete logic to the ViewModel in Step 2!
                     if (ViewModel.CurrentTool == ToolMode.Marquee && _hasActiveSelection)
                     {
                         ViewModel.SaveStateForUndo();
