@@ -3,6 +3,44 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Hexel">
     <Application.Resources>
-         
+
+        <Color x:Key="Color.Background">#0F172A</Color>
+        <Color x:Key="Color.PanelBackground">#1E293B</Color>
+        <Color x:Key="Color.PanelBorder">#334155</Color>
+        <Color x:Key="Color.PrimaryAccent">#38BDF8</Color>
+        <Color x:Key="Color.TextMain">#F8FAFC</Color>
+        <Color x:Key="Color.TextMuted">#94A3B8</Color>
+
+        <Color x:Key="Color.CanvasBackground">#020617</Color>
+        <Color x:Key="Color.OledBackground">#000000</Color>
+
+        <SolidColorBrush x:Key="Theme.BackgroundBrush"
+                         Color="{StaticResource Color.Background}" />
+        <SolidColorBrush x:Key="Theme.PanelBackgroundBrush"
+                         Color="{StaticResource Color.PanelBackground}" />
+        <SolidColorBrush x:Key="Theme.PanelBorderBrush"
+                         Color="{StaticResource Color.PanelBorder}" />
+        <SolidColorBrush x:Key="Theme.PrimaryAccentBrush"
+                         Color="{StaticResource Color.PrimaryAccent}" />
+        <SolidColorBrush x:Key="Theme.TextMainBrush"
+                         Color="{StaticResource Color.TextMain}" />
+        <SolidColorBrush x:Key="Theme.TextMutedBrush"
+                         Color="{StaticResource Color.TextMuted}" />
+        <SolidColorBrush x:Key="Theme.CanvasBackgroundBrush"
+                         Color="{StaticResource Color.CanvasBackground}" />
+
+        <SolidColorBrush x:Key="Theme.OledOffBrush"
+                         Color="{StaticResource Color.OledBackground}" />
+        <SolidColorBrush x:Key="Theme.OledOnBrush"
+                         Color="{StaticResource Color.PrimaryAccent}" />
+
+        <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}"
+                         Color="{StaticResource Color.PanelBackground}" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
+                         Color="{StaticResource Color.Background}" />
+
+        <FontFamily x:Key="Theme.MainFont">Segoe UI, Helvetica Neue, sans-serif</FontFamily>
+        <FontFamily x:Key="Theme.CodeFont">Consolas, Courier New, monospace</FontFamily>
+
     </Application.Resources>
 </Application>

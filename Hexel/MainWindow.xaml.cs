@@ -39,10 +39,10 @@ namespace Hexel
         private bool _isPanning;
 
         // Brushes
-        private readonly SolidColorBrush _colorOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFCC"));
-        private readonly SolidColorBrush _colorOff = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
-        private readonly SolidColorBrush _previewOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFFF"));
-        private readonly SolidColorBrush _previewOff = new SolidColorBrush(Colors.Black);
+        private SolidColorBrush _colorOn => (SolidColorBrush)Application.Current.Resources["Theme.PrimaryAccentBrush"];
+        private SolidColorBrush _colorOff => (SolidColorBrush)Application.Current.Resources["Theme.PanelBackgroundBrush"];
+        private SolidColorBrush _previewOn => (SolidColorBrush)Application.Current.Resources["Theme.OledOnBrush"];
+        private SolidColorBrush _previewOff => (SolidColorBrush)Application.Current.Resources["Theme.OledOffBrush"];
 
 
         // --- CONSTRUCTOR & INITIALIZATION ---
@@ -69,7 +69,7 @@ namespace Hexel
                 }
                 else
                 {
-                    OledBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#050505"));
+                    OledBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#020617"));
                     PreviewGridContainer.Background = new SolidColorBrush(Colors.Black);
                 }
             }

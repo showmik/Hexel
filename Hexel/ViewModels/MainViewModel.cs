@@ -17,10 +17,10 @@ namespace Hexel.ViewModels
 
         private bool _isUpdatingProgrammatically = false;
         // Brushes used for UI representation
-        private readonly SolidColorBrush _colorOff = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
-        private readonly SolidColorBrush _colorOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFCC"));
-        private readonly SolidColorBrush _previewOff = new SolidColorBrush(Colors.Black);
-        private readonly SolidColorBrush _previewOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFFF"));
+        private readonly SolidColorBrush _colorOff;
+        private readonly SolidColorBrush _colorOn;
+        private readonly SolidColorBrush _previewOff;
+        private readonly SolidColorBrush _previewOn;
 
         public ObservableCollection<SolidColorBrush> PixelBrushes { get; } = new ObservableCollection<SolidColorBrush>();
         public ObservableCollection<SolidColorBrush> PreviewBrushes { get; } = new ObservableCollection<SolidColorBrush>();
@@ -136,6 +136,11 @@ namespace Hexel.ViewModels
 
             SpriteState = new SpriteState(16);
             InitializeGrid(16);
+
+            _colorOff = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PanelBackgroundBrush"];
+            _colorOn = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PrimaryAccentBrush"];
+            _previewOff = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.OledOffBrush"];
+            _previewOn = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.OledOnBrush"];
 
             // Try to freeze shared brushes for minor perf/thread-safety benefit
             try
