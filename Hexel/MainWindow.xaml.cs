@@ -14,18 +14,10 @@ namespace Hexel
 
         // --- FIELDS & STATE ---
 
-        // UI State
-        private int _lastClickedIndex = -1;
-
-        // Line Tool State
-        private bool _isDrawingLine;
-        private int _lineStartIdx = -1;
-        private int _lineCurrentIdx = -1;
-        private bool _lineDrawState;
+       
 
         // Selection & Floating State
         private bool _hasActiveSelection, _isSelecting, _isFloating, _isDraggingSelection;
-        private bool _pendingTextUpdateDuringDrag = false;
         private int _selectionStartIdx = -1, _selectionEndIdx = -1;
         private int _selMinX = -1, _selMaxX = -1, _selMinY = -1, _selMaxY = -1;
         private bool[,] _floatingPixels;
@@ -119,7 +111,6 @@ namespace Hexel
 
         private void Pixel_Interaction(object sender, MouseEventArgs e)
         {
-            // The XAML AlternationIndex automatically assigns the correct index to the Tag property
             if (sender is Border cell && cell.Tag is int index)
             {
                 if (ViewModel.CurrentTool == ToolMode.Marquee)
@@ -128,72 +119,25 @@ namespace Hexel
                     return;
                 }
 
-                // --- UPDATED LINE TOOL LOGIC ---
-                if (ViewModel.CurrentTool == ToolMode.Line)
-                {
-                    if (e is MouseButtonEventArgs args)
-                    {
-                        _isDrawingLine = true;
-                        _lineStartIdx = index;
-                        _lineCurrentIdx = index;
-                        _lineDrawState = args.LeftButton == MouseButtonState.Pressed;
-                        if (args.RightButton == MouseButtonState.Pressed) _lineDrawState = false;
+                bool? drawState = null;
+                if (Mouse.LeftButton == MouseButtonState.Pressed) drawState = true;
+                else if (Mouse.RightButton == MouseButtonState.Pressed) drawState = false;
 
-                        ViewModel.PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                bool isShiftDown = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
 
-                        // CRITICAL: Capture the mouse to ensure we don't drop events when moving fast
-                        Mouse.Capture(PixelGridContainer);
-                    }
-                    return; // Stop here, dragging is handled globally in OnPreviewMouseMove
-                }
-
+                // If this is the initial click
                 if (e is MouseButtonEventArgs)
                 {
-                    ViewModel.SaveStateForUndo();
-
-                    if (ViewModel.CurrentTool == ToolMode.Fill)
+                    if (ViewModel.CurrentTool == ToolMode.Line)
                     {
-                        bool newState = Mouse.LeftButton == MouseButtonState.Pressed;
-                        if (Mouse.RightButton == MouseButtonState.Pressed) newState = false;
-                        ViewModel.ApplyFloodFill(index, newState);
-                        _lastClickedIndex = index;
-                        return;
+                        Mouse.Capture(PixelGridContainer);
                     }
-
-                    if (ViewModel.CurrentTool == ToolMode.Pencil && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && _lastClickedIndex != -1)
-                    {
-                        bool newState = Mouse.LeftButton == MouseButtonState.Pressed;
-                        ViewModel.DrawLine(_lastClickedIndex, index, newState);
-                        _lastClickedIndex = index;
-                        return;
-                    }
+                    ViewModel.ProcessToolInput(index, "Down", drawState, isShiftDown);
                 }
-
-                if (ViewModel.CurrentTool == ToolMode.Pencil)
+                // If this is a drag (mouse entered a new pixel)
+                else if (drawState.HasValue)
                 {
-                    bool isDrawing = Mouse.LeftButton == MouseButtonState.Pressed;
-                    bool isErasing = Mouse.RightButton == MouseButtonState.Pressed;
-
-                    if (isDrawing || isErasing)
-                    {
-                        bool targetState = isDrawing;
-
-                        if (e is MouseButtonEventArgs)
-                        {
-                            ViewModel.SetPixel(index, targetState);
-                            _lastClickedIndex = index;
-                            ViewModel.UpdateTextOutputs();
-                        }
-                        else
-                        {
-                            if (_lastClickedIndex != -1 && _lastClickedIndex != index)
-                            {
-                                ViewModel.DrawLineContinuous(_lastClickedIndex, index, targetState);
-                                _lastClickedIndex = index;
-                                _pendingTextUpdateDuringDrag = true;
-                            }
-                        }
-                    }
+                    ViewModel.ProcessToolInput(index, "Enter", drawState, isShiftDown);
                 }
             }
         }
@@ -411,7 +355,7 @@ namespace Hexel
             base.OnPreviewMouseMove(e);
 
             // --- NEW LINE TOOL DRAG TRACKING ---
-            if (_isDrawingLine)
+            if (ViewModel.IsDrawingLine)
             {
                 Point pos = e.GetPosition(PixelGridContainer);
                 int size = ViewModel.SpriteState.Size;
@@ -424,18 +368,11 @@ namespace Hexel
                     int x = (int)(pos.X / cellWidth);
                     int y = (int)(pos.Y / cellHeight);
 
-                    // Clamp to grid boundaries so the line stops at the edge safely
                     x = Math.Max(0, Math.Min(size - 1, x));
                     y = Math.Max(0, Math.Min(size - 1, y));
 
                     int hoverIndex = (y * size) + x;
-
-                    // Only trigger a visual redraw if the mouse actually entered a new cell
-                    if (_lineCurrentIdx != hoverIndex)
-                    {
-                        _lineCurrentIdx = hoverIndex;
-                        ViewModel.PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    }
+                    ViewModel.ProcessToolInput(hoverIndex, "Enter", null, false);
                 }
             }
 
@@ -474,39 +411,30 @@ namespace Hexel
         {
             base.OnPreviewMouseUp(e);
 
-            // --- UPDATED LINE TOOL COMMIT ---
-            if (_isDrawingLine)
+            // --- UPDATED TOOL COMMIT ---
+            if (ViewModel.IsDrawingLine)
             {
-                _isDrawingLine = false;
+                ViewModel.ProcessToolInput(-1, "Up", null, false);
                 Mouse.Capture(null); // Release the mouse lock
-
-                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
-                {
-                    ViewModel.DrawLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    _lastClickedIndex = _lineCurrentIdx; // Ensure shift-click still works from this endpoint
-                }
-                _lineStartIdx = -1;
-                _lineCurrentIdx = -1;
+            }
+            else if (ViewModel.CurrentTool == ToolMode.Pencil)
+            {
+                ViewModel.ProcessToolInput(-1, "Up", null, false);
             }
 
             if (e.ChangedButton == MouseButton.Left)
             {
-                // NEW: Release the mouse capture if we were holding it
+                // Release the mouse capture if we were holding it
                 if (Mouse.Captured == PixelGridContainer)
                 {
                     Mouse.Capture(null);
-                    // Alternatively, you can use: PixelGridContainer.ReleaseMouseCapture();
                 }
 
                 _isSelecting = false;
                 _isDraggingSelection = false;
                 ViewModel.RedrawGridFromMemory();
 
-                if (_pendingTextUpdateDuringDrag)
-                {
-                    ViewModel.UpdateTextOutputs();
-                    _pendingTextUpdateDuringDrag = false;
-                }
+                // _pendingTextUpdateDuringDrag logic is completely gone from here!
             }
         }
 

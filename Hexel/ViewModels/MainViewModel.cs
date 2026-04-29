@@ -47,6 +47,13 @@ namespace Hexel.ViewModels
         public int FloatingWidth { get; private set; }
         public int FloatingHeight { get; private set; }
 
+        // Tool tracking state
+        public bool IsDrawingLine { get; private set; }
+        private int _lineStartIdx = -1;
+        private int _lineCurrentIdx = -1;
+        private bool _lineDrawState = false;
+        private bool _pendingTextUpdateDuringDrag = false;
+
         private SpriteState _spriteState;
         public SpriteState SpriteState
         {
@@ -398,6 +405,81 @@ namespace Hexel.ViewModels
                 }
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
+            }
+        }
+
+        public void ProcessToolInput(int index, string actionType, bool? drawState, bool isShiftDown)
+        {
+            if (CurrentTool == ToolMode.Marquee) return; // Marquee is handled separately
+
+            if (actionType == "Down" && drawState.HasValue)
+            {
+                if (CurrentTool == ToolMode.Line)
+                {
+                    IsDrawingLine = true;
+                    _lineStartIdx = index;
+                    _lineCurrentIdx = index;
+                    _lineDrawState = drawState.Value;
+                    PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                }
+                else if (CurrentTool == ToolMode.Fill)
+                {
+                    SaveStateForUndo();
+                    ApplyFloodFill(index, drawState.Value);
+                    _lastClickedIndex = index;
+                }
+                else if (CurrentTool == ToolMode.Pencil)
+                {
+                    SaveStateForUndo();
+                    if (isShiftDown && _lastClickedIndex != -1)
+                        DrawLine(_lastClickedIndex, index, drawState.Value);
+                    else
+                        SetPixel(index, drawState.Value);
+
+                    _lastClickedIndex = index;
+                    UpdateTextOutputs();
+                }
+            }
+            else if (actionType == "Enter")
+            {
+                if (CurrentTool == ToolMode.Line && IsDrawingLine)
+                {
+                    if (_lineCurrentIdx != index)
+                    {
+                        _lineCurrentIdx = index;
+                        PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    }
+                }
+                else if (CurrentTool == ToolMode.Pencil && drawState.HasValue)
+                {
+                    if (_lastClickedIndex != -1 && _lastClickedIndex != index)
+                    {
+                        DrawLineContinuous(_lastClickedIndex, index, drawState.Value);
+                        _lastClickedIndex = index;
+                        _pendingTextUpdateDuringDrag = true;
+                    }
+                }
+            }
+            else if (actionType == "Up")
+            {
+                if (CurrentTool == ToolMode.Line && IsDrawingLine)
+                {
+                    IsDrawingLine = false;
+                    if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                    {
+                        DrawLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                        _lastClickedIndex = _lineCurrentIdx;
+                    }
+                    _lineStartIdx = -1;
+                    _lineCurrentIdx = -1;
+                    UpdateTextOutputs();
+                }
+
+                if (CurrentTool == ToolMode.Pencil && _pendingTextUpdateDuringDrag)
+                {
+                    UpdateTextOutputs();
+                    _pendingTextUpdateDuringDrag = false;
+                }
             }
         }
     }
