@@ -325,6 +325,8 @@ namespace Hexel
             System.Windows.Controls.Panel.SetZIndex(MarqueeOverlay, 100);
             MarqueeOverlay.Visibility = Visibility.Visible;
             _hasActiveSelection = true;
+
+            ViewModel.SetSelectionBounds(true, _selMinX, _selMaxX, _selMinY, _selMaxY);
         }
 
         private void ClearSelectionVisuals()
@@ -333,6 +335,7 @@ namespace Hexel
             _selectionStartIdx = -1;
             _selectionEndIdx = -1;
             if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
+            ViewModel.SetSelectionBounds(false, -1, -1, -1, -1);
         }
 
 
@@ -528,21 +531,10 @@ namespace Hexel
 
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
-                    if (ViewModel.CurrentTool == ToolMode.Marquee && _hasActiveSelection)
+                    // Look how much cleaner this is!
+                    if (ViewModel.DeleteSelectionCommand.CanExecute(null))
                     {
-                        ViewModel.SaveStateForUndo();
-                        int size = ViewModel.SpriteState.Size;
-                        for (int i = 0; i < size * size; i++)
-                        {
-                            int x = i % size;
-                            int y = i / size;
-                            if (x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
-                            {
-                                ViewModel.SpriteState.Pixels[i] = false;
-                            }
-                        }
-                        ViewModel.RedrawGridFromMemory();
-                        ViewModel.UpdateTextOutputs();
+                        ViewModel.DeleteSelectionCommand.Execute(null);
                         e.Handled = true;
                     }
                 }

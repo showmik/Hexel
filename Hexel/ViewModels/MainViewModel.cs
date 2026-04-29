@@ -125,6 +125,7 @@ namespace Hexel.ViewModels
         public IRelayCommand RedoCommand { get; }
         public IRelayCommand ClearCommand { get; }
         public IRelayCommand InvertCommand { get; }
+        public IRelayCommand DeleteSelectionCommand { get; }
 
         public MainViewModel(ICodeGeneratorService codeGen, IDrawingService drawingService, IHistoryService historyService)
         {
@@ -185,6 +186,8 @@ namespace Hexel.ViewModels
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
             });
+
+            DeleteSelectionCommand = new RelayCommand(DeleteSelection);
 
             UpdateTextOutputs();
         }
@@ -366,6 +369,35 @@ namespace Hexel.ViewModels
                 SpriteState.Pixels[index] = state;
                 PixelBrushes[index] = state ? _colorOn : _colorOff;
                 PreviewBrushes[index] = state ? _previewOn : _previewOff;
+            }
+        }
+
+        public void SetSelectionBounds(bool hasSelection, int minX, int maxX, int minY, int maxY)
+        {
+            HasActiveSelection = hasSelection;
+            SelMinX = minX;
+            SelMaxX = maxX;
+            SelMinY = minY;
+            SelMaxY = maxY;
+        }
+
+        private void DeleteSelection()
+        {
+            if (CurrentTool == ToolMode.Marquee && HasActiveSelection)
+            {
+                SaveStateForUndo();
+                for (int i = 0; i < SpriteState.Pixels.Length; i++)
+                {
+                    int x = i % SpriteState.Size;
+                    int y = i / SpriteState.Size;
+
+                    if (x >= SelMinX && x <= SelMaxX && y >= SelMinY && y <= SelMaxY)
+                    {
+                        SpriteState.Pixels[i] = false;
+                    }
+                }
+                RedrawGridFromMemory();
+                UpdateTextOutputs();
             }
         }
     }
