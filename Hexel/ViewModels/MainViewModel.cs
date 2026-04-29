@@ -125,6 +125,7 @@ namespace Hexel.ViewModels
         public IRelayCommand RedoCommand { get; }
         public IRelayCommand ClearCommand { get; }
         public IRelayCommand InvertCommand { get; }
+        public IRelayCommand<string> ShiftGridCommand { get; }
 
         public MainViewModel(ICodeGeneratorService codeGen, IDrawingService drawingService, IHistoryService historyService)
         {
@@ -184,6 +185,17 @@ namespace Hexel.ViewModels
                 IsDisplayInverted = !IsDisplayInverted;
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
+            });
+
+            ShiftGridCommand = new RelayCommand<string>(direction =>
+            {
+                switch (direction)
+                {
+                    case "Up": ShiftGrid(0, -1); break;
+                    case "Down": ShiftGrid(0, 1); break;
+                    case "Left": ShiftGrid(-1, 0); break;
+                    case "Right": ShiftGrid(1, 0); break;
+                }
             });
 
             UpdateTextOutputs();

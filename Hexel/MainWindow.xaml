@@ -10,6 +10,31 @@
         FontFamily="{DynamicResource Theme.MainFont}"
         WindowStartupLocation="CenterScreen">
 
+    <Window.InputBindings>
+        <KeyBinding Key="Z"
+                    Modifiers="Ctrl"
+                    Command="{Binding UndoCommand}" />
+        <KeyBinding Key="Y"
+                    Modifiers="Ctrl"
+                    Command="{Binding RedoCommand}" />
+        <KeyBinding Key="Up"
+                    Modifiers="Ctrl"
+                    Command="{Binding ShiftGridCommand}"
+                    CommandParameter="Up" />
+        <KeyBinding Key="Down"
+                    Modifiers="Ctrl"
+                    Command="{Binding ShiftGridCommand}"
+                    CommandParameter="Down" />
+        <KeyBinding Key="Left"
+                    Modifiers="Ctrl"
+                    Command="{Binding ShiftGridCommand}"
+                    CommandParameter="Left" />
+        <KeyBinding Key="Right"
+                    Modifiers="Ctrl"
+                    Command="{Binding ShiftGridCommand}"
+                    CommandParameter="Right" />
+    </Window.InputBindings>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />

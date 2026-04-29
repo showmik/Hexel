@@ -510,21 +510,17 @@ namespace Hexel
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                if (e.Key == Key.Z) { ViewModel.UndoCommand.Execute(null); e.Handled = true; }
-                else if (e.Key == Key.Y) { ViewModel.RedoCommand.Execute(null); e.Handled = true; }
-                else if (e.Key == Key.Up) { ViewModel.ShiftGrid(0, -1); e.Handled = true; }
-                else if (e.Key == Key.Down) { ViewModel.ShiftGrid(0, 1); e.Handled = true; }
-                else if (e.Key == Key.Left) { ViewModel.ShiftGrid(-1, 0); e.Handled = true; }
-                else if (e.Key == Key.Right) { ViewModel.ShiftGrid(1, 0); e.Handled = true; }
-            }
-            else if (Keyboard.Modifiers == ModifierKeys.None)
+
+            // Ctrl modifier commands (Undo, Redo, ShiftGrid) are now handled by XAML InputBindings!
+
+            // Handle raw letter keys for tools (only if not typing in a text box)
+            if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 if (Keyboard.FocusedElement is TextBox) return;
 
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
+                    // We will move this delete logic to the ViewModel in Step 2!
                     if (ViewModel.CurrentTool == ToolMode.Marquee && _hasActiveSelection)
                     {
                         ViewModel.SaveStateForUndo();
@@ -543,9 +539,6 @@ namespace Hexel
                         e.Handled = true;
                     }
                 }
-                else if (e.Key == Key.M) { if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; }
-                else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
-                else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.M) { if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
