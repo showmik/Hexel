@@ -76,37 +76,77 @@ namespace Hexel
 
         #region Core Canvas Interaction
 
-        private void Pixel_Interaction(object sender, MouseEventArgs e)
+        private void CanvasImage_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is Border cell && cell.Tag is int index)
+            var image = (Image)sender;
+            Point pos = e.GetPosition(image);
+            int index = GetIndexFromMousePosition(pos, image.ActualWidth, image.ActualHeight);
+
+            if (ViewModel.CurrentTool == ToolMode.Marquee)
             {
-                if (ViewModel.CurrentTool == ToolMode.Marquee)
+                HandleMarqueeTool(e, index);
+                return;
+            }
+
+            bool? drawState = null;
+            if (e.LeftButton == MouseButtonState.Pressed) drawState = true;
+            else if (e.RightButton == MouseButtonState.Pressed) drawState = false;
+
+            bool isShiftDown = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            if (ViewModel.CurrentTool == ToolMode.Line)
+            {
+                Mouse.Capture(image);
+            }
+
+            _lastHoveredIndex = index;
+            ViewModel.ProcessToolInput(index, "Down", drawState, isShiftDown);
+        }
+
+        private void CanvasImage_MouseMove(object sender, MouseEventArgs e)
+        {
+            var image = (Image)sender;
+            Point pos = e.GetPosition(image);
+            int index = GetIndexFromMousePosition(pos, image.ActualWidth, image.ActualHeight);
+
+            if (index != _lastHoveredIndex)
+            {
+                _lastHoveredIndex = index;
+
+                if (ViewModel.CurrentTool == ToolMode.Marquee && Mouse.LeftButton == MouseButtonState.Pressed)
                 {
                     HandleMarqueeTool(e, index);
                     return;
                 }
 
                 bool? drawState = null;
-                if (Mouse.LeftButton == MouseButtonState.Pressed) drawState = true;
-                else if (Mouse.RightButton == MouseButtonState.Pressed) drawState = false;
+                if (e.LeftButton == MouseButtonState.Pressed) drawState = true;
+                else if (e.RightButton == MouseButtonState.Pressed) drawState = false;
 
                 bool isShiftDown = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
 
-                // If this is the initial click
-                if (e is MouseButtonEventArgs)
-                {
-                    if (ViewModel.CurrentTool == ToolMode.Line)
-                    {
-                        Mouse.Capture(PixelGridContainer);
-                    }
-                    ViewModel.ProcessToolInput(index, "Down", drawState, isShiftDown);
-                }
-                // If this is a drag (mouse entered a new pixel)
-                else if (drawState.HasValue)
+                if (drawState.HasValue)
                 {
                     ViewModel.ProcessToolInput(index, "Enter", drawState, isShiftDown);
                 }
             }
+        }
+
+        private int _lastHoveredIndex = -1; // Prevents spamming the viewmodel on the same pixel
+
+        private int GetIndexFromMousePosition(Point pos, double actualWidth, double actualHeight)
+        {
+            int size = ViewModel.SpriteState.Size;
+            if (actualWidth == 0 || actualHeight == 0) return 0;
+
+            int x = (int)(pos.X / actualWidth * size);
+            int y = (int)(pos.Y / actualHeight * size);
+
+            // Clamp coordinates to grid boundaries
+            x = Math.Max(0, Math.Min(size - 1, x));
+            y = Math.Max(0, Math.Min(size - 1, y));
+
+            return (y * size) + x;
         }
 
         #endregion
@@ -334,25 +374,12 @@ namespace Hexel
             base.OnPreviewMouseMove(e);
 
             // --- NEW LINE TOOL DRAG TRACKING ---
+            // Inside OnPreviewMouseMove
             if (ViewModel.IsDrawingLine)
             {
-                Point pos = e.GetPosition(PixelGridContainer);
-                int size = ViewModel.SpriteState.Size;
-
-                if (PixelGridContainer.ActualWidth > 0 && PixelGridContainer.ActualHeight > 0)
-                {
-                    double cellWidth = PixelGridContainer.ActualWidth / size;
-                    double cellHeight = PixelGridContainer.ActualHeight / size;
-
-                    int x = (int)(pos.X / cellWidth);
-                    int y = (int)(pos.Y / cellHeight);
-
-                    x = Math.Max(0, Math.Min(size - 1, x));
-                    y = Math.Max(0, Math.Min(size - 1, y));
-
-                    int hoverIndex = (y * size) + x;
-                    ViewModel.ProcessToolInput(hoverIndex, "Enter", null, false);
-                }
+                Point pos = e.GetPosition(CanvasImage); // Reference the Image name
+                int hoverIndex = GetIndexFromMousePosition(pos, CanvasImage.ActualWidth, CanvasImage.ActualHeight);
+                ViewModel.ProcessToolInput(hoverIndex, "Enter", null, false);
             }
 
             if (_isDraggingSelection && Mouse.LeftButton == MouseButtonState.Pressed)

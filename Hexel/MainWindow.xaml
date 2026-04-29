@@ -207,26 +207,14 @@
                         <Grid Width="400"
                               Height="400"
                               x:Name="PixelGridContainer">
-                            <ItemsControl ItemsSource="{Binding PixelBrushes}"
-                                          AlternationCount="100000">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Rows="{Binding SpriteState.Size}"
-                                                     Columns="{Binding SpriteState.Size}"
-                                                     Background="{DynamicResource Theme.BackgroundBrush}" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="{Binding}"
-                                                BorderBrush="{DynamicResource Theme.BackgroundBrush}"
-                                                BorderThickness="1"
-                                                Tag="{Binding Path=(ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}"
-                                                MouseDown="Pixel_Interaction"
-                                                MouseEnter="Pixel_Interaction" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <Image x:Name="CanvasImage"
+                                   Source="{Binding CanvasBitmap}"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   Stretch="Fill"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"
+                                   MouseDown="CanvasImage_MouseDown"
+                                   MouseMove="CanvasImage_MouseMove" />
 
                             <Canvas IsHitTestVisible="False"
                                     HorizontalAlignment="Stretch"
@@ -343,24 +331,13 @@
                                     </Style.Triggers>
                                 </Style>
                             </Grid.Style>
-                            <ItemsControl x:Name="PreviewItemsControl"
-                                          ItemsSource="{Binding PreviewBrushes}"
-                                          Width="{Binding PreviewSize}"
-                                          Height="{Binding PreviewSize}"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Rows="{Binding SpriteState.Size}"
-                                                     Columns="{Binding SpriteState.Size}" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Rectangle Fill="{Binding}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <Image Source="{Binding PreviewBitmap}"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   Stretch="Fill"
+                                   Width="{Binding PreviewSize}"
+                                   Height="{Binding PreviewSize}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
                         </Grid>
                     </Border>
                     <TextBlock Text="*Sprite size shown relative to total screen area"

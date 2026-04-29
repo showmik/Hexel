@@ -5,6 +5,7 @@ using Hexel.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Hexel.ViewModels
 {
@@ -47,9 +48,28 @@ namespace Hexel.ViewModels
         private bool _pendingTextUpdateDuringDrag = false;
         #endregion
 
-        #region Observable Collections
-        public ObservableCollection<SolidColorBrush> PixelBrushes { get; } = new ObservableCollection<SolidColorBrush>();
-        public ObservableCollection<SolidColorBrush> PreviewBrushes { get; } = new ObservableCollection<SolidColorBrush>();
+        #region WritableBitmaps & Pixel Collections
+        private WriteableBitmap _canvasBitmap;
+        public WriteableBitmap CanvasBitmap
+        {
+            get => _canvasBitmap;
+            set => SetProperty(ref _canvasBitmap, value);
+        }
+
+        private WriteableBitmap _previewBitmap;
+        public WriteableBitmap PreviewBitmap
+        {
+            get => _previewBitmap;
+            set => SetProperty(ref _previewBitmap, value);
+        }
+
+        // Buffers and color representations
+        private uint[] _canvasBuffer;
+        private uint[] _previewBuffer;
+        private uint _colorOffUint, _colorOnUint, _previewOffUint, _previewOnUint;
+
+        // Helper to convert WPF Color to BGRA32 uint for the WriteableBitmap
+        private uint ToBgra32(Color c) => (uint)((c.A << 24) | (c.R << 16) | (c.G << 8) | c.B);
         #endregion
 
         #region Properties
@@ -241,6 +261,11 @@ namespace Hexel.ViewModels
             _previewOff = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.OledOffBrush"];
             _previewOn = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.OledOnBrush"];
 
+            _colorOffUint = ToBgra32(_colorOff.Color);
+            _colorOnUint = ToBgra32(_colorOn.Color);
+            _previewOffUint = ToBgra32(_previewOff.Color);
+            _previewOnUint = ToBgra32(_previewOn.Color);
+
             // Try to freeze shared brushes for minor perf/thread-safety benefit
             try
             {
@@ -262,23 +287,28 @@ namespace Hexel.ViewModels
         public void InitializeGrid(int size)
         {
             SpriteState = new SpriteState(size);
-            PixelBrushes.Clear();
-            PreviewBrushes.Clear();
-            for (int i = 0; i < size * size; i++)
-            {
-                PixelBrushes.Add(_colorOff);
-                PreviewBrushes.Add(_previewOff);
-            }
+
+            // Create new bitmaps and buffers matching the new size
+            CanvasBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
+            PreviewBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
+
+            _canvasBuffer = new uint[size * size];
+            _previewBuffer = new uint[size * size];
+
             UpdateTextOutputs();
+            RedrawGridFromMemory();
         }
 
         public void RedrawGridFromMemory()
         {
-            for (int y = 0; y < SpriteState.Size; y++)
+            if (CanvasBitmap == null || _canvasBuffer == null) return;
+            int size = SpriteState.Size;
+
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < SpriteState.Size; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    int i = (y * SpriteState.Size) + x;
+                    int i = (y * size) + x;
                     bool isPixelOn = SpriteState.Pixels[i];
 
                     if (IsFloating && FloatingPixels != null)
@@ -289,15 +319,14 @@ namespace Hexel.ViewModels
                             if (FloatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
                     }
 
-                    // Inside MainViewModel.cs -> RedrawGridFromMemory()
-                    var newBrush = isPixelOn ? _colorOn : _colorOff;
-                    var newPrevBrush = isPixelOn ? _previewOn : _previewOff;
-
-                    // Only trigger an ObservableCollection Replace event if the state actually changed!
-                    if (PixelBrushes[i] != newBrush) PixelBrushes[i] = newBrush;
-                    if (PreviewBrushes[i] != newPrevBrush) PreviewBrushes[i] = newPrevBrush;
+                    _canvasBuffer[i] = isPixelOn ? _colorOnUint : _colorOffUint;
+                    _previewBuffer[i] = isPixelOn ? _previewOnUint : _previewOffUint;
                 }
             }
+
+            // Write the flat arrays directly to the bitmap textures in one pass
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
         }
 
         public void ProcessToolInput(int index, string actionType, bool? drawState, bool isShiftDown)
@@ -391,16 +420,17 @@ namespace Hexel.ViewModels
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
             int err = dx - dy;
 
-            var previewColor = newState ? _colorOn : _colorOff;
-            var previewPrev = newState ? _previewOn : _previewOff;
+            // Use the new uint color representations
+            var previewColor = newState ? _colorOnUint : _colorOffUint;
+            var previewPrev = newState ? _previewOnUint : _previewOffUint;
 
             while (true)
             {
                 int i = (y0 * size) + x0;
 
-                // Only update brushes for the visual preview (don't save to SpriteState yet)
-                if (PixelBrushes[i] != previewColor) PixelBrushes[i] = previewColor;
-                if (PreviewBrushes[i] != previewPrev) PreviewBrushes[i] = previewPrev;
+                // Write directly to the uint arrays instead of the deleted ObservableCollections
+                _canvasBuffer[i] = previewColor;
+                _previewBuffer[i] = previewPrev;
 
                 if (x0 == x1 && y0 == y1) break;
 
@@ -408,6 +438,10 @@ namespace Hexel.ViewModels
                 if (e2 > -dy) { err -= dy; x0 += sx; }
                 if (e2 < dx) { err += dx; y0 += sy; }
             }
+
+            // Push the updated buffers to the WriteableBitmaps to show the preview
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
         }
 
         public void SaveStateForUndo()
@@ -455,8 +489,7 @@ namespace Hexel.ViewModels
             if (SpriteState.Pixels[index] != state)
             {
                 SpriteState.Pixels[index] = state;
-                PixelBrushes[index] = state ? _colorOn : _colorOff;
-                PreviewBrushes[index] = state ? _previewOn : _previewOff;
+                RedrawGridFromMemory();
             }
         }
 
