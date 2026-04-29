@@ -12,6 +12,8 @@ namespace Hexel
     {
         private ViewModels.MainViewModel ViewModel => (ViewModels.MainViewModel)DataContext;
 
+        // --- FIELDS & STATE ---
+
         // UI State
         private int _lastClickedIndex = -1;
 
@@ -25,10 +27,19 @@ namespace Hexel
         private Point _dragStartMousePos;
         private int _dragStartFloatingX, _dragStartFloatingY;
 
+        // Panning State
+        private Point _panStartMouse;
+        private Point _panStartScroll;
+        private bool _isPanning;
+
+        // Brushes
         private readonly SolidColorBrush _colorOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFCC"));
         private readonly SolidColorBrush _colorOff = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
         private readonly SolidColorBrush _previewOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFFF"));
         private readonly SolidColorBrush _previewOff = new SolidColorBrush(Colors.Black);
+
+
+        // --- CONSTRUCTOR & INITIALIZATION ---
 
         public MainWindow(ViewModels.MainViewModel vm)
         {
@@ -58,6 +69,9 @@ namespace Hexel
             }
         }
 
+
+        // --- UI CONTROLS & TOOLBAR ---
+
         private void CmbGridSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ViewModel == null) return;
@@ -70,6 +84,31 @@ namespace Hexel
                 PreviewItemsControl.Width = PreviewItemsControl.Height = newSize * 2;
             }
         }
+
+        private void Tool_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Tag != null && ViewModel != null)
+            {
+                string tag = rb.Tag.ToString();
+                ViewModel.CurrentTool = tag == "Fill" ? ToolMode.Fill :
+                                        tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
+
+                if (ViewModel.CurrentTool != ToolMode.Marquee)
+                {
+                    CommitSelection();
+                    ClearSelectionVisuals();
+                }
+            }
+        }
+
+        private void BtnCopy_Click(object sender, RoutedEventArgs e)
+        {
+            Clipboard.SetText(TxtHex.Text);
+            MessageBox.Show("Copied!");
+        }
+
+
+        // --- CORE CANVAS INTERACTION ---
 
         private void Pixel_Interaction(object sender, MouseEventArgs e)
         {
@@ -133,7 +172,9 @@ namespace Hexel
             }
         }
 
+
         // --- MARQUEE TOOL & SELECTION LOGIC ---
+
         private void HandleMarqueeTool(MouseEventArgs e, int index)
         {
             int size = ViewModel.SpriteState.Size;
@@ -268,6 +309,74 @@ namespace Hexel
             if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
         }
 
+
+        // --- ZOOM & PANNING LOGIC ---
+
+        private void BtnZoomIn_Click(object sender, RoutedEventArgs e) => ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.2);
+
+        private void BtnZoomOut_Click(object sender, RoutedEventArgs e) => ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.2);
+
+        private void BtnZoomReset_Click(object sender, RoutedEventArgs e) => ZoomSlider.Value = 1.0;
+
+        private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Always prevent the default vertical scrolling behavior
+            e.Handled = true;
+
+            // Apply the zoom
+            double zoomChange = e.Delta > 0 ? 0.2 : -0.2;
+            ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + zoomChange));
+        }
+
+        private void ScrollViewer_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // Trigger pan if Middle-Clicked OR if holding Spacebar + Left-Click (Adobe style)
+            if (e.ChangedButton == MouseButton.Middle ||
+               (e.ChangedButton == MouseButton.Left && Keyboard.IsKeyDown(Key.Space)))
+            {
+                var scrollViewer = (ScrollViewer)sender;
+                _isPanning = true;
+
+                // Track mouse relative to the window so the math doesn't jitter when the scrollviewer moves
+                _panStartMouse = e.GetPosition(this);
+                _panStartScroll = new Point(scrollViewer.HorizontalOffset, scrollViewer.VerticalOffset);
+
+                scrollViewer.CaptureMouse();
+                scrollViewer.Cursor = Cursors.SizeAll; // Gives visual feedback that you are grabbing the canvas
+                e.Handled = true; // Crucial: Prevents the pencil tool from drawing while panning!
+            }
+        }
+
+        private void ScrollViewer_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_isPanning)
+            {
+                var scrollViewer = (ScrollViewer)sender;
+                Point currentMouse = e.GetPosition(this);
+                Vector delta = currentMouse - _panStartMouse;
+
+                // Move the scrollbars exactly opposite to the mouse movement
+                scrollViewer.ScrollToHorizontalOffset(_panStartScroll.X - delta.X);
+                scrollViewer.ScrollToVerticalOffset(_panStartScroll.Y - delta.Y);
+                e.Handled = true;
+            }
+        }
+
+        private void ScrollViewer_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isPanning && (e.ChangedButton == MouseButton.Middle || e.ChangedButton == MouseButton.Left))
+            {
+                var scrollViewer = (ScrollViewer)sender;
+                _isPanning = false;
+                scrollViewer.ReleaseMouseCapture();
+                scrollViewer.Cursor = Cursors.Arrow;
+                e.Handled = true;
+            }
+        }
+
+
+        // --- GLOBAL INPUT OVERRIDES (KEYS & MARQUEE DRAGGING) ---
+
         protected override void OnPreviewMouseMove(MouseEventArgs e)
         {
             base.OnPreviewMouseMove(e);
@@ -365,24 +474,6 @@ namespace Hexel
                 else if (e.Key == Key.M) { if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
-            }
-        }
-
-        private void BtnCopy_Click(object sender, RoutedEventArgs e) { Clipboard.SetText(TxtHex.Text); MessageBox.Show("Copied!"); }
-
-        private void Tool_Checked(object sender, RoutedEventArgs e)
-        {
-            if (sender is RadioButton rb && rb.Tag != null && ViewModel != null)
-            {
-                string tag = rb.Tag.ToString();
-                ViewModel.CurrentTool = tag == "Fill" ? ToolMode.Fill :
-                                        tag == "Marquee" ? ToolMode.Marquee : ToolMode.Pencil;
-
-                if (ViewModel.CurrentTool != ToolMode.Marquee)
-                {
-                    CommitSelection();
-                    ClearSelectionVisuals();
-                }
             }
         }
     }

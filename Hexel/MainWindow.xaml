@@ -184,17 +184,78 @@
                               Data="M 2,2 L 16,2 L 16,16 L 2,16 Z" />
                     </RadioButton.Content>
                 </RadioButton>
+
+                <TextBlock Text="Zoom:"
+                           Style="{StaticResource HeaderStyle}"
+                           VerticalAlignment="Center"
+                           Margin="20,0,5,0" />
+                <Button Content="-"
+                        Width="22"
+                        Height="22"
+                        Margin="0,0,5,0"
+                        Background="#333"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Click="BtnZoomOut_Click"
+                        Cursor="Hand" />
+                <Slider x:Name="ZoomSlider"
+                        Width="100"
+                        Minimum="0.5"
+                        Maximum="5.0"
+                        Value="1.0"
+                        TickFrequency="0.1"
+                        IsSnapToTickEnabled="True"
+                        VerticalAlignment="Center"
+                        ToolTip="Zoom Canvas (Ctrl+Scroll)" />
+                <Button Content="+"
+                        Width="22"
+                        Height="22"
+                        Margin="5,0,5,0"
+                        Background="#333"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Click="BtnZoomIn_Click"
+                        Cursor="Hand" />
+                <Button Content="100%"
+                        Height="22"
+                        Padding="8,0"
+                        Margin="5,0,0,0"
+                        Background="#333"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Click="BtnZoomReset_Click"
+                        Cursor="Hand" />
+
+                <TextBlock Text="{Binding Value, ElementName=ZoomSlider, StringFormat={}{0:F1}x}"
+                           Foreground="#00FFCC"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           Width="35" />
             </StackPanel>
 
-            <Viewbox Grid.Row="1"
-                     Stretch="Uniform"
-                     Margin="10">
+            <ScrollViewer Grid.Row="1"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          Margin="10"
+                          PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
+                          PreviewMouseDown="ScrollViewer_PreviewMouseDown"
+                          PreviewMouseMove="ScrollViewer_PreviewMouseMove"
+                          PreviewMouseUp="ScrollViewer_PreviewMouseUp">
                 <Border BorderBrush="#444"
                         BorderThickness="2"
-                        Background="#111">
+                        Background="#111"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <Border.LayoutTransform>
+                        <ScaleTransform ScaleX="{Binding Value, ElementName=ZoomSlider}"
+                                        ScaleY="{Binding Value, ElementName=ZoomSlider}" />
+                    </Border.LayoutTransform>
+
                     <Grid Width="400"
                           Height="400"
                           x:Name="PixelGridContainer">
+
                         <ItemsControl ItemsSource="{Binding PixelBrushes}"
                                       AlternationCount="100000">
                             <ItemsControl.ItemsPanel>
@@ -228,7 +289,7 @@
                         </Canvas>
                     </Grid>
                 </Border>
-            </Viewbox>
+            </ScrollViewer>
 
             <StackPanel Grid.Row="2"
                         Orientation="Horizontal"
