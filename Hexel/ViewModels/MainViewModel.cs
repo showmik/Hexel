@@ -227,8 +227,13 @@ namespace Hexel.ViewModels
                             if (FloatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
                     }
 
-                    PixelBrushes[i] = isPixelOn ? _colorOn : _colorOff;
-                    PreviewBrushes[i] = isPixelOn ? _previewOn : _previewOff;
+                    // Inside MainViewModel.cs -> RedrawGridFromMemory()
+                    var newBrush = isPixelOn ? _colorOn : _colorOff;
+                    var newPrevBrush = isPixelOn ? _previewOn : _previewOff;
+
+                    // Only trigger an ObservableCollection Replace event if the state actually changed!
+                    if (PixelBrushes[i] != newBrush) PixelBrushes[i] = newBrush;
+                    if (PreviewBrushes[i] != newPrevBrush) PreviewBrushes[i] = newPrevBrush;
                 }
             }
         }
@@ -250,6 +255,25 @@ namespace Hexel.ViewModels
         {
             // fire-and-forget; prefer awaiting UpdateTextOutputsAsync where possible
             _ = UpdateTextOutputsAsync();
+        }
+
+        public void SyncFloatingState(bool isFloating, bool[,] pixels, int x, int y, int w, int h)
+        {
+            IsFloating = isFloating;
+            FloatingPixels = pixels;
+            FloatingX = x;
+            FloatingY = y;
+            FloatingWidth = w;
+            FloatingHeight = h;
+        }
+
+        public void DrawLineContinuous(int startIdx, int endIdx, bool newState)
+        {
+            // Draws the line without saving to the Undo history stack
+            _drawingService.DrawLine(SpriteState, startIdx, endIdx, newState);
+
+            // Updates the visual brushes (using the optimized diffing we added earlier)
+            RedrawGridFromMemory();
         }
     }
 }
