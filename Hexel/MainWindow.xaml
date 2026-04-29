@@ -198,7 +198,7 @@
                         <UniformGrid x:Name="PixelGrid"
                                      Background="#333" />
 
-                        <Canvas>
+                        <Canvas IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                             <Rectangle x:Name="MarqueeOverlay"
                                        Stroke="Yellow"
                                        StrokeThickness="2"

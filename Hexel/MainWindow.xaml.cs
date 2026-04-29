@@ -14,10 +14,10 @@ namespace Hexel
         // Core State
         private SpriteState _spriteState;
 
-        // Services
-        private readonly CodeGeneratorService _codeGen = new CodeGeneratorService();
-        private readonly DrawingService _drawingService = new DrawingService();
-        private readonly HistoryService _historyService = new HistoryService();
+        // Services (depend on interfaces for cleaner architecture)
+        private readonly ICodeGeneratorService _codeGen;
+        private readonly IDrawingService _drawingService;
+        private readonly IHistoryService _historyService;
 
         // UI State
         private ToolMode _currentTool = ToolMode.Pencil;
@@ -27,6 +27,8 @@ namespace Hexel
 
         // Selection & Floating State
         private bool _hasActiveSelection, _isSelecting, _isFloating, _isDraggingSelection;
+        // Flag to avoid expensive export updates while mouse is dragging
+        private bool _pendingTextUpdateDuringDrag = false;
         private int _selectionStartIdx = -1, _selectionEndIdx = -1;
         private int _selMinX = -1, _selMaxX = -1, _selMinY = -1, _selMaxY = -1;
         private bool[,] _floatingPixels;
@@ -40,16 +42,69 @@ namespace Hexel
         private readonly SolidColorBrush _previewOff = new SolidColorBrush(Colors.Black);
         private readonly SolidColorBrush _previewOn = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FFFF"));
 
-        public MainWindow()
+        // Constructor used by DI - MainViewModel is the DataContext
+        public MainWindow(ViewModels.MainViewModel vm)
         {
+            // initialize concrete services for code-behind operations
+            _codeGen = new CodeGeneratorService();
+            _drawingService = new DrawingService();
+            _historyService = new HistoryService();
+
             InitializeComponent();
-            InitializeGrid(16);
+            DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
+            InitializeGrid(vm.SpriteState.Size);
+
+            // subscribe to VM brush collections so UI updates when VM redraws
+            vm.PixelBrushes.CollectionChanged += (s, e) => UpdateUIFromVM();
+            vm.PreviewBrushes.CollectionChanged += (s, e) => UpdateUIFromVM();
+        }
+
+        private void UpdateUIFromVM()
+        {
+            if (!(DataContext is ViewModels.MainViewModel vm)) return;
+
+            // Update pixel grid brushes
+            for (int i = 0; i < PixelGrid.Children.Count && i < vm.PixelBrushes.Count; i++)
+            {
+                if (PixelGrid.Children[i] is Border cell)
+                {
+                    cell.Background = vm.PixelBrushes[i];
+                }
+            }
+
+            // Update preview brushes
+            for (int i = 0; i < PreviewGrid.Children.Count && i < vm.PreviewBrushes.Count; i++)
+            {
+                if (PreviewGrid.Children[i] is Rectangle rect)
+                {
+                    rect.Fill = vm.PreviewBrushes[i];
+                }
+            }
+
+            // Update text outputs without triggering change handlers
+            _isUpdatingProgrammatically = true;
+            TxtBinary.Text = vm.TxtBinary;
+            TxtHex.Text = vm.TxtHex;
+            _isUpdatingProgrammatically = false;
         }
 
         private void InitializeGrid(int size)
         {
-            _spriteState = new SpriteState(size);
+            // prefer VM's SpriteState when available
+            if (DataContext is ViewModels.MainViewModel vm)
+            {
+                // Ask the VM to initialize its grid to the requested size so both VM and view stay in sync
+                vm.InitializeGrid(size);
+                _spriteState = vm.SpriteState;
+            }
+            else
+            {
+                _spriteState = new SpriteState(size);
+            }
+
             BuildGridUI();
+            // ensure UI reflects VM data
+            UpdateUIFromVM();
             UpdateTextOutputs();
         }
 
@@ -81,6 +136,10 @@ namespace Hexel
 
                 PreviewGrid.Children.Add(new Rectangle { Fill = _previewOff });
             }
+            // Ensure layout measurements are up to date so overlay calculations use real sizes
+            PixelGrid.UpdateLayout();
+            // Place marquee overlay above the pixel grid
+            if (MarqueeOverlay != null) System.Windows.Controls.Panel.SetZIndex(MarqueeOverlay, 100);
         }
 
         private void Pixel_Interaction(object sender, MouseEventArgs e)
@@ -134,9 +193,19 @@ namespace Hexel
 
                     if (stateChanged)
                     {
+                        // Update only the affected pixel UI and export text to reduce redraw work
                         UpdateSinglePixelUI(index);
-                        UpdateTextOutputs();
                         _lastClickedIndex = index;
+                        // If this event is the initial mouse down, update exports immediately.
+                        // For mouse-enter during dragging, defer export update until mouse up to keep UI responsive.
+                        if (e is MouseButtonEventArgs)
+                        {
+                            UpdateTextOutputs();
+                        }
+                        else
+                        {
+                            _pendingTextUpdateDuringDrag = true;
+                        }
                     }
                 }
             }
@@ -153,8 +222,10 @@ namespace Hexel
             {
                 if (e is MouseButtonEventArgs)
                 {
+                    // If clicking inside an existing selection, lift it for dragging
                     if (_hasActiveSelection && x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
                     {
+                        _historyService.SaveState(_spriteState);
                         LiftSelection();
                         _isDraggingSelection = true;
                         _dragStartMousePos = e.GetPosition(PixelGrid);
@@ -163,6 +234,7 @@ namespace Hexel
                         return;
                     }
 
+                    // Start a new selection
                     CommitSelection();
                     _isSelecting = true;
                     _selectionStartIdx = index;
@@ -246,9 +318,12 @@ namespace Hexel
         private void UpdateSelectionVisualsFromBounds()
         {
             if (MarqueeOverlay == null) return;
+            // Use the actual rendered size of the pixel grid so the overlay stays aligned
+            double gridWidth = (PixelGrid != null && PixelGrid.ActualWidth > 0) ? PixelGrid.ActualWidth : 400.0;
+            double gridHeight = (PixelGrid != null && PixelGrid.ActualHeight > 0) ? PixelGrid.ActualHeight : 400.0;
 
-            double cellWidth = 400.0 / _spriteState.Size;
-            double cellHeight = 400.0 / _spriteState.Size;
+            double cellWidth = gridWidth / _spriteState.Size;
+            double cellHeight = gridHeight / _spriteState.Size;
 
             Canvas.SetLeft(MarqueeOverlay, _selMinX * cellWidth);
             Canvas.SetTop(MarqueeOverlay, _selMinY * cellHeight);
@@ -256,6 +331,8 @@ namespace Hexel
             MarqueeOverlay.Width = ((_selMaxX - _selMinX) + 1) * cellWidth;
             MarqueeOverlay.Height = ((_selMaxY - _selMinY) + 1) * cellHeight;
 
+            // Ensure overlay is above the pixels
+            System.Windows.Controls.Panel.SetZIndex(MarqueeOverlay, 100);
             MarqueeOverlay.Visibility = Visibility.Visible;
             _hasActiveSelection = true;
         }
@@ -298,7 +375,6 @@ namespace Hexel
 
                     UpdateSelectionVisualsFromBounds();
                     RedrawGridFromMemory();
-                    UpdateTextOutputs();
                 }
             }
         }
@@ -310,6 +386,13 @@ namespace Hexel
             {
                 _isSelecting = false;
                 _isDraggingSelection = false;
+                // After finishing drag, update exports once to avoid lag during continuous mouse moves
+                RedrawGridFromMemory();
+                if (_pendingTextUpdateDuringDrag)
+                {
+                    UpdateTextOutputs();
+                    _pendingTextUpdateDuringDrag = false;
+                }
             }
         }
 

@@ -4,7 +4,7 @@ using Hexel.Core;
 
 namespace Hexel.Services
 {
-    public class DrawingService
+    public class DrawingService : IDrawingService
     {
         public void ApplyFloodFill(SpriteState state, int startIndex, bool newState)
         {

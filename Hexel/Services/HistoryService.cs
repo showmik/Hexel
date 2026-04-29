@@ -3,7 +3,7 @@ using Hexel.Core;
 
 namespace Hexel.Services
 {
-    public class HistoryService
+    public class HistoryService : IHistoryService
     {
         private readonly Stack<SpriteState> _undoStack = new Stack<SpriteState>();
         private readonly Stack<SpriteState> _redoStack = new Stack<SpriteState>();

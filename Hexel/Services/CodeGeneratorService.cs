@@ -5,7 +5,7 @@ using Hexel.Core;
 
 namespace Hexel.Services
 {
-    public class CodeGeneratorService
+    public class CodeGeneratorService : ICodeGeneratorService
     {
         public (string Binary, string Hex) GenerateExportStrings(SpriteState state, bool isFloating, bool[,] floatingPixels, int floatX, int floatY, int floatW, int floatH)
         {
@@ -61,6 +61,12 @@ namespace Hexel.Services
                               "\n};";
 
             return (string.Join("\n", binList), hexFinal);
+        }
+
+        public async System.Threading.Tasks.Task<(string Binary, string Hex)> GenerateExportStringsAsync(SpriteState state, bool isFloating, bool[,] floatingPixels, int floatX, int floatY, int floatW, int floatH)
+        {
+            // Offload CPU-bound work to thread pool to avoid blocking UI thread
+            return await System.Threading.Tasks.Task.Run(() => GenerateExportStrings(state, isFloating, floatingPixels, floatX, floatY, floatW, floatH));
         }
 
         public void ParseBinaryToState(string binaryText, SpriteState state)
