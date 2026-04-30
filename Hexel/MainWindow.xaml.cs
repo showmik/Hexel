@@ -49,6 +49,26 @@ namespace Hexel
         {
             InitializeComponent();
             DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
+
+            // Listen for Undo/Redo jumps to drop any view-specific selection states
+            vm.HistoryRestored += (s, e) =>
+            {
+                if (_hasActiveSelection || _isFloating)
+                {
+                    _hasActiveSelection = false;
+                    _isSelecting = false;
+                    _isFloating = false;
+                    _isDraggingSelection = false;
+                    _floatingPixels = null;
+                    ClearSelectionVisuals();
+
+                    // Release mouse capture if we were dragging a selection when Undo was pressed
+                    if (Mouse.Captured == PixelGridContainer)
+                    {
+                        Mouse.Capture(null);
+                    }
+                }
+            };
         }
 
         #endregion

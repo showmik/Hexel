@@ -17,7 +17,8 @@ namespace Hexel.Core
         {
             return new SpriteState(Size)
             {
-                Pixels = (bool[])this.Pixels.Clone()
+                // Add a null check fallback to prevent null exceptions when history saves
+                Pixels = this.Pixels != null ? (bool[])this.Pixels.Clone() : new bool[Size * Size]
             };
         }
     }

@@ -78,6 +78,9 @@ namespace Hexel.ViewModels
         #endregion
 
         #region Properties
+        public event EventHandler HistoryRestored;
+
+
         // -- Core Properties --
         public bool BinaryUseComma
         {
@@ -115,11 +118,20 @@ namespace Hexel.ViewModels
             get => _gridSize;
             set
             {
-                if (SetProperty(ref _gridSize, value))
+                if (_gridSize != value)
                 {
+                    // Save state before changing size, so the resize can be undone
+                    if (_spriteState != null && _historyService != null)
+                    {
+                        _historyService.SaveState(_spriteState);
+                    }
+
+                    _gridSize = value;
+                    OnPropertyChanged(nameof(GridSize));
+
                     InitializeGrid(value);
                     OnPropertyChanged(nameof(PreviewSize));
-                    OnPropertyChanged(nameof(GridViewport)); // <-- Add this!
+                    OnPropertyChanged(nameof(GridViewport));
                 }
             }
         }
@@ -259,22 +271,27 @@ namespace Hexel.ViewModels
                     _dialogService.ShowMessage($"Error saving file: {ex.Message}");
                 }
             });
-            
+
             LoadCommand = new RelayCommand(() =>
             {
                 try
                 {
                     var loadedState = _fileService.LoadSprite();
-                    if (loadedState != null)
+                    if (loadedState != null && loadedState.Pixels != null)
                     {
                         _historyService.SaveState(SpriteState); // Save current state for undo
 
-                        // Changing GridSize automatically re-initializes bitmaps and the SpriteState wrapper
-                        GridSize = loadedState.Size;
+                        // Manually handle the size change to prevent duplicate history saves
+                        if (_gridSize != loadedState.Size)
+                        {
+                            _gridSize = loadedState.Size;
+                            OnPropertyChanged(nameof(GridSize));
+                            InitializeGrid(loadedState.Size);
+                            OnPropertyChanged(nameof(PreviewSize));
+                            OnPropertyChanged(nameof(GridViewport));
+                        }
 
-                        // Inject the loaded pixels into the freshly initialized state
                         SpriteState.Pixels = (bool[])loadedState.Pixels.Clone();
-
                         RedrawGridFromMemory();
                         UpdateTextOutputs();
                     }
@@ -285,8 +302,6 @@ namespace Hexel.ViewModels
                 }
             });
 
-
-
             CopyHexCommand = new RelayCommand(() =>
             {
                 _clipboardService.SetText(TxtHex);
@@ -295,16 +310,14 @@ namespace Hexel.ViewModels
 
             UndoCommand = new RelayCommand(() =>
             {
-                SpriteState = _historyService.Undo(SpriteState);
-                RedrawGridFromMemory();
-                UpdateTextOutputs();
+                var previousState = _historyService.Undo(SpriteState);
+                RestoreState(previousState);
             });
 
             RedoCommand = new RelayCommand(() =>
             {
-                SpriteState = _historyService.Redo(SpriteState);
-                RedrawGridFromMemory();
-                UpdateTextOutputs();
+                var nextState = _historyService.Redo(SpriteState);
+                RestoreState(nextState);
             });
 
             ClearCommand = new RelayCommand(() =>
@@ -375,7 +388,7 @@ namespace Hexel.ViewModels
 
         public void RedrawGridFromMemory()
         {
-            if (CanvasBitmap == null || _canvasBuffer == null) return;
+            if (CanvasBitmap == null || _canvasBuffer == null || SpriteState?.Pixels == null) return;
             int size = SpriteState.Size;
 
             for (int y = 0; y < size; y++)
@@ -629,6 +642,45 @@ namespace Hexel.ViewModels
             SelMinY = minY;
             SelMaxY = maxY;
         }
+
+        public void CancelCurrentOperation()
+        {
+            IsDrawingLine = false;
+            _lineStartIdx = -1;
+            _lineCurrentIdx = -1;
+            _lastClickedIndex = -1;
+
+            if (IsFloating)
+            {
+                SyncFloatingState(false, null, 0, 0, 0, 0);
+            }
+            SetSelectionBounds(false, -1, -1, -1, -1);
+        }
+
+        private void RestoreState(SpriteState state)
+        {
+            if (state == null || state == SpriteState) return;
+
+            CancelCurrentOperation(); // Stop any active tool drawing safely
+
+            // If the history state had a different grid size, seamlessly revert the canvas
+            if (_gridSize != state.Size)
+            {
+                _gridSize = state.Size;
+                OnPropertyChanged(nameof(GridSize));
+                InitializeGrid(state.Size);
+                OnPropertyChanged(nameof(PreviewSize));
+                OnPropertyChanged(nameof(GridViewport));
+            }
+
+            SpriteState = state;
+            RedrawGridFromMemory();
+            UpdateTextOutputs();
+
+            // Notify the Window to clear lingering selection visuals
+            HistoryRestored?.Invoke(this, EventArgs.Empty);
+        }
+
         #endregion
 
         #region Private Methods
