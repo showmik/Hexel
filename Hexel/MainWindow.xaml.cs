@@ -163,17 +163,17 @@ namespace Hexel
 
         private int GetIndexFromMousePosition(Point pos, double actualWidth, double actualHeight)
         {
-            int size = ViewModel.SpriteState.Size;
+            int w = ViewModel.SpriteState.Width;
+            int h = ViewModel.SpriteState.Height;
             if (actualWidth == 0 || actualHeight == 0) return 0;
 
-            int x = (int)(pos.X / actualWidth * size);
-            int y = (int)(pos.Y / actualHeight * size);
+            int x = (int)(pos.X / actualWidth * w);
+            int y = (int)(pos.Y / actualHeight * h);
 
-            // Clamp coordinates to grid boundaries
-            x = Math.Max(0, Math.Min(size - 1, x));
-            y = Math.Max(0, Math.Min(size - 1, y));
+            x = Math.Max(0, Math.Min(w - 1, x));
+            y = Math.Max(0, Math.Min(h - 1, y));
 
-            return (y * size) + x;
+            return (y * w) + x;
         }
 
         #endregion
@@ -182,13 +182,13 @@ namespace Hexel
 
         private void HandleSelectionTool(MouseEventArgs e, int index)
         {
-            int size = ViewModel.SpriteState.Size;
-            int x = index % size;
-            int y = index / size;
+            int w = ViewModel.SpriteState.Width;
+            int x = index % w;
+            int y = index / w;
 
             if (Mouse.LeftButton == MouseButtonState.Pressed)
             {
-                if (e is MouseButtonEventArgs) // MouseDown
+                if (e is MouseButtonEventArgs)
                 {
                     bool clickingInside = false;
                     if (_hasActiveSelection && x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
@@ -240,7 +240,7 @@ namespace Hexel
                         UpdateSelectionVisualsFromBounds();
                     }
                 }
-                else if (_isSelecting) // MouseMove
+                else if (_isSelecting)
                 {
                     if (ViewModel.CurrentTool == ToolMode.Lasso)
                     {
@@ -255,13 +255,13 @@ namespace Hexel
                             UpdateLassoVisuals();
                         }
                     }
-                    else // Marquee
+                    else
                     {
                         _selectionEndIdx = index;
-                        _selMinX = Math.Min(_selectionStartIdx % size, x);
-                        _selMaxX = Math.Max(_selectionStartIdx % size, x);
-                        _selMinY = Math.Min(_selectionStartIdx / size, y);
-                        _selMaxY = Math.Max(_selectionStartIdx / size, y);
+                        _selMinX = Math.Min(_selectionStartIdx % w, x);
+                        _selMaxX = Math.Max(_selectionStartIdx % w, x);
+                        _selMinY = Math.Min(_selectionStartIdx / w, y);
+                        _selMaxY = Math.Max(_selectionStartIdx / w, y);
                         UpdateSelectionVisualsFromBounds();
                     }
                 }
@@ -274,8 +274,8 @@ namespace Hexel
 
             double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
             double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
-            double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-            double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+            double cellWidth = gridWidth / ViewModel.SpriteState.Width;
+            double cellHeight = gridHeight / ViewModel.SpriteState.Height;
 
             int dx = 0;
             int dy = 0;
@@ -285,7 +285,6 @@ namespace Hexel
                 dy = _floatingY - _lassoOriginalMinY;
             }
 
-            // Either recycle the floating mask if we are dragging it, or build it fresh
             bool[,] mask = null;
             int w, h, currentMinX, currentMinY;
 
@@ -315,7 +314,6 @@ namespace Hexel
                 currentMinY = _selMinY;
             }
 
-            // Generate a unified border by unioning cell rectangles
             Geometry combined = null;
             for (int y = 0; y < h; y++)
             {
@@ -345,8 +343,8 @@ namespace Hexel
             if (MarqueeOverlay == null) return;
             double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
             double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
-            double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-            double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+            double cellWidth = gridWidth / ViewModel.SpriteState.Width;
+            double cellHeight = gridHeight / ViewModel.SpriteState.Height;
 
             Canvas.SetLeft(MarqueeOverlay, _selMinX * cellWidth);
             Canvas.SetTop(MarqueeOverlay, _selMinY * cellHeight);
@@ -376,7 +374,7 @@ namespace Hexel
         {
             if (!_hasActiveSelection || _isFloating) return;
 
-            int size = ViewModel.SpriteState.Size;
+            int w = ViewModel.SpriteState.Width;
             _floatingWidth = (_selMaxX - _selMinX) + 1;
             _floatingHeight = (_selMaxY - _selMinY) + 1;
             _floatingX = _selMinX;
@@ -393,7 +391,7 @@ namespace Hexel
 
                     if (includePixel)
                     {
-                        int idx = (y * size) + x;
+                        int idx = (y * w) + x;
                         if (ViewModel.SpriteState.Pixels[idx])
                         {
                             _floatingPixels[x - _selMinX, y - _selMinY] = true;
@@ -413,7 +411,8 @@ namespace Hexel
 
             if (_isFloating && _floatingPixels != null)
             {
-                int size = ViewModel.SpriteState.Size;
+                int w = ViewModel.SpriteState.Width;
+                int h = ViewModel.SpriteState.Height;
                 for (int y = 0; y < _floatingHeight; y++)
                 {
                     for (int x = 0; x < _floatingWidth; x++)
@@ -423,9 +422,9 @@ namespace Hexel
                             int gridX = _floatingX + x;
                             int gridY = _floatingY + y;
 
-                            if (gridX >= 0 && gridX < size && gridY >= 0 && gridY < size)
+                            if (gridX >= 0 && gridX < w && gridY >= 0 && gridY < h)
                             {
-                                ViewModel.SpriteState.Pixels[(gridY * size) + gridX] = true;
+                                ViewModel.SpriteState.Pixels[(gridY * w) + gridX] = true;
                             }
                         }
                     }
@@ -517,7 +516,6 @@ namespace Hexel
         {
             base.OnPreviewMouseMove(e);
 
-            // --- NEW LINE & RECTANGLE TOOL DRAG TRACKING ---
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
                 Point pos = e.GetPosition(CanvasImage);
@@ -532,8 +530,8 @@ namespace Hexel
                 double deltaY = currentPos.Y - _dragStartMousePos.Y;
                 double gridWidth = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
                 double gridHeight = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
-                double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-                double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+                double cellWidth = gridWidth / ViewModel.SpriteState.Width;
+                double cellHeight = gridHeight / ViewModel.SpriteState.Height;
 
                 int cellsMovedX = (int)Math.Round(deltaX / cellWidth);
                 int cellsMovedY = (int)Math.Round(deltaY / cellHeight);

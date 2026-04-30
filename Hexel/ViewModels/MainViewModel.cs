@@ -12,6 +12,22 @@ namespace Hexel.ViewModels
 {
     public class MainViewModel : ObservableObject
     {
+        private int _inputWidth = 16;
+        public int InputWidth
+        {
+            get => _inputWidth;
+            set => SetProperty(ref _inputWidth, value);
+        }
+
+        private int _inputHeight = 16;
+        public int InputHeight
+        {
+            get => _inputHeight;
+            set => SetProperty(ref _inputHeight, value);
+        }
+
+        public IRelayCommand NewCanvasCommand { get; }
+
         #region Services & Dependencies
         private readonly ICodeGeneratorService _codeGen;
         private readonly IDrawingService _drawingService;
@@ -35,7 +51,6 @@ namespace Hexel.ViewModels
         // Core state backing fields
         private bool _isUpdatingProgrammatically = false;
         private SpriteState _spriteState;
-        private int _gridSize = 16;
         private bool _isDisplayInverted = false;
 
         // Text backing fields
@@ -113,33 +128,21 @@ namespace Hexel.ViewModels
             set => SetProperty(ref _spriteState, value);
         }
 
-        public int GridSize
-        {
-            get => _gridSize;
-            set
-            {
-                if (_gridSize != value)
-                {
-                    // Save state before changing size, so the resize can be undone
-                    if (_spriteState != null && _historyService != null)
-                    {
-                        _historyService.SaveState(_spriteState);
-                    }
+        // Helper to calculate the perfect pixel size based on the canvas aspect ratio
+        private double _cellSize => SpriteState != null ? Math.Min(400.0 / SpriteState.Width, 400.0 / SpriteState.Height) : 25.0;
 
-                    _gridSize = value;
-                    OnPropertyChanged(nameof(GridSize));
+        // Dynamic dimensions for the main drawing container
+        public double CanvasDisplayWidth => (SpriteState?.Width ?? 16) * _cellSize;
+        public double CanvasDisplayHeight => (SpriteState?.Height ?? 16) * _cellSize;
 
-                    InitializeGrid(value);
-                    OnPropertyChanged(nameof(PreviewSize));
-                    OnPropertyChanged(nameof(GridViewport));
-                }
-            }
-        }
-
-        public Rect GridViewport => new Rect(0, 0, 400.0 / GridSize, 400.0 / GridSize);
+        // The background checkerboard grid lines
+        public Rect GridViewport => new Rect(0, 0, _cellSize, _cellSize);
+        // Dynamic thickness that scales down with the cell size but stays visible
+        public double DynamicStrokeThickness => SpriteState != null ? Math.Max(0.5, _cellSize * 0.08) : 2.0;
 
         // Replaces the "vm.SpriteState.Size * 2" math from your code-behind
-        public int PreviewSize => GridSize * 2;
+        public int PreviewWidth => (SpriteState?.Width ?? 16) * 2;
+        public int PreviewHeight => (SpriteState?.Height ?? 16) * 2;
 
         public bool IsDisplayInverted
         {
@@ -261,6 +264,12 @@ namespace Hexel.ViewModels
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
 
             // Initialize commands
+            NewCanvasCommand = new RelayCommand(() =>
+            {
+                // Optional: Add a dialog confirming they want to wipe the canvas
+                InitializeGrid(InputWidth, InputHeight);
+            });
+
             SaveCommand = new RelayCommand(() =>
             {
                 try
@@ -280,16 +289,14 @@ namespace Hexel.ViewModels
                     var loadedState = _fileService.LoadSprite();
                     if (loadedState != null && loadedState.Pixels != null)
                     {
-                        _historyService.SaveState(SpriteState); // Save current state for undo
+                        _historyService.SaveState(SpriteState);
 
-                        // Manually handle the size change to prevent duplicate history saves
-                        if (_gridSize != loadedState.Size)
+                        // Update to check Width and Height instead of GridSize
+                        if (InputWidth != loadedState.Width || InputHeight != loadedState.Height)
                         {
-                            _gridSize = loadedState.Size;
-                            OnPropertyChanged(nameof(GridSize));
-                            InitializeGrid(loadedState.Size);
-                            OnPropertyChanged(nameof(PreviewSize));
-                            OnPropertyChanged(nameof(GridViewport));
+                            InputWidth = loadedState.Width;
+                            InputHeight = loadedState.Height;
+                            InitializeGrid(InputWidth, InputHeight);
                         }
 
                         SpriteState.Pixels = (bool[])loadedState.Pixels.Clone();
@@ -341,8 +348,7 @@ namespace Hexel.ViewModels
             DeleteSelectionCommand = new RelayCommand(DeleteSelection);
 
             // Setup state & brushes
-            SpriteState = new SpriteState(16);
-            InitializeGrid(16);
+            InitializeGrid(InputWidth, InputHeight);
 
             _colorOff = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PanelBackgroundBrush"];
             _colorOn = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PrimaryAccentBrush"];
@@ -372,46 +378,40 @@ namespace Hexel.ViewModels
         #endregion
 
         #region Public Methods
-        public void InitializeGrid(int size)
+        public void InitializeGrid(int width, int height)
         {
-            // 1. Cache the old state before overriding it
-            var oldState = SpriteState;
-            SpriteState = new SpriteState(size);
+            SpriteState = new SpriteState(width, height);
 
-            // 2. Map and copy existing pixels to preserve the drawing during resize
-            if (oldState != null && oldState.Pixels != null)
-            {
-                int minSize = Math.Min(oldState.Size, size);
-                for (int y = 0; y < minSize; y++)
-                {
-                    for (int x = 0; x < minSize; x++)
-                    {
-                        SpriteState.Pixels[(y * size) + x] = oldState.Pixels[(y * oldState.Size) + x];
-                    }
-                }
-            }
+            CanvasBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            PreviewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
 
-            // 3. Create new bitmaps and buffers matching the new size
-            CanvasBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
-            PreviewBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
-
-            _canvasBuffer = new uint[size * size];
-            _previewBuffer = new uint[size * size];
+            _canvasBuffer = new uint[width * height];
+            _previewBuffer = new uint[width * height];
 
             UpdateTextOutputs();
             RedrawGridFromMemory();
+
+            // ADD THESE THREE LINES: Notify UI that the canvas dimensions changed
+            OnPropertyChanged(nameof(GridViewport));
+            OnPropertyChanged(nameof(PreviewWidth));
+            OnPropertyChanged(nameof(PreviewHeight));
+            OnPropertyChanged(nameof(CanvasDisplayWidth));
+            OnPropertyChanged(nameof(CanvasDisplayHeight));
+            OnPropertyChanged(nameof(DynamicStrokeThickness));
         }
 
         public void RedrawGridFromMemory()
         {
             if (CanvasBitmap == null || _canvasBuffer == null || SpriteState?.Pixels == null) return;
-            int size = SpriteState.Size;
 
-            for (int y = 0; y < size; y++)
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+
+            for (int y = 0; y < h; y++)
             {
-                for (int x = 0; x < size; x++)
+                for (int x = 0; x < w; x++)
                 {
-                    int i = (y * size) + x;
+                    int i = (y * w) + x; // 1D array math using Width
                     bool isPixelOn = SpriteState.Pixels[i];
 
                     if (IsFloating && FloatingPixels != null)
@@ -428,8 +428,8 @@ namespace Hexel.ViewModels
             }
 
             // Write the flat arrays directly to the bitmap textures in one pass
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void ProcessToolInput(int index, string actionType, bool? drawState, bool isShiftDown)
@@ -573,42 +573,36 @@ namespace Hexel.ViewModels
 
         public void PreviewLine(int startIdx, int endIdx, bool newState)
         {
-            // Reset to current committed state to clear any previous preview line
             RedrawGridFromMemory();
 
-            // Calculate the preview line (Bresenham's line algorithm)
-            int size = SpriteState.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+            int x0 = startIdx % w;
+            int y0 = startIdx / w;
+            int x1 = endIdx % w;
+            int y1 = endIdx / w;
 
             int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
             int err = dx - dy;
 
-            // Use the new uint color representations
             var previewColor = newState ? _colorOnUint : _colorOffUint;
             var previewPrev = newState ? _previewOnUint : _previewOffUint;
 
             while (true)
             {
-                int i = (y0 * size) + x0;
-
-                // Write directly to the uint arrays instead of the deleted ObservableCollections
+                int i = (y0 * w) + x0;
                 _canvasBuffer[i] = previewColor;
                 _previewBuffer[i] = previewPrev;
 
                 if (x0 == x1 && y0 == y1) break;
-
                 int e2 = 2 * err;
                 if (e2 > -dy) { err -= dy; x0 += sx; }
                 if (e2 < dx) { err += dx; y0 += sy; }
             }
 
-            // Push the updated buffers to the WriteableBitmaps to show the preview
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void SaveStateForUndo()
@@ -671,13 +665,14 @@ namespace Hexel.ViewModels
 
         public void PreviewRectangle(int startIdx, int endIdx, bool newState)
         {
-            RedrawGridFromMemory(); // Clear previous preview frame
+            RedrawGridFromMemory();
 
-            int size = SpriteState.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+            int x0 = startIdx % w;
+            int y0 = startIdx / w;
+            int x1 = endIdx % w;
+            int y1 = endIdx / w;
 
             int minX = Math.Min(x0, x1);
             int maxX = Math.Max(x0, x1);
@@ -687,28 +682,17 @@ namespace Hexel.ViewModels
             var previewColor = newState ? _colorOnUint : _colorOffUint;
             var previewPrev = newState ? _previewOnUint : _previewOffUint;
 
-            // Local helper function to draw pixels cleanly
             Action<int, int> drawPixel = (px, py) => {
-                int i = (py * size) + px;
+                int i = (py * w) + px;
                 _canvasBuffer[i] = previewColor;
                 _previewBuffer[i] = previewPrev;
             };
 
-            // Plot horizontal edges
-            for (int x = minX; x <= maxX; x++)
-            {
-                drawPixel(x, minY);
-                drawPixel(x, maxY);
-            }
-            // Plot vertical edges
-            for (int y = minY; y <= maxY; y++)
-            {
-                drawPixel(minX, y);
-                drawPixel(maxX, y);
-            }
+            for (int x = minX; x <= maxX; x++) { drawPixel(x, minY); drawPixel(x, maxY); }
+            for (int y = minY; y <= maxY; y++) { drawPixel(minX, y); drawPixel(maxX, y); }
 
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void DrawEllipse(int startIdx, int endIdx, bool newState)
@@ -722,28 +706,27 @@ namespace Hexel.ViewModels
 
         public void PreviewEllipse(int startIdx, int endIdx, bool newState)
         {
-            RedrawGridFromMemory(); // Clear previous preview frame
+            RedrawGridFromMemory();
 
-            int size = SpriteState.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+            int x0 = startIdx % w;
+            int y0 = startIdx / w;
+            int x1 = endIdx % w;
+            int y1 = endIdx / w;
 
             var previewColor = newState ? _colorOnUint : _colorOffUint;
             var previewPrev = newState ? _previewOnUint : _previewOffUint;
 
-            // Local helper to draw pixels cleanly to the buffers
             Action<int, int> drawPixel = (px, py) => {
-                if (px >= 0 && px < size && py >= 0 && py < size)
+                if (px >= 0 && px < w && py >= 0 && py < h)
                 {
-                    int i = (py * size) + px;
+                    int i = (py * w) + px;
                     _canvasBuffer[i] = previewColor;
                     _previewBuffer[i] = previewPrev;
                 }
             };
 
-            // Bresenham's Ellipse Math (same as DrawingService)
             int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
             long dx = 4 * (1 - a) * b * b, dy = 4 * (b1 + 1) * a * a;
             long err = dx + dy + b1 * a * a, e2;
@@ -769,8 +752,8 @@ namespace Hexel.ViewModels
                 y0++; y1--;
             }
 
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void ParseBinaryToState(string text)
@@ -856,24 +839,18 @@ namespace Hexel.ViewModels
         private void RestoreState(SpriteState state)
         {
             if (state == null || state == SpriteState) return;
+            CancelCurrentOperation();
 
-            CancelCurrentOperation(); // Stop any active tool drawing safely
-
-            // If the history state had a different grid size, seamlessly revert the canvas
-            if (_gridSize != state.Size)
+            if (InputWidth != state.Width || InputHeight != state.Height)
             {
-                _gridSize = state.Size;
-                OnPropertyChanged(nameof(GridSize));
-                InitializeGrid(state.Size);
-                OnPropertyChanged(nameof(PreviewSize));
-                OnPropertyChanged(nameof(GridViewport));
+                InputWidth = state.Width;
+                InputHeight = state.Height;
+                InitializeGrid(InputWidth, InputHeight);
             }
 
             SpriteState = state;
             RedrawGridFromMemory();
             UpdateTextOutputs();
-
-            // Notify the Window to clear lingering selection visuals
             HistoryRestored?.Invoke(this, EventArgs.Empty);
         }
 
@@ -891,13 +868,13 @@ namespace Hexel.ViewModels
                 }
                 else
                 {
+                    int w = SpriteState.Width;
                     for (int i = 0; i < SpriteState.Pixels.Length; i++)
                     {
-                        int x = i % SpriteState.Size;
-                        int y = i / SpriteState.Size;
+                        int x = i % w;
+                        int y = i / w;
                         if (x >= SelMinX && x <= SelMaxX && y >= SelMinY && y <= SelMaxY)
                         {
-                            // Use the polygon mask if we have one, otherwise fallback to bounding box
                             if (SelectionMask != null)
                             {
                                 if (SelectionMask[x - SelMinX, y - SelMinY])

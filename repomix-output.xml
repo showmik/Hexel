@@ -701,27 +701,26 @@ namespace Hexel.Services
 </file>
 
 <file path="Hexel/Core/SpriteState.cs">
-using System;
-
 namespace Hexel.Core
 {
     public class SpriteState
     {
-        public int Size { get; }
+        public int Width { get; }
+        public int Height { get; }
         public bool[] Pixels { get; set; }
 
-        public SpriteState(int size)
+        public SpriteState(int width, int height)
         {
-            Size = size;
-            Pixels = new bool[size * size];
+            Width = width;
+            Height = height;
+            Pixels = new bool[width * height];
         }
 
         public SpriteState Clone()
         {
-            return new SpriteState(Size)
+            return new SpriteState(Width, Height)
             {
-                // Add a null check fallback to prevent null exceptions when history saves
-                Pixels = this.Pixels != null ? (bool[])this.Pixels.Clone() : new bool[Size * Size]
+                Pixels = this.Pixels != null ? (bool[])this.Pixels.Clone() : new bool[Width * Height]
             };
         }
     }
@@ -971,6 +970,56 @@ namespace Hexel.Services
                                  Value="True">
                             <Setter Property="Opacity"
                                     Value="0.6" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ModernTextBoxStyle"
+           TargetType="TextBox">
+        <Setter Property="Background"
+                Value="{DynamicResource Theme.BackgroundBrush}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource Theme.TextMainBrush}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource Theme.PanelBorderBrush}" />
+        <Setter Property="BorderThickness"
+                Value="1" />
+        <Setter Property="Padding"
+                Value="8,4" />
+        <Setter Property="CaretBrush"
+                Value="{DynamicResource Theme.TextMainBrush}" />
+        <Setter Property="SelectionBrush"
+                Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="{TemplateBinding Padding}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource Theme.TextMutedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsFocused"
+                                 Value="True">
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter Property="Opacity"
+                                    Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1287,9 +1336,9 @@ namespace Hexel.Services
         {
             var binBuilder = new StringBuilder();
             var hexList = new List<string>();
-            int bytesPerRow = (int)Math.Ceiling(state.Size / 8.0);
+            int bytesPerRow = (int)Math.Ceiling(state.Width / 8.0);
 
-            for (int row = 0; row < state.Size; row++)
+            for (int row = 0; row < state.Height; row++)
             {
                 var fullRowBinary = new StringBuilder();
                 for (int chunk = 0; chunk < bytesPerRow; chunk++)
@@ -1298,9 +1347,9 @@ namespace Hexel.Services
                     for (int bit = 0; bit < 8; bit++)
                     {
                         int col = (chunk * 8) + bit;
-                        if (col < state.Size)
+                        if (col < state.Width)
                         {
-                            int index = (row * state.Size) + col;
+                            int index = (row * state.Width) + col;
                             bool isPixelOn = state.Pixels[index];
 
                             if (isFloating)
@@ -1322,8 +1371,6 @@ namespace Hexel.Services
                     fullRowBinary.Append(byteString).Append(" ");
                     hexList.Add($"0x{Convert.ToInt32(byteString.ToString(), 2):X2}");
                 }
-
-                // --- UPDATED LINE ---
                 binBuilder.AppendLine(fullRowBinary.ToString().TrimEnd());
             }
 
@@ -1331,18 +1378,8 @@ namespace Hexel.Services
             for (int i = 0; i < hexList.Count; i++)
             {
                 hexFormatted.Append(hexList[i]);
-                
-                // Only add a comma and space if it's not the last item
-                if (i < hexList.Count - 1)
-                {
-                    hexFormatted.Append(", ");
-                }
-
-                // Add a line break at the end of each row
-                if ((i + 1) % bytesPerRow == 0 && i < hexList.Count - 1) 
-                {
-                    hexFormatted.AppendLine();
-                }
+                if (i < hexList.Count - 1) hexFormatted.Append(", ");
+                if ((i + 1) % bytesPerRow == 0 && i < hexList.Count - 1) hexFormatted.AppendLine();
             }
 
             return (binBuilder.ToString().TrimEnd('\r', '\n'), hexFormatted.ToString());
@@ -1352,9 +1389,9 @@ namespace Hexel.Services
         {
             var binBuilder = new StringBuilder();
             var hexBuilder = new StringBuilder();
-            int bytesPerRow = (int)Math.Ceiling(state.Size / 8.0);
+            int bytesPerRow = (int)Math.Ceiling(state.Width / 8.0);
 
-            for (int row = 0; row < state.Size; row++)
+            for (int row = 0; row < state.Height; row++)
             {
                 var fullRowBinary = new StringBuilder();
                 var fullRowHex = new StringBuilder();
@@ -1365,9 +1402,9 @@ namespace Hexel.Services
                     for (int bit = 0; bit < 8; bit++)
                     {
                         int col = (chunk * 8) + bit;
-                        if (col < state.Size)
+                        if (col < state.Width)
                         {
-                            int index = (row * state.Size) + col;
+                            int index = (row * state.Width) + col;
                             bool isPixelOn = state.Pixels[index];
 
                             if (isFloating)
@@ -1393,11 +1430,8 @@ namespace Hexel.Services
                     fullRowBinary.Append(binChunk);
                     fullRowHex.Append(hexChunk);
 
-                    if (binaryUseComma) fullRowBinary.Append(", ");
-                    else fullRowBinary.Append(" ");
-
-                    if (hexUseComma) fullRowHex.Append(", ");
-                    else fullRowHex.Append(" ");
+                    if (binaryUseComma) fullRowBinary.Append(", "); else fullRowBinary.Append(" ");
+                    if (hexUseComma) fullRowHex.Append(", "); else fullRowHex.Append(" ");
                 }
 
                 binBuilder.AppendLine(fullRowBinary.ToString().TrimEnd());
@@ -1420,15 +1454,13 @@ namespace Hexel.Services
 
             foreach (string line in lines)
             {
-                if (row >= state.Size) break;
+                if (row >= state.Height) break;
                 string dataPart = line.Contains(":") ? line.Substring(line.IndexOf(':') + 1) : line;
-
-                // Remove spaces AND commas before reading back into the grid
                 dataPart = dataPart.Replace(" ", "").Replace(",", "");
 
-                for (int col = 0; col < state.Size; col++)
+                for (int col = 0; col < state.Width; col++)
                 {
-                    state.Pixels[(row * state.Size) + col] = (col < dataPart.Length) && (dataPart[col] == '1');
+                    state.Pixels[(row * state.Width) + col] = (col < dataPart.Length) && (dataPart[col] == '1');
                 }
                 row++;
             }
@@ -1437,10 +1469,10 @@ namespace Hexel.Services
         public void ParseHexToState(string hexText, SpriteState state)
         {
             MatchCollection matches = Regex.Matches(hexText, @"0[xX]([0-9a-fA-F]{1,2})");
-            int bytesPerRow = (int)Math.Ceiling(state.Size / 8.0);
+            int bytesPerRow = (int)Math.Ceiling(state.Width / 8.0);
             int matchIndex = 0;
 
-            for (int row = 0; row < state.Size; row++)
+            for (int row = 0; row < state.Height; row++)
             {
                 for (int chunk = 0; chunk < bytesPerRow; chunk++)
                 {
@@ -1451,9 +1483,9 @@ namespace Hexel.Services
                         for (int bit = 7; bit >= 0; bit--)
                         {
                             int col = (chunk * 8) + (7 - bit);
-                            if (col < state.Size)
+                            if (col < state.Width)
                             {
-                                state.Pixels[(row * state.Size) + col] = ((b >> bit) & 1) == 1;
+                                state.Pixels[(row * state.Width) + col] = ((b >> bit) & 1) == 1;
                             }
                         }
                     }
@@ -1490,23 +1522,23 @@ namespace Hexel.Services
                 {
                     state.Pixels[current] = newState;
 
-                    int x = current % state.Size;
-                    int y = current / state.Size;
+                    int x = current % state.Width;
+                    int y = current / state.Width;
 
                     if (x > 0) queue.Enqueue(current - 1);
-                    if (x < state.Size - 1) queue.Enqueue(current + 1);
-                    if (y > 0) queue.Enqueue(current - state.Size);
-                    if (y < state.Size - 1) queue.Enqueue(current + state.Size);
+                    if (x < state.Width - 1) queue.Enqueue(current + 1);
+                    if (y > 0) queue.Enqueue(current - state.Width);
+                    if (y < state.Height - 1) queue.Enqueue(current + state.Width);
                 }
             }
         }
 
         public void DrawLine(SpriteState state, int startIdx, int endIdx, bool newState)
         {
-            int x0 = startIdx % state.Size;
-            int y0 = startIdx / state.Size;
-            int x1 = endIdx % state.Size;
-            int y1 = endIdx / state.Size;
+            int x0 = startIdx % state.Width;
+            int y0 = startIdx / state.Width;
+            int x1 = endIdx % state.Width;
+            int y1 = endIdx / state.Width;
 
             int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
@@ -1514,7 +1546,7 @@ namespace Hexel.Services
 
             while (true)
             {
-                state.Pixels[(y0 * state.Size) + x0] = newState;
+                state.Pixels[(y0 * state.Width) + x0] = newState;
                 if (x0 == x1 && y0 == y1) break;
 
                 int e2 = 2 * err;
@@ -1525,37 +1557,34 @@ namespace Hexel.Services
 
         public void ShiftGrid(SpriteState state, int offsetX, int offsetY)
         {
-            int totalPixels = state.Size * state.Size;
+            int totalPixels = state.Width * state.Height;
 
-            // 2. Initialize or resize the buffer ONLY if necessary
             if (_shiftBuffer == null || _shiftBuffer.Length != totalPixels)
             {
                 _shiftBuffer = new bool[totalPixels];
             }
             else
             {
-                // 3. Clear the buffer for reuse (significantly faster than creating a new array)
                 Array.Clear(_shiftBuffer, 0, totalPixels);
             }
 
-            for (int y = 0; y < state.Size; y++)
+            for (int y = 0; y < state.Height; y++)
             {
-                for (int x = 0; x < state.Size; x++)
+                for (int x = 0; x < state.Width; x++)
                 {
-                    if (state.Pixels[(y * state.Size) + x])
+                    if (state.Pixels[(y * state.Width) + x])
                     {
-                        int newX = (x + offsetX) % state.Size;
-                        if (newX < 0) newX += state.Size;
+                        int newX = (x + offsetX) % state.Width;
+                        if (newX < 0) newX += state.Width;
 
-                        int newY = (y + offsetY) % state.Size;
-                        if (newY < 0) newY += state.Size;
+                        int newY = (y + offsetY) % state.Height;
+                        if (newY < 0) newY += state.Height;
 
-                        _shiftBuffer[(newY * state.Size) + newX] = true;
+                        _shiftBuffer[(newY * state.Width) + newX] = true;
                     }
                 }
             }
 
-            // 4. Copy the shifted data directly back into the existing state array
             Array.Copy(_shiftBuffer, state.Pixels, totalPixels);
         }
 
@@ -1567,42 +1596,40 @@ namespace Hexel.Services
             }
         }
 
-        // Add this new method inside the DrawingService class
         public void DrawRectangle(SpriteState state, int startIdx, int endIdx, bool newState)
         {
-            int size = state.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int width = state.Width;
+            int x0 = startIdx % width;
+            int y0 = startIdx / width;
+            int x1 = endIdx % width;
+            int y1 = endIdx / width;
 
             int minX = Math.Min(x0, x1);
             int maxX = Math.Max(x0, x1);
             int minY = Math.Min(y0, y1);
             int maxY = Math.Max(y0, y1);
 
-            // Draw top and bottom edges
             for (int x = minX; x <= maxX; x++)
             {
-                state.Pixels[(minY * size) + x] = newState;
-                state.Pixels[(maxY * size) + x] = newState;
+                state.Pixels[(minY * width) + x] = newState;
+                state.Pixels[(maxY * width) + x] = newState;
             }
 
-            // Draw left and right edges
             for (int y = minY; y <= maxY; y++)
             {
-                state.Pixels[(y * size) + minX] = newState;
-                state.Pixels[(y * size) + maxX] = newState;
+                state.Pixels[(y * width) + minX] = newState;
+                state.Pixels[(y * width) + maxX] = newState;
             }
         }
 
         public void DrawEllipse(SpriteState state, int startIdx, int endIdx, bool newState)
         {
-            int size = state.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int width = state.Width;
+            int height = state.Height;
+            int x0 = startIdx % width;
+            int y0 = startIdx / width;
+            int x1 = endIdx % width;
+            int y1 = endIdx / width;
 
             int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
             long dx = 4 * (1 - a) * b * b, dy = 4 * (b1 + 1) * a * a;
@@ -1615,11 +1642,10 @@ namespace Hexel.Services
             a *= 8 * a;
             b1 = 8 * b * b;
 
-            // Helper to safely set pixels within bounds
             void SetPixel(int px, int py)
             {
-                if (px >= 0 && px < size && py >= 0 && py < size)
-                    state.Pixels[(py * size) + px] = newState;
+                if (px >= 0 && px < width && py >= 0 && py < height)
+                    state.Pixels[(py * width) + px] = newState;
             }
 
             do
@@ -1633,7 +1659,6 @@ namespace Hexel.Services
                 if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += b1; }
             } while (x0 <= x1);
 
-            // Catch flat vertical/horizontal lines
             while (y0 - y1 < b)
             {
                 SetPixel(x0 - 1, y0);
@@ -1747,6 +1772,22 @@ namespace Hexel.ViewModels
 {
     public class MainViewModel : ObservableObject
     {
+        private int _inputWidth = 16;
+        public int InputWidth
+        {
+            get => _inputWidth;
+            set => SetProperty(ref _inputWidth, value);
+        }
+
+        private int _inputHeight = 16;
+        public int InputHeight
+        {
+            get => _inputHeight;
+            set => SetProperty(ref _inputHeight, value);
+        }
+
+        public IRelayCommand NewCanvasCommand { get; }
+
         #region Services & Dependencies
         private readonly ICodeGeneratorService _codeGen;
         private readonly IDrawingService _drawingService;
@@ -1770,7 +1811,6 @@ namespace Hexel.ViewModels
         // Core state backing fields
         private bool _isUpdatingProgrammatically = false;
         private SpriteState _spriteState;
-        private int _gridSize = 16;
         private bool _isDisplayInverted = false;
 
         // Text backing fields
@@ -1848,33 +1888,19 @@ namespace Hexel.ViewModels
             set => SetProperty(ref _spriteState, value);
         }
 
-        public int GridSize
-        {
-            get => _gridSize;
-            set
-            {
-                if (_gridSize != value)
-                {
-                    // Save state before changing size, so the resize can be undone
-                    if (_spriteState != null && _historyService != null)
-                    {
-                        _historyService.SaveState(_spriteState);
-                    }
+        // Helper to calculate the perfect pixel size based on the canvas aspect ratio
+        private double _cellSize => SpriteState != null ? Math.Min(400.0 / SpriteState.Width, 400.0 / SpriteState.Height) : 25.0;
 
-                    _gridSize = value;
-                    OnPropertyChanged(nameof(GridSize));
+        // Dynamic dimensions for the main drawing container
+        public double CanvasDisplayWidth => (SpriteState?.Width ?? 16) * _cellSize;
+        public double CanvasDisplayHeight => (SpriteState?.Height ?? 16) * _cellSize;
 
-                    InitializeGrid(value);
-                    OnPropertyChanged(nameof(PreviewSize));
-                    OnPropertyChanged(nameof(GridViewport));
-                }
-            }
-        }
-
-        public Rect GridViewport => new Rect(0, 0, 400.0 / GridSize, 400.0 / GridSize);
+        // The background checkerboard grid lines
+        public Rect GridViewport => new Rect(0, 0, _cellSize, _cellSize);
 
         // Replaces the "vm.SpriteState.Size * 2" math from your code-behind
-        public int PreviewSize => GridSize * 2;
+        public int PreviewWidth => (SpriteState?.Width ?? 16) * 2;
+        public int PreviewHeight => (SpriteState?.Height ?? 16) * 2;
 
         public bool IsDisplayInverted
         {
@@ -1996,6 +2022,12 @@ namespace Hexel.ViewModels
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
 
             // Initialize commands
+            NewCanvasCommand = new RelayCommand(() =>
+            {
+                // Optional: Add a dialog confirming they want to wipe the canvas
+                InitializeGrid(InputWidth, InputHeight);
+            });
+
             SaveCommand = new RelayCommand(() =>
             {
                 try
@@ -2015,16 +2047,14 @@ namespace Hexel.ViewModels
                     var loadedState = _fileService.LoadSprite();
                     if (loadedState != null && loadedState.Pixels != null)
                     {
-                        _historyService.SaveState(SpriteState); // Save current state for undo
+                        _historyService.SaveState(SpriteState);
 
-                        // Manually handle the size change to prevent duplicate history saves
-                        if (_gridSize != loadedState.Size)
+                        // Update to check Width and Height instead of GridSize
+                        if (InputWidth != loadedState.Width || InputHeight != loadedState.Height)
                         {
-                            _gridSize = loadedState.Size;
-                            OnPropertyChanged(nameof(GridSize));
-                            InitializeGrid(loadedState.Size);
-                            OnPropertyChanged(nameof(PreviewSize));
-                            OnPropertyChanged(nameof(GridViewport));
+                            InputWidth = loadedState.Width;
+                            InputHeight = loadedState.Height;
+                            InitializeGrid(InputWidth, InputHeight);
                         }
 
                         SpriteState.Pixels = (bool[])loadedState.Pixels.Clone();
@@ -2076,8 +2106,7 @@ namespace Hexel.ViewModels
             DeleteSelectionCommand = new RelayCommand(DeleteSelection);
 
             // Setup state & brushes
-            SpriteState = new SpriteState(16);
-            InitializeGrid(16);
+            InitializeGrid(InputWidth, InputHeight);
 
             _colorOff = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PanelBackgroundBrush"];
             _colorOn = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PrimaryAccentBrush"];
@@ -2107,31 +2136,39 @@ namespace Hexel.ViewModels
         #endregion
 
         #region Public Methods
-        public void InitializeGrid(int size)
+        public void InitializeGrid(int width, int height)
         {
-            SpriteState = new SpriteState(size);
+            SpriteState = new SpriteState(width, height);
 
-            // Create new bitmaps and buffers matching the new size
-            CanvasBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
-            PreviewBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
+            CanvasBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            PreviewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
 
-            _canvasBuffer = new uint[size * size];
-            _previewBuffer = new uint[size * size];
+            _canvasBuffer = new uint[width * height];
+            _previewBuffer = new uint[width * height];
 
             UpdateTextOutputs();
             RedrawGridFromMemory();
+
+            // ADD THESE THREE LINES: Notify UI that the canvas dimensions changed
+            OnPropertyChanged(nameof(GridViewport));
+            OnPropertyChanged(nameof(PreviewWidth));
+            OnPropertyChanged(nameof(PreviewHeight));
+            OnPropertyChanged(nameof(CanvasDisplayWidth));
+            OnPropertyChanged(nameof(CanvasDisplayHeight));
         }
 
         public void RedrawGridFromMemory()
         {
             if (CanvasBitmap == null || _canvasBuffer == null || SpriteState?.Pixels == null) return;
-            int size = SpriteState.Size;
 
-            for (int y = 0; y < size; y++)
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+
+            for (int y = 0; y < h; y++)
             {
-                for (int x = 0; x < size; x++)
+                for (int x = 0; x < w; x++)
                 {
-                    int i = (y * size) + x;
+                    int i = (y * w) + x; // 1D array math using Width
                     bool isPixelOn = SpriteState.Pixels[i];
 
                     if (IsFloating && FloatingPixels != null)
@@ -2148,8 +2185,8 @@ namespace Hexel.ViewModels
             }
 
             // Write the flat arrays directly to the bitmap textures in one pass
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void ProcessToolInput(int index, string actionType, bool? drawState, bool isShiftDown)
@@ -2293,42 +2330,36 @@ namespace Hexel.ViewModels
 
         public void PreviewLine(int startIdx, int endIdx, bool newState)
         {
-            // Reset to current committed state to clear any previous preview line
             RedrawGridFromMemory();
 
-            // Calculate the preview line (Bresenham's line algorithm)
-            int size = SpriteState.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+            int x0 = startIdx % w;
+            int y0 = startIdx / w;
+            int x1 = endIdx % w;
+            int y1 = endIdx / w;
 
             int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
             int err = dx - dy;
 
-            // Use the new uint color representations
             var previewColor = newState ? _colorOnUint : _colorOffUint;
             var previewPrev = newState ? _previewOnUint : _previewOffUint;
 
             while (true)
             {
-                int i = (y0 * size) + x0;
-
-                // Write directly to the uint arrays instead of the deleted ObservableCollections
+                int i = (y0 * w) + x0;
                 _canvasBuffer[i] = previewColor;
                 _previewBuffer[i] = previewPrev;
 
                 if (x0 == x1 && y0 == y1) break;
-
                 int e2 = 2 * err;
                 if (e2 > -dy) { err -= dy; x0 += sx; }
                 if (e2 < dx) { err += dx; y0 += sy; }
             }
 
-            // Push the updated buffers to the WriteableBitmaps to show the preview
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void SaveStateForUndo()
@@ -2391,13 +2422,14 @@ namespace Hexel.ViewModels
 
         public void PreviewRectangle(int startIdx, int endIdx, bool newState)
         {
-            RedrawGridFromMemory(); // Clear previous preview frame
+            RedrawGridFromMemory();
 
-            int size = SpriteState.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+            int x0 = startIdx % w;
+            int y0 = startIdx / w;
+            int x1 = endIdx % w;
+            int y1 = endIdx / w;
 
             int minX = Math.Min(x0, x1);
             int maxX = Math.Max(x0, x1);
@@ -2407,28 +2439,17 @@ namespace Hexel.ViewModels
             var previewColor = newState ? _colorOnUint : _colorOffUint;
             var previewPrev = newState ? _previewOnUint : _previewOffUint;
 
-            // Local helper function to draw pixels cleanly
             Action<int, int> drawPixel = (px, py) => {
-                int i = (py * size) + px;
+                int i = (py * w) + px;
                 _canvasBuffer[i] = previewColor;
                 _previewBuffer[i] = previewPrev;
             };
 
-            // Plot horizontal edges
-            for (int x = minX; x <= maxX; x++)
-            {
-                drawPixel(x, minY);
-                drawPixel(x, maxY);
-            }
-            // Plot vertical edges
-            for (int y = minY; y <= maxY; y++)
-            {
-                drawPixel(minX, y);
-                drawPixel(maxX, y);
-            }
+            for (int x = minX; x <= maxX; x++) { drawPixel(x, minY); drawPixel(x, maxY); }
+            for (int y = minY; y <= maxY; y++) { drawPixel(minX, y); drawPixel(maxX, y); }
 
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void DrawEllipse(int startIdx, int endIdx, bool newState)
@@ -2442,28 +2463,27 @@ namespace Hexel.ViewModels
 
         public void PreviewEllipse(int startIdx, int endIdx, bool newState)
         {
-            RedrawGridFromMemory(); // Clear previous preview frame
+            RedrawGridFromMemory();
 
-            int size = SpriteState.Size;
-            int x0 = startIdx % size;
-            int y0 = startIdx / size;
-            int x1 = endIdx % size;
-            int y1 = endIdx / size;
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+            int x0 = startIdx % w;
+            int y0 = startIdx / w;
+            int x1 = endIdx % w;
+            int y1 = endIdx / w;
 
             var previewColor = newState ? _colorOnUint : _colorOffUint;
             var previewPrev = newState ? _previewOnUint : _previewOffUint;
 
-            // Local helper to draw pixels cleanly to the buffers
             Action<int, int> drawPixel = (px, py) => {
-                if (px >= 0 && px < size && py >= 0 && py < size)
+                if (px >= 0 && px < w && py >= 0 && py < h)
                 {
-                    int i = (py * size) + px;
+                    int i = (py * w) + px;
                     _canvasBuffer[i] = previewColor;
                     _previewBuffer[i] = previewPrev;
                 }
             };
 
-            // Bresenham's Ellipse Math (same as DrawingService)
             int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
             long dx = 4 * (1 - a) * b * b, dy = 4 * (b1 + 1) * a * a;
             long err = dx + dy + b1 * a * a, e2;
@@ -2489,8 +2509,8 @@ namespace Hexel.ViewModels
                 y0++; y1--;
             }
 
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
         public void ParseBinaryToState(string text)
@@ -2576,24 +2596,18 @@ namespace Hexel.ViewModels
         private void RestoreState(SpriteState state)
         {
             if (state == null || state == SpriteState) return;
+            CancelCurrentOperation();
 
-            CancelCurrentOperation(); // Stop any active tool drawing safely
-
-            // If the history state had a different grid size, seamlessly revert the canvas
-            if (_gridSize != state.Size)
+            if (InputWidth != state.Width || InputHeight != state.Height)
             {
-                _gridSize = state.Size;
-                OnPropertyChanged(nameof(GridSize));
-                InitializeGrid(state.Size);
-                OnPropertyChanged(nameof(PreviewSize));
-                OnPropertyChanged(nameof(GridViewport));
+                InputWidth = state.Width;
+                InputHeight = state.Height;
+                InitializeGrid(InputWidth, InputHeight);
             }
 
             SpriteState = state;
             RedrawGridFromMemory();
             UpdateTextOutputs();
-
-            // Notify the Window to clear lingering selection visuals
             HistoryRestored?.Invoke(this, EventArgs.Empty);
         }
 
@@ -2611,13 +2625,13 @@ namespace Hexel.ViewModels
                 }
                 else
                 {
+                    int w = SpriteState.Width;
                     for (int i = 0; i < SpriteState.Pixels.Length; i++)
                     {
-                        int x = i % SpriteState.Size;
-                        int y = i / SpriteState.Size;
+                        int x = i % w;
+                        int y = i / w;
                         if (x >= SelMinX && x <= SelMaxX && y >= SelMinY && y <= SelMaxY)
                         {
-                            // Use the polygon mask if we have one, otherwise fallback to bounding box
                             if (SelectionMask != null)
                             {
                                 if (SelectionMask[x - SelMinX, y - SelMinY])
@@ -2727,29 +2741,24 @@ namespace Hexel.ViewModels
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"
                                    FontSize="11" />
-                        <ComboBox x:Name="CmbGridSize"
-                                  Width="85"
-                                  SelectedValuePath="Tag"
-                                  SelectedValue="{Binding GridSize}"
-                                  Style="{StaticResource ModernComboBoxStyle}"
-                                  Padding="8,4"
-                                  Background="{DynamicResource Theme.BackgroundBrush}"
-                                  Foreground="{DynamicResource Theme.TextMainBrush}"
-                                  BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
-                            <ComboBoxItem Content="2x2"
-                                          Tag="2" />
-                            <ComboBoxItem Content="4x4"
-                                          Tag="4" />
-                            <ComboBoxItem Content="8x8"
-                                          Tag="8" />
-                            <ComboBoxItem Content="16x16"
-                                          Tag="16"
-                                          IsSelected="True" />
-                            <ComboBoxItem Content="24x24"
-                                          Tag="24" />
-                            <ComboBoxItem Content="32x32"
-                                          Tag="32" />
-                        </ComboBox>
+                        <TextBox Text="{Binding InputWidth}"
+                                 Width="40"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Margin="0,0,5,0"
+                                 TextAlignment="Center" />
+                        <TextBlock Text="x"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   Margin="0,0,5,0" />
+                        <TextBox Text="{Binding InputHeight}"
+                                 Width="40"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Margin="0,0,10,0"
+                                 TextAlignment="Center" />
+                        <Button Content="New Canvas"
+                                Command="{Binding NewCanvasCommand}"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="8,4" />
                         <CheckBox Content="Show Grid"
                                   IsChecked="{Binding ShowGridLines}"
                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
@@ -2923,8 +2932,8 @@ namespace Hexel.ViewModels
                                             ScaleY="{Binding Value, ElementName=ZoomSlider}" />
                         </Border.LayoutTransform>
 
-                        <Grid Width="400"
-                              Height="400"
+                        <Grid Width="{Binding CanvasDisplayWidth}"
+                              Height="{Binding CanvasDisplayHeight}"
                               x:Name="PixelGridContainer">
 
                             <Image x:Name="CanvasImage"
@@ -3144,8 +3153,8 @@ namespace Hexel.ViewModels
                             <Image Source="{Binding PreviewBitmap}"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
                                    Stretch="Fill"
-                                   Width="{Binding PreviewSize}"
-                                   Height="{Binding PreviewSize}"
+                                   Width="{Binding PreviewWidth}"
+                                   Height="{Binding PreviewHeight}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                         </Grid>
@@ -3420,17 +3429,17 @@ namespace Hexel
 
         private int GetIndexFromMousePosition(Point pos, double actualWidth, double actualHeight)
         {
-            int size = ViewModel.SpriteState.Size;
+            int w = ViewModel.SpriteState.Width;
+            int h = ViewModel.SpriteState.Height;
             if (actualWidth == 0 || actualHeight == 0) return 0;
 
-            int x = (int)(pos.X / actualWidth * size);
-            int y = (int)(pos.Y / actualHeight * size);
+            int x = (int)(pos.X / actualWidth * w);
+            int y = (int)(pos.Y / actualHeight * h);
 
-            // Clamp coordinates to grid boundaries
-            x = Math.Max(0, Math.Min(size - 1, x));
-            y = Math.Max(0, Math.Min(size - 1, y));
+            x = Math.Max(0, Math.Min(w - 1, x));
+            y = Math.Max(0, Math.Min(h - 1, y));
 
-            return (y * size) + x;
+            return (y * w) + x;
         }
 
         #endregion
@@ -3439,13 +3448,13 @@ namespace Hexel
 
         private void HandleSelectionTool(MouseEventArgs e, int index)
         {
-            int size = ViewModel.SpriteState.Size;
-            int x = index % size;
-            int y = index / size;
+            int w = ViewModel.SpriteState.Width;
+            int x = index % w;
+            int y = index / w;
 
             if (Mouse.LeftButton == MouseButtonState.Pressed)
             {
-                if (e is MouseButtonEventArgs) // MouseDown
+                if (e is MouseButtonEventArgs)
                 {
                     bool clickingInside = false;
                     if (_hasActiveSelection && x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
@@ -3497,7 +3506,7 @@ namespace Hexel
                         UpdateSelectionVisualsFromBounds();
                     }
                 }
-                else if (_isSelecting) // MouseMove
+                else if (_isSelecting)
                 {
                     if (ViewModel.CurrentTool == ToolMode.Lasso)
                     {
@@ -3512,13 +3521,13 @@ namespace Hexel
                             UpdateLassoVisuals();
                         }
                     }
-                    else // Marquee
+                    else
                     {
                         _selectionEndIdx = index;
-                        _selMinX = Math.Min(_selectionStartIdx % size, x);
-                        _selMaxX = Math.Max(_selectionStartIdx % size, x);
-                        _selMinY = Math.Min(_selectionStartIdx / size, y);
-                        _selMaxY = Math.Max(_selectionStartIdx / size, y);
+                        _selMinX = Math.Min(_selectionStartIdx % w, x);
+                        _selMaxX = Math.Max(_selectionStartIdx % w, x);
+                        _selMinY = Math.Min(_selectionStartIdx / w, y);
+                        _selMaxY = Math.Max(_selectionStartIdx / w, y);
                         UpdateSelectionVisualsFromBounds();
                     }
                 }
@@ -3531,8 +3540,8 @@ namespace Hexel
 
             double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
             double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
-            double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-            double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+            double cellWidth = gridWidth / ViewModel.SpriteState.Width;
+            double cellHeight = gridHeight / ViewModel.SpriteState.Height;
 
             int dx = 0;
             int dy = 0;
@@ -3542,7 +3551,6 @@ namespace Hexel
                 dy = _floatingY - _lassoOriginalMinY;
             }
 
-            // Either recycle the floating mask if we are dragging it, or build it fresh
             bool[,] mask = null;
             int w, h, currentMinX, currentMinY;
 
@@ -3572,7 +3580,6 @@ namespace Hexel
                 currentMinY = _selMinY;
             }
 
-            // Generate a unified border by unioning cell rectangles
             Geometry combined = null;
             for (int y = 0; y < h; y++)
             {
@@ -3602,8 +3609,8 @@ namespace Hexel
             if (MarqueeOverlay == null) return;
             double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
             double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
-            double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-            double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+            double cellWidth = gridWidth / ViewModel.SpriteState.Width;
+            double cellHeight = gridHeight / ViewModel.SpriteState.Height;
 
             Canvas.SetLeft(MarqueeOverlay, _selMinX * cellWidth);
             Canvas.SetTop(MarqueeOverlay, _selMinY * cellHeight);
@@ -3633,7 +3640,7 @@ namespace Hexel
         {
             if (!_hasActiveSelection || _isFloating) return;
 
-            int size = ViewModel.SpriteState.Size;
+            int w = ViewModel.SpriteState.Width;
             _floatingWidth = (_selMaxX - _selMinX) + 1;
             _floatingHeight = (_selMaxY - _selMinY) + 1;
             _floatingX = _selMinX;
@@ -3650,7 +3657,7 @@ namespace Hexel
 
                     if (includePixel)
                     {
-                        int idx = (y * size) + x;
+                        int idx = (y * w) + x;
                         if (ViewModel.SpriteState.Pixels[idx])
                         {
                             _floatingPixels[x - _selMinX, y - _selMinY] = true;
@@ -3670,7 +3677,8 @@ namespace Hexel
 
             if (_isFloating && _floatingPixels != null)
             {
-                int size = ViewModel.SpriteState.Size;
+                int w = ViewModel.SpriteState.Width;
+                int h = ViewModel.SpriteState.Height;
                 for (int y = 0; y < _floatingHeight; y++)
                 {
                     for (int x = 0; x < _floatingWidth; x++)
@@ -3680,9 +3688,9 @@ namespace Hexel
                             int gridX = _floatingX + x;
                             int gridY = _floatingY + y;
 
-                            if (gridX >= 0 && gridX < size && gridY >= 0 && gridY < size)
+                            if (gridX >= 0 && gridX < w && gridY >= 0 && gridY < h)
                             {
-                                ViewModel.SpriteState.Pixels[(gridY * size) + gridX] = true;
+                                ViewModel.SpriteState.Pixels[(gridY * w) + gridX] = true;
                             }
                         }
                     }
@@ -3774,7 +3782,6 @@ namespace Hexel
         {
             base.OnPreviewMouseMove(e);
 
-            // --- NEW LINE & RECTANGLE TOOL DRAG TRACKING ---
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
                 Point pos = e.GetPosition(CanvasImage);
@@ -3789,8 +3796,8 @@ namespace Hexel
                 double deltaY = currentPos.Y - _dragStartMousePos.Y;
                 double gridWidth = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
                 double gridHeight = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
-                double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-                double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+                double cellWidth = gridWidth / ViewModel.SpriteState.Width;
+                double cellHeight = gridHeight / ViewModel.SpriteState.Height;
 
                 int cellsMovedX = (int)Math.Round(deltaX / cellWidth);
                 int cellsMovedY = (int)Math.Round(deltaY / cellHeight);

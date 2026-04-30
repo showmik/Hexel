@@ -12,9 +12,9 @@ namespace Hexel.Services
         {
             var binBuilder = new StringBuilder();
             var hexList = new List<string>();
-            int bytesPerRow = (int)Math.Ceiling(state.Size / 8.0);
+            int bytesPerRow = (int)Math.Ceiling(state.Width / 8.0);
 
-            for (int row = 0; row < state.Size; row++)
+            for (int row = 0; row < state.Height; row++)
             {
                 var fullRowBinary = new StringBuilder();
                 for (int chunk = 0; chunk < bytesPerRow; chunk++)
@@ -23,9 +23,9 @@ namespace Hexel.Services
                     for (int bit = 0; bit < 8; bit++)
                     {
                         int col = (chunk * 8) + bit;
-                        if (col < state.Size)
+                        if (col < state.Width)
                         {
-                            int index = (row * state.Size) + col;
+                            int index = (row * state.Width) + col;
                             bool isPixelOn = state.Pixels[index];
 
                             if (isFloating)
@@ -47,8 +47,6 @@ namespace Hexel.Services
                     fullRowBinary.Append(byteString).Append(" ");
                     hexList.Add($"0x{Convert.ToInt32(byteString.ToString(), 2):X2}");
                 }
-
-                // --- UPDATED LINE ---
                 binBuilder.AppendLine(fullRowBinary.ToString().TrimEnd());
             }
 
@@ -56,18 +54,8 @@ namespace Hexel.Services
             for (int i = 0; i < hexList.Count; i++)
             {
                 hexFormatted.Append(hexList[i]);
-                
-                // Only add a comma and space if it's not the last item
-                if (i < hexList.Count - 1)
-                {
-                    hexFormatted.Append(", ");
-                }
-
-                // Add a line break at the end of each row
-                if ((i + 1) % bytesPerRow == 0 && i < hexList.Count - 1) 
-                {
-                    hexFormatted.AppendLine();
-                }
+                if (i < hexList.Count - 1) hexFormatted.Append(", ");
+                if ((i + 1) % bytesPerRow == 0 && i < hexList.Count - 1) hexFormatted.AppendLine();
             }
 
             return (binBuilder.ToString().TrimEnd('\r', '\n'), hexFormatted.ToString());
@@ -77,9 +65,9 @@ namespace Hexel.Services
         {
             var binBuilder = new StringBuilder();
             var hexBuilder = new StringBuilder();
-            int bytesPerRow = (int)Math.Ceiling(state.Size / 8.0);
+            int bytesPerRow = (int)Math.Ceiling(state.Width / 8.0);
 
-            for (int row = 0; row < state.Size; row++)
+            for (int row = 0; row < state.Height; row++)
             {
                 var fullRowBinary = new StringBuilder();
                 var fullRowHex = new StringBuilder();
@@ -90,9 +78,9 @@ namespace Hexel.Services
                     for (int bit = 0; bit < 8; bit++)
                     {
                         int col = (chunk * 8) + bit;
-                        if (col < state.Size)
+                        if (col < state.Width)
                         {
-                            int index = (row * state.Size) + col;
+                            int index = (row * state.Width) + col;
                             bool isPixelOn = state.Pixels[index];
 
                             if (isFloating)
@@ -118,11 +106,8 @@ namespace Hexel.Services
                     fullRowBinary.Append(binChunk);
                     fullRowHex.Append(hexChunk);
 
-                    if (binaryUseComma) fullRowBinary.Append(", ");
-                    else fullRowBinary.Append(" ");
-
-                    if (hexUseComma) fullRowHex.Append(", ");
-                    else fullRowHex.Append(" ");
+                    if (binaryUseComma) fullRowBinary.Append(", "); else fullRowBinary.Append(" ");
+                    if (hexUseComma) fullRowHex.Append(", "); else fullRowHex.Append(" ");
                 }
 
                 binBuilder.AppendLine(fullRowBinary.ToString().TrimEnd());
@@ -145,15 +130,13 @@ namespace Hexel.Services
 
             foreach (string line in lines)
             {
-                if (row >= state.Size) break;
+                if (row >= state.Height) break;
                 string dataPart = line.Contains(":") ? line.Substring(line.IndexOf(':') + 1) : line;
-
-                // Remove spaces AND commas before reading back into the grid
                 dataPart = dataPart.Replace(" ", "").Replace(",", "");
 
-                for (int col = 0; col < state.Size; col++)
+                for (int col = 0; col < state.Width; col++)
                 {
-                    state.Pixels[(row * state.Size) + col] = (col < dataPart.Length) && (dataPart[col] == '1');
+                    state.Pixels[(row * state.Width) + col] = (col < dataPart.Length) && (dataPart[col] == '1');
                 }
                 row++;
             }
@@ -162,10 +145,10 @@ namespace Hexel.Services
         public void ParseHexToState(string hexText, SpriteState state)
         {
             MatchCollection matches = Regex.Matches(hexText, @"0[xX]([0-9a-fA-F]{1,2})");
-            int bytesPerRow = (int)Math.Ceiling(state.Size / 8.0);
+            int bytesPerRow = (int)Math.Ceiling(state.Width / 8.0);
             int matchIndex = 0;
 
-            for (int row = 0; row < state.Size; row++)
+            for (int row = 0; row < state.Height; row++)
             {
                 for (int chunk = 0; chunk < bytesPerRow; chunk++)
                 {
@@ -176,9 +159,9 @@ namespace Hexel.Services
                         for (int bit = 7; bit >= 0; bit--)
                         {
                             int col = (chunk * 8) + (7 - bit);
-                            if (col < state.Size)
+                            if (col < state.Width)
                             {
-                                state.Pixels[(row * state.Size) + col] = ((b >> bit) & 1) == 1;
+                                state.Pixels[(row * state.Width) + col] = ((b >> bit) & 1) == 1;
                             }
                         }
                     }

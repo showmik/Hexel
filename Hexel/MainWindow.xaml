@@ -85,29 +85,24 @@
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"
                                    FontSize="11" />
-                        <ComboBox x:Name="CmbGridSize"
-                                  Width="85"
-                                  SelectedValuePath="Tag"
-                                  SelectedValue="{Binding GridSize}"
-                                  Style="{StaticResource ModernComboBoxStyle}"
-                                  Padding="8,4"
-                                  Background="{DynamicResource Theme.BackgroundBrush}"
-                                  Foreground="{DynamicResource Theme.TextMainBrush}"
-                                  BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
-                            <ComboBoxItem Content="2x2"
-                                          Tag="2" />
-                            <ComboBoxItem Content="4x4"
-                                          Tag="4" />
-                            <ComboBoxItem Content="8x8"
-                                          Tag="8" />
-                            <ComboBoxItem Content="16x16"
-                                          Tag="16"
-                                          IsSelected="True" />
-                            <ComboBoxItem Content="24x24"
-                                          Tag="24" />
-                            <ComboBoxItem Content="32x32"
-                                          Tag="32" />
-                        </ComboBox>
+                        <TextBox Text="{Binding InputWidth}"
+                                 Width="40"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Margin="0,0,5,0"
+                                 TextAlignment="Center" />
+                        <TextBlock Text="x"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   Margin="0,0,5,0" />
+                        <TextBox Text="{Binding InputHeight}"
+                                 Width="40"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Margin="0,0,10,0"
+                                 TextAlignment="Center" />
+                        <Button Content="New Canvas"
+                                Command="{Binding NewCanvasCommand}"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="8,4" />
                         <CheckBox Content="Show Grid"
                                   IsChecked="{Binding ShowGridLines}"
                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
@@ -281,8 +276,8 @@
                                             ScaleY="{Binding Value, ElementName=ZoomSlider}" />
                         </Border.LayoutTransform>
 
-                        <Grid Width="400"
-                              Height="400"
+                        <Grid Width="{Binding CanvasDisplayWidth}"
+                              Height="{Binding CanvasDisplayHeight}"
                               x:Name="PixelGridContainer">
 
                             <Image x:Name="CanvasImage"
@@ -319,7 +314,7 @@
                                                 </GeometryDrawing.Geometry>
                                                 <GeometryDrawing.Pen>
                                                     <Pen Brush="{DynamicResource Theme.BackgroundBrush}"
-                                                         Thickness="1" />
+                                                         Thickness="{Binding DynamicStrokeThickness}" />
                                                 </GeometryDrawing.Pen>
                                             </GeometryDrawing>
                                         </DrawingBrush.Drawing>
@@ -333,18 +328,18 @@
 
                                 <Rectangle x:Name="MarqueeOverlay"
                                            Stroke="{DynamicResource Theme.WarningBrush}"
-                                           StrokeThickness="2"
+                                           StrokeThickness="{Binding DynamicStrokeThickness}"
                                            StrokeDashArray="4,4"
                                            Visibility="Hidden"
                                            IsHitTestVisible="False" />
 
                                 <Path x:Name="LassoOverlay"
-                                         Stroke="{DynamicResource Theme.WarningBrush}"
-                                         StrokeThickness="2"
-                                         StrokeDashArray="4,4"
-                                         Visibility="Hidden"
-                                         IsHitTestVisible="False"
-                                         Fill="#40F2E94E" />
+                                      Stroke="{DynamicResource Theme.WarningBrush}"
+                                      StrokeThickness="{Binding DynamicStrokeThickness}"
+                                      StrokeDashArray="4,4"
+                                      Visibility="Hidden"
+                                      IsHitTestVisible="False"
+                                      Fill="#40F2E94E" />
                                 <!-- Light transparent yellow to show the inner selection area -->
                             </Canvas>
                         </Grid>
@@ -502,8 +497,8 @@
                             <Image Source="{Binding PreviewBitmap}"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
                                    Stretch="Fill"
-                                   Width="{Binding PreviewSize}"
-                                   Height="{Binding PreviewSize}"
+                                   Width="{Binding PreviewWidth}"
+                                   Height="{Binding PreviewHeight}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                         </Grid>

@@ -158,6 +158,56 @@
         </Setter>
     </Style>
 
+    <Style x:Key="ModernTextBoxStyle"
+           TargetType="TextBox">
+        <Setter Property="Background"
+                Value="{DynamicResource Theme.BackgroundBrush}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource Theme.TextMainBrush}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource Theme.PanelBorderBrush}" />
+        <Setter Property="BorderThickness"
+                Value="1" />
+        <Setter Property="Padding"
+                Value="8,4" />
+        <Setter Property="CaretBrush"
+                Value="{DynamicResource Theme.TextMainBrush}" />
+        <Setter Property="SelectionBrush"
+                Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="{TemplateBinding Padding}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource Theme.TextMutedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsFocused"
+                                 Value="True">
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter Property="Opacity"
+                                    Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="ComboBoxItem">
         <Setter Property="Background"
                 Value="{DynamicResource Theme.PanelBackgroundBrush}" />
