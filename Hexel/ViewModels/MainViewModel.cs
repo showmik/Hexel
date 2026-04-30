@@ -438,14 +438,20 @@ namespace Hexel.ViewModels
                 }
                 else if (CurrentTool == ToolMode.Pencil)
                 {
-                    SaveStateForUndo();
                     if (isShiftDown && _lastClickedIndex != -1)
+                    {
+                        // DrawLine already handles SaveState, updating _lastClickedIndex, 
+                        // and triggering UpdateTextOutputs internally.
                         DrawLine(_lastClickedIndex, index, drawState.Value);
+                    }
                     else
+                    {
+                        // Standard single-pixel click
+                        SaveStateForUndo();
                         SetPixel(index, drawState.Value);
-
-                    _lastClickedIndex = index;
-                    UpdateTextOutputs();
+                        _lastClickedIndex = index;
+                        UpdateTextOutputs();
+                    }
                 }
             }
             else if (actionType == "Enter")
