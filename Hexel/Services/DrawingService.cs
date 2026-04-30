@@ -99,5 +99,34 @@ namespace Hexel.Services
                 state.Pixels[i] = !state.Pixels[i];
             }
         }
+
+        // Add this new method inside the DrawingService class
+        public void DrawRectangle(SpriteState state, int startIdx, int endIdx, bool newState)
+        {
+            int size = state.Size;
+            int x0 = startIdx % size;
+            int y0 = startIdx / size;
+            int x1 = endIdx % size;
+            int y1 = endIdx / size;
+
+            int minX = Math.Min(x0, x1);
+            int maxX = Math.Max(x0, x1);
+            int minY = Math.Min(y0, y1);
+            int maxY = Math.Max(y0, y1);
+
+            // Draw top and bottom edges
+            for (int x = minX; x <= maxX; x++)
+            {
+                state.Pixels[(minY * size) + x] = newState;
+                state.Pixels[(maxY * size) + x] = newState;
+            }
+
+            // Draw left and right edges
+            for (int y = minY; y <= maxY; y++)
+            {
+                state.Pixels[(y * size) + minX] = newState;
+                state.Pixels[(y * size) + maxX] = newState;
+            }
+        }
     }
 }

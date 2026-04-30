@@ -152,6 +152,17 @@
                                       Data="M4 14L14 4" />
                             </RadioButton.Content>
                         </RadioButton>
+                        <RadioButton x:Name="RbRectangle"
+                                     Style="{StaticResource IconToolButtonStyle}"
+                                     GroupName="Tools"
+                                     Checked="Tool_Checked"
+                                     Tag="Rectangle"
+                                     ToolTip="Rectangle Tool (R)">
+                            <RadioButton.Content>
+                                <Path Style="{StaticResource StrokedToolIconStyle}"
+                                      Data="M 5,5 H 19 V 19 H 5 Z" />
+                            </RadioButton.Content>
+                        </RadioButton>
                         <RadioButton x:Name="RbFill"
                                      Style="{StaticResource IconToolButtonStyle}"
                                      GroupName="Tools"

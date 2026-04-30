@@ -4,6 +4,7 @@
     {
         Pencil,
         Line,
+        Rectangle,
         Fill,
         Marquee
     }

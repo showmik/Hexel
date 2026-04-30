@@ -214,6 +214,7 @@ namespace Hexel.ViewModels
         }
 
         public bool IsDrawingLine { get; private set; }
+        public bool IsDrawingRectangle { get; private set; }
 
         // Selection fields (public so view can bind/observe)
         public bool HasActiveSelection { get; private set; }
@@ -430,6 +431,14 @@ namespace Hexel.ViewModels
                     _lineDrawState = drawState.Value;
                     PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
                 }
+                else if (CurrentTool == ToolMode.Rectangle)
+                {
+                    IsDrawingRectangle = true;
+                    _lineStartIdx = index;
+                    _lineCurrentIdx = index;
+                    _lineDrawState = drawState.Value;
+                    PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                }
                 else if (CurrentTool == ToolMode.Fill)
                 {
                     SaveStateForUndo();
@@ -473,6 +482,14 @@ namespace Hexel.ViewModels
                         _pendingTextUpdateDuringDrag = true;
                     }
                 }
+                else if (CurrentTool == ToolMode.Rectangle && IsDrawingRectangle)
+                {
+                    if (_lineCurrentIdx != index)
+                    {
+                        _lineCurrentIdx = index;
+                        PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    }
+                }
             }
             else if (actionType == "Up")
             {
@@ -493,6 +510,19 @@ namespace Hexel.ViewModels
                 {
                     UpdateTextOutputs();
                     _pendingTextUpdateDuringDrag = false;
+                }
+
+                if (CurrentTool == ToolMode.Rectangle && IsDrawingRectangle)
+                {
+                    IsDrawingRectangle = false;
+                    if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                    {
+                        DrawRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                        _lastClickedIndex = _lineCurrentIdx;
+                    }
+                    _lineStartIdx = -1;
+                    _lineCurrentIdx = -1;
+                    UpdateTextOutputs();
                 }
             }
         }
@@ -586,6 +616,57 @@ namespace Hexel.ViewModels
             }
         }
 
+        public void DrawRectangle(int startIdx, int endIdx, bool newState)
+        {
+            _historyService.SaveState(SpriteState);
+            _drawingService.DrawRectangle(SpriteState, startIdx, endIdx, newState);
+            _lastClickedIndex = endIdx;
+            RedrawGridFromMemory();
+            UpdateTextOutputs();
+        }
+
+        public void PreviewRectangle(int startIdx, int endIdx, bool newState)
+        {
+            RedrawGridFromMemory(); // Clear previous preview frame
+
+            int size = SpriteState.Size;
+            int x0 = startIdx % size;
+            int y0 = startIdx / size;
+            int x1 = endIdx % size;
+            int y1 = endIdx / size;
+
+            int minX = Math.Min(x0, x1);
+            int maxX = Math.Max(x0, x1);
+            int minY = Math.Min(y0, y1);
+            int maxY = Math.Max(y0, y1);
+
+            var previewColor = newState ? _colorOnUint : _colorOffUint;
+            var previewPrev = newState ? _previewOnUint : _previewOffUint;
+
+            // Local helper function to draw pixels cleanly
+            Action<int, int> drawPixel = (px, py) => {
+                int i = (py * size) + px;
+                _canvasBuffer[i] = previewColor;
+                _previewBuffer[i] = previewPrev;
+            };
+
+            // Plot horizontal edges
+            for (int x = minX; x <= maxX; x++)
+            {
+                drawPixel(x, minY);
+                drawPixel(x, maxY);
+            }
+            // Plot vertical edges
+            for (int y = minY; y <= maxY; y++)
+            {
+                drawPixel(minX, y);
+                drawPixel(maxX, y);
+            }
+
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+        }
+
         public void ParseBinaryToState(string text)
         {
             _codeGen.ParseBinaryToState(text, SpriteState);
@@ -653,6 +734,7 @@ namespace Hexel.ViewModels
         public void CancelCurrentOperation()
         {
             IsDrawingLine = false;
+            IsDrawingRectangle = false;
             _lineStartIdx = -1;
             _lineCurrentIdx = -1;
             _lastClickedIndex = -1;

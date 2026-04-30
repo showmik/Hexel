@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Hexel.Core;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using Hexel.Core;
 
 namespace Hexel
 {
@@ -82,6 +82,7 @@ namespace Hexel
                 string tag = rb.Tag.ToString();
                 ViewModel.CurrentTool = tag == "Fill" ? ToolMode.Fill :
                                         tag == "Marquee" ? ToolMode.Marquee :
+                                        tag == "Rectangle" ? ToolMode.Rectangle :
                                         tag == "Line" ? ToolMode.Line : ToolMode.Pencil;
 
                 if (ViewModel.CurrentTool != ToolMode.Marquee)
@@ -393,11 +394,10 @@ namespace Hexel
         {
             base.OnPreviewMouseMove(e);
 
-            // --- NEW LINE TOOL DRAG TRACKING ---
-            // Inside OnPreviewMouseMove
-            if (ViewModel.IsDrawingLine)
+            // --- NEW LINE & RECTANGLE TOOL DRAG TRACKING ---
+            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle)
             {
-                Point pos = e.GetPosition(CanvasImage); // Reference the Image name
+                Point pos = e.GetPosition(CanvasImage);
                 int hoverIndex = GetIndexFromMousePosition(pos, CanvasImage.ActualWidth, CanvasImage.ActualHeight);
                 ViewModel.ProcessToolInput(hoverIndex, "Enter", null, false);
             }
@@ -441,7 +441,7 @@ namespace Hexel
             base.OnPreviewMouseUp(e);
 
             // --- UPDATED TOOL COMMIT ---
-            if (ViewModel.IsDrawingLine)
+            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle)
             {
                 ViewModel.ProcessToolInput(-1, "Up", null, false);
                 Mouse.Capture(null); // Release the mouse lock
@@ -506,6 +506,8 @@ namespace Hexel
                 else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.L) { if (RbLine != null) RbLine.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.R) { if (RbRectangle != null) RbRectangle.IsChecked = true; e.Handled = true; }
+
             }
         }
 
