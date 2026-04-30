@@ -205,7 +205,10 @@
                                      ToolTip="Lasso Select (S)">
                             <RadioButton.Content>
                                 <Path Style="{StaticResource StrokedToolIconStyle}"
-                                      Data="M 12.5,14.5 C 15,14.5 17,12.5 17,9.5 C 17,6.5 15,4.5 11,4.5 C 7,4.5 5,6.5 5,9.5 C 5,12.5 7.5,14.5 10,14.5 L 12.5,20.5 M 8,20.5 L 12.5,20.5" />
+                                      StrokeDashArray="2,2"
+                                      Height="22"
+                                      Width="22"
+                                      Data="{StaticResource Icon.Lasso}" />
                             </RadioButton.Content>
                         </RadioButton>
                     </StackPanel>
