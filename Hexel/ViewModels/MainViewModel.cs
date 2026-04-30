@@ -374,9 +374,24 @@ namespace Hexel.ViewModels
         #region Public Methods
         public void InitializeGrid(int size)
         {
+            // 1. Cache the old state before overriding it
+            var oldState = SpriteState;
             SpriteState = new SpriteState(size);
 
-            // Create new bitmaps and buffers matching the new size
+            // 2. Map and copy existing pixels to preserve the drawing during resize
+            if (oldState != null && oldState.Pixels != null)
+            {
+                int minSize = Math.Min(oldState.Size, size);
+                for (int y = 0; y < minSize; y++)
+                {
+                    for (int x = 0; x < minSize; x++)
+                    {
+                        SpriteState.Pixels[(y * size) + x] = oldState.Pixels[(y * oldState.Size) + x];
+                    }
+                }
+            }
+
+            // 3. Create new bitmaps and buffers matching the new size
             CanvasBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
             PreviewBitmap = new WriteableBitmap(size, size, 96, 96, PixelFormats.Bgra32, null);
 
