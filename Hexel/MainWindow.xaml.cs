@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Collections.Generic;
 
 namespace Hexel
 {
@@ -23,6 +24,10 @@ namespace Hexel
         private int _selectionStartIdx = -1;
         private int _selectionEndIdx = -1;
         private int _selMinX = -1, _selMaxX = -1, _selMinY = -1, _selMaxY = -1;
+
+        private List<Point> _lassoPoints = new List<Point>();
+        private int _lassoOriginalMinX = -1;
+        private int _lassoOriginalMinY = -1;
 
         private bool[,] _floatingPixels;
         private int _floatingX, _floatingY, _floatingWidth, _floatingHeight;
@@ -82,11 +87,12 @@ namespace Hexel
                 string tag = rb.Tag.ToString();
                 ViewModel.CurrentTool = tag == "Fill" ? ToolMode.Fill :
                                         tag == "Marquee" ? ToolMode.Marquee :
+                                        tag == "Lasso" ? ToolMode.Lasso :
                                         tag == "Rectangle" ? ToolMode.Rectangle :
                                         tag == "Ellipse" ? ToolMode.Ellipse :
                                         tag == "Line" ? ToolMode.Line : ToolMode.Pencil;
 
-                if (ViewModel.CurrentTool != ToolMode.Marquee)
+                if (ViewModel.CurrentTool != ToolMode.Marquee && ViewModel.CurrentTool != ToolMode.Lasso)
                 {
                     CommitSelection();
                     ClearSelectionVisuals();
@@ -104,9 +110,9 @@ namespace Hexel
             Point pos = e.GetPosition(image);
             int index = GetIndexFromMousePosition(pos, image.ActualWidth, image.ActualHeight);
 
-            if (ViewModel.CurrentTool == ToolMode.Marquee)
+            if (ViewModel.CurrentTool == ToolMode.Marquee || ViewModel.CurrentTool == ToolMode.Lasso)
             {
-                HandleMarqueeTool(e, index);
+                HandleSelectionTool(e, index);
                 return;
             }
 
@@ -134,10 +140,9 @@ namespace Hexel
             if (index != _lastHoveredIndex)
             {
                 _lastHoveredIndex = index;
-
-                if (ViewModel.CurrentTool == ToolMode.Marquee && Mouse.LeftButton == MouseButtonState.Pressed)
+                if ((ViewModel.CurrentTool == ToolMode.Marquee || ViewModel.CurrentTool == ToolMode.Lasso) && Mouse.LeftButton == MouseButtonState.Pressed)
                 {
-                    HandleMarqueeTool(e, index);
+                    HandleSelectionTool(e, index);
                     return;
                 }
 
@@ -175,7 +180,7 @@ namespace Hexel
 
         #region Marquee Tool & Selection Logic
 
-        private void HandleMarqueeTool(MouseEventArgs e, int index)
+        private void HandleSelectionTool(MouseEventArgs e, int index)
         {
             int size = ViewModel.SpriteState.Size;
             int x = index % size;
@@ -183,9 +188,22 @@ namespace Hexel
 
             if (Mouse.LeftButton == MouseButtonState.Pressed)
             {
-                if (e is MouseButtonEventArgs)
+                if (e is MouseButtonEventArgs) // MouseDown
                 {
+                    bool clickingInside = false;
                     if (_hasActiveSelection && x >= _selMinX && x <= _selMaxX && y >= _selMinY && y <= _selMaxY)
+                    {
+                        if (ViewModel.CurrentTool == ToolMode.Marquee)
+                        {
+                            clickingInside = true;
+                        }
+                        else if (ViewModel.CurrentTool == ToolMode.Lasso && IsPointInPolygon(new Point(x, y), _lassoPoints))
+                        {
+                            clickingInside = true;
+                        }
+                    }
+
+                    if (clickingInside)
                     {
                         ViewModel.SaveStateForUndo();
                         LiftSelection();
@@ -194,9 +212,13 @@ namespace Hexel
                         _dragStartFloatingX = _floatingX;
                         _dragStartFloatingY = _floatingY;
 
-                        // NEW: Capture the mouse to ensure we track it if it leaves the window
-                        Mouse.Capture(PixelGridContainer);
+                        if (ViewModel.CurrentTool == ToolMode.Lasso)
+                        {
+                            _lassoOriginalMinX = _selMinX;
+                            _lassoOriginalMinY = _selMinY;
+                        }
 
+                        Mouse.Capture(PixelGridContainer);
                         return;
                     }
 
@@ -207,19 +229,121 @@ namespace Hexel
                     _selMinX = _selMaxX = x;
                     _selMinY = _selMaxY = y;
 
-                    UpdateSelectionVisualsFromBounds();
+                    if (ViewModel.CurrentTool == ToolMode.Lasso)
+                    {
+                        _lassoPoints.Clear();
+                        _lassoPoints.Add(new Point(x, y));
+                        UpdateLassoVisuals();
+                    }
+                    else
+                    {
+                        UpdateSelectionVisualsFromBounds();
+                    }
                 }
-                else if (_isSelecting)
+                else if (_isSelecting) // MouseMove
                 {
-                    _selectionEndIdx = index;
-                    _selMinX = Math.Min(_selectionStartIdx % size, x);
-                    _selMaxX = Math.Max(_selectionStartIdx % size, x);
-                    _selMinY = Math.Min(_selectionStartIdx / size, y);
-                    _selMaxY = Math.Max(_selectionStartIdx / size, y);
-
-                    UpdateSelectionVisualsFromBounds();
+                    if (ViewModel.CurrentTool == ToolMode.Lasso)
+                    {
+                        var lastPt = _lassoPoints[_lassoPoints.Count - 1];
+                        if (lastPt.X != x || lastPt.Y != y)
+                        {
+                            _lassoPoints.Add(new Point(x, y));
+                            _selMinX = Math.Min(_selMinX, x);
+                            _selMaxX = Math.Max(_selMaxX, x);
+                            _selMinY = Math.Min(_selMinY, y);
+                            _selMaxY = Math.Max(_selMaxY, y);
+                            UpdateLassoVisuals();
+                        }
+                    }
+                    else // Marquee
+                    {
+                        _selectionEndIdx = index;
+                        _selMinX = Math.Min(_selectionStartIdx % size, x);
+                        _selMaxX = Math.Max(_selectionStartIdx % size, x);
+                        _selMinY = Math.Min(_selectionStartIdx / size, y);
+                        _selMaxY = Math.Max(_selectionStartIdx / size, y);
+                        UpdateSelectionVisualsFromBounds();
+                    }
                 }
             }
+        }
+
+        private void UpdateLassoVisuals()
+        {
+            if (LassoOverlay == null || _lassoPoints.Count == 0) return;
+            double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
+            double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
+            double cellWidth = gridWidth / ViewModel.SpriteState.Size;
+            double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+
+            int dx = 0;
+            int dy = 0;
+            if (_isDraggingSelection)
+            {
+                dx = _floatingX - _lassoOriginalMinX;
+                dy = _floatingY - _lassoOriginalMinY;
+            }
+
+            PointCollection points = new PointCollection();
+            foreach (var p in _lassoPoints)
+            {
+                // Align polygon points to the center of the visual cell 
+                points.Add(new Point(((p.X + dx) * cellWidth) + (cellWidth / 2), ((p.Y + dy) * cellHeight) + (cellHeight / 2)));
+            }
+
+            LassoOverlay.Points = points;
+            LassoOverlay.Visibility = Visibility.Visible;
+            if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
+
+            if (!_isDraggingSelection)
+            {
+                int w = (_selMaxX - _selMinX) + 1;
+                int h = (_selMaxY - _selMinY) + 1;
+                bool[,] mask = new bool[w, h];
+
+                for (int y = _selMinY; y <= _selMaxY; y++)
+                {
+                    for (int x = _selMinX; x <= _selMaxX; x++)
+                    {
+                        mask[x - _selMinX, y - _selMinY] = IsPointInPolygon(new Point(x, y), _lassoPoints);
+                    }
+                }
+
+                ViewModel.SetSelectionBounds(true, _selMinX, _selMaxX, _selMinY, _selMaxY, mask);
+                _hasActiveSelection = true;
+            }
+        }
+
+        private void UpdateSelectionVisualsFromBounds()
+        {
+            if (MarqueeOverlay == null) return;
+            double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
+            double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
+            double cellWidth = gridWidth / ViewModel.SpriteState.Size;
+            double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+
+            Canvas.SetLeft(MarqueeOverlay, _selMinX * cellWidth);
+            Canvas.SetTop(MarqueeOverlay, _selMinY * cellHeight);
+            MarqueeOverlay.Width = ((_selMaxX - _selMinX) + 1) * cellWidth;
+            MarqueeOverlay.Height = ((_selMaxY - _selMinY) + 1) * cellHeight;
+            System.Windows.Controls.Panel.SetZIndex(MarqueeOverlay, 100);
+
+            MarqueeOverlay.Visibility = Visibility.Visible;
+            if (LassoOverlay != null) LassoOverlay.Visibility = Visibility.Hidden;
+
+            _hasActiveSelection = true;
+            ViewModel.SetSelectionBounds(true, _selMinX, _selMaxX, _selMinY, _selMaxY, null);
+        }
+
+        private void ClearSelectionVisuals()
+        {
+            _isSelecting = false;
+            _selectionStartIdx = -1;
+            _selectionEndIdx = -1;
+            if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
+            if (LassoOverlay != null) LassoOverlay.Visibility = Visibility.Hidden;
+            _lassoPoints.Clear();
+            ViewModel.SetSelectionBounds(false, -1, -1, -1, -1, null);
         }
 
         private void LiftSelection()
@@ -231,17 +355,24 @@ namespace Hexel
             _floatingHeight = (_selMaxY - _selMinY) + 1;
             _floatingX = _selMinX;
             _floatingY = _selMinY;
+
             _floatingPixels = new bool[_floatingWidth, _floatingHeight];
 
             for (int y = _selMinY; y <= _selMaxY; y++)
             {
                 for (int x = _selMinX; x <= _selMaxX; x++)
                 {
-                    int idx = (y * size) + x;
-                    if (ViewModel.SpriteState.Pixels[idx])
+                    bool includePixel = ViewModel.CurrentTool == ToolMode.Marquee ||
+                                        (ViewModel.CurrentTool == ToolMode.Lasso && IsPointInPolygon(new Point(x, y), _lassoPoints));
+
+                    if (includePixel)
                     {
-                        _floatingPixels[x - _selMinX, y - _selMinY] = true;
-                        ViewModel.SpriteState.Pixels[idx] = false;
+                        int idx = (y * size) + x;
+                        if (ViewModel.SpriteState.Pixels[idx])
+                        {
+                            _floatingPixels[x - _selMinX, y - _selMinY] = true;
+                            ViewModel.SpriteState.Pixels[idx] = false;
+                        }
                     }
                 }
             }
@@ -286,41 +417,6 @@ namespace Hexel
             ViewModel.RedrawGridFromMemory();
             ViewModel.UpdateTextOutputs();
         }
-
-        private void UpdateSelectionVisualsFromBounds()
-        {
-            if (MarqueeOverlay == null) return;
-
-            double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
-            double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
-
-            double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-            double cellHeight = gridHeight / ViewModel.SpriteState.Size;
-
-            Canvas.SetLeft(MarqueeOverlay, _selMinX * cellWidth);
-            Canvas.SetTop(MarqueeOverlay, _selMinY * cellHeight);
-
-            MarqueeOverlay.Width = ((_selMaxX - _selMinX) + 1) * cellWidth;
-            MarqueeOverlay.Height = ((_selMaxY - _selMinY) + 1) * cellHeight;
-
-            System.Windows.Controls.Panel.SetZIndex(MarqueeOverlay, 100);
-            MarqueeOverlay.Visibility = Visibility.Visible;
-            _hasActiveSelection = true;
-
-            ViewModel.SetSelectionBounds(true, _selMinX, _selMaxX, _selMinY, _selMaxY);
-        }
-
-        private void ClearSelectionVisuals()
-        {
-            _isSelecting = false;
-            _selectionStartIdx = -1;
-            _selectionEndIdx = -1;
-
-            if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
-
-            ViewModel.SetSelectionBounds(false, -1, -1, -1, -1);
-        }
-
         #endregion
 
         #region Zoom & Panning Logic
@@ -435,6 +531,40 @@ namespace Hexel
                     ViewModel.RedrawGridFromMemory();
                 }
             }
+
+            if (_isDraggingSelection && Mouse.LeftButton == MouseButtonState.Pressed)
+            {
+                Point currentPos = e.GetPosition(PixelGridContainer);
+                double deltaX = currentPos.X - _dragStartMousePos.X;
+                double deltaY = currentPos.Y - _dragStartMousePos.Y;
+                double gridWidth = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
+                double gridHeight = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
+                double cellWidth = gridWidth / ViewModel.SpriteState.Size;
+                double cellHeight = gridHeight / ViewModel.SpriteState.Size;
+
+                int cellsMovedX = (int)Math.Round(deltaX / cellWidth);
+                int cellsMovedY = (int)Math.Round(deltaY / cellHeight);
+                int newX = _dragStartFloatingX + cellsMovedX;
+                int newY = _dragStartFloatingY + cellsMovedY;
+
+                if (newX != _floatingX || newY != _floatingY)
+                {
+                    _floatingX = newX;
+                    _floatingY = newY;
+                    _selMinX = _floatingX;
+                    _selMaxX = _floatingX + _floatingWidth - 1;
+                    _selMinY = _floatingY;
+                    _selMaxY = _floatingY + _floatingHeight - 1;
+
+                    if (ViewModel.CurrentTool == ToolMode.Lasso)
+                        UpdateLassoVisuals();
+                    else
+                        UpdateSelectionVisualsFromBounds();
+
+                    ViewModel.SyncFloatingState(_isFloating, _floatingPixels, _floatingX, _floatingY, _floatingWidth, _floatingHeight);
+                    ViewModel.RedrawGridFromMemory();
+                }
+            }
         }
 
         protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
@@ -504,6 +634,7 @@ namespace Hexel
                     }
                 }
                 else if (e.Key == Key.M) { if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; }
+                else if (e.Key == Key.S) { if (RbLasso != null) RbLasso.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.P) { if (RbPencil != null) RbPencil.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.L) { if (RbLine != null) RbLine.IsChecked = true; e.Handled = true; }
@@ -513,5 +644,31 @@ namespace Hexel
         }
 
         #endregion
+
+        private bool IsPointInPolygon(Point p, List<Point> polygon)
+        {
+            if (polygon == null || polygon.Count == 0) return false;
+            if (polygon.Count == 1) return p.X == polygon[0].X && p.Y == polygon[0].Y;
+            if (polygon.Count == 2) return (p.X == polygon[0].X && p.Y == polygon[0].Y) || (p.X == polygon[1].X && p.Y == polygon[1].Y);
+
+            // If the mouse hovered exactly over a vertex, guarantee it's counted
+            foreach (var v in polygon)
+            {
+                if (v.X == p.X && v.Y == p.Y) return true;
+            }
+
+            bool isInside = false;
+            Point testPoint = new Point(p.X + 0.01, p.Y + 0.01); // Offset to avoid boundary line overlaps
+
+            for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+            {
+                if (((polygon[i].Y > testPoint.Y) != (polygon[j].Y > testPoint.Y)) &&
+                    (testPoint.X < (polygon[j].X - polygon[i].X) * (testPoint.Y - polygon[i].Y) / (polygon[j].Y - polygon[i].Y) + polygon[i].X))
+                {
+                    isInside = !isInside;
+                }
+            }
+            return isInside;
+        }
     }
 }

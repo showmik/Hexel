@@ -216,8 +216,7 @@ namespace Hexel.ViewModels
         public bool IsDrawingLine { get; private set; }
         public bool IsDrawingRectangle { get; private set; }
         public bool IsDrawingEllipse { get; private set; }
-
-        // Selection fields (public so view can bind/observe)
+        public bool[,] SelectionMask { get; private set; }
         public bool HasActiveSelection { get; private set; }
         public bool IsSelecting { get; private set; }
         public bool IsFloating { get; private set; }
@@ -814,13 +813,14 @@ namespace Hexel.ViewModels
             FloatingHeight = h;
         }
 
-        public void SetSelectionBounds(bool hasSelection, int minX, int maxX, int minY, int maxY)
+        public void SetSelectionBounds(bool hasSelection, int minX, int maxX, int minY, int maxY, bool[,] mask = null)
         {
             HasActiveSelection = hasSelection;
             SelMinX = minX;
             SelMaxX = maxX;
             SelMinY = minY;
             SelMaxY = maxY;
+            SelectionMask = mask;
         }
 
         public void CancelCurrentOperation()
@@ -831,12 +831,11 @@ namespace Hexel.ViewModels
             _lineStartIdx = -1;
             _lineCurrentIdx = -1;
             _lastClickedIndex = -1;
-
             if (IsFloating)
             {
                 SyncFloatingState(false, null, 0, 0, 0, 0);
             }
-            SetSelectionBounds(false, -1, -1, -1, -1);
+            SetSelectionBounds(false, -1, -1, -1, -1, null);
         }
 
         private void RestoreState(SpriteState state)
@@ -868,29 +867,34 @@ namespace Hexel.ViewModels
         #region Private Methods
         private void DeleteSelection()
         {
-            if (CurrentTool == ToolMode.Marquee && HasActiveSelection)
+            if ((CurrentTool == ToolMode.Marquee || CurrentTool == ToolMode.Lasso) && HasActiveSelection)
             {
                 SaveStateForUndo();
-
                 if (IsFloating)
                 {
-                    // Destroy the floating pixels
                     SyncFloatingState(false, null, 0, 0, 0, 0);
                 }
                 else
                 {
-                    // Standard static deletion logic
                     for (int i = 0; i < SpriteState.Pixels.Length; i++)
                     {
                         int x = i % SpriteState.Size;
                         int y = i / SpriteState.Size;
                         if (x >= SelMinX && x <= SelMaxX && y >= SelMinY && y <= SelMaxY)
                         {
-                            SpriteState.Pixels[i] = false;
+                            // Use the polygon mask if we have one, otherwise fallback to bounding box
+                            if (SelectionMask != null)
+                            {
+                                if (SelectionMask[x - SelMinX, y - SelMinY])
+                                    SpriteState.Pixels[i] = false;
+                            }
+                            else
+                            {
+                                SpriteState.Pixels[i] = false;
+                            }
                         }
                     }
                 }
-
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
             }

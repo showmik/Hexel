@@ -7,6 +7,7 @@
         Rectangle,
         Ellipse,
         Fill,
-        Marquee
+        Marquee,
+        Lasso
     }
 }
