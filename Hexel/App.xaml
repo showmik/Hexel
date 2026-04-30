@@ -26,7 +26,7 @@
             <Color x:Key="Color.ClearButtonBackground">#FE4A49</Color>
             <Color x:Key="Color.CopyButtonBackground">#8BB174</Color>
             <Color x:Key="Color.ThumbBackground">#1e293b</Color>
-            <Color x:Key="Color.ScrollBar">#8696AD</Color>
+            <Color x:Key="Color.ScrollBar">#8692AD</Color>
 
             <SolidColorBrush x:Key="Theme.InvertButtonBackgroundBrush"
                              Color="{StaticResource Color.InvertButtonBackground}" />
