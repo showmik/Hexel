@@ -83,6 +83,7 @@ namespace Hexel
                 ViewModel.CurrentTool = tag == "Fill" ? ToolMode.Fill :
                                         tag == "Marquee" ? ToolMode.Marquee :
                                         tag == "Rectangle" ? ToolMode.Rectangle :
+                                        tag == "Ellipse" ? ToolMode.Ellipse :
                                         tag == "Line" ? ToolMode.Line : ToolMode.Pencil;
 
                 if (ViewModel.CurrentTool != ToolMode.Marquee)
@@ -395,7 +396,7 @@ namespace Hexel
             base.OnPreviewMouseMove(e);
 
             // --- NEW LINE & RECTANGLE TOOL DRAG TRACKING ---
-            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle)
+            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
                 Point pos = e.GetPosition(CanvasImage);
                 int hoverIndex = GetIndexFromMousePosition(pos, CanvasImage.ActualWidth, CanvasImage.ActualHeight);
@@ -441,7 +442,7 @@ namespace Hexel
             base.OnPreviewMouseUp(e);
 
             // --- UPDATED TOOL COMMIT ---
-            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle)
+            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
                 ViewModel.ProcessToolInput(-1, "Up", null, false);
                 Mouse.Capture(null); // Release the mouse lock
@@ -507,7 +508,7 @@ namespace Hexel
                 else if (e.Key == Key.F) { if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.L) { if (RbLine != null) RbLine.IsChecked = true; e.Handled = true; }
                 else if (e.Key == Key.R) { if (RbRectangle != null) RbRectangle.IsChecked = true; e.Handled = true; }
-
+                else if (e.Key == Key.E) { if (RbEllipse != null) RbEllipse.IsChecked = true; e.Handled = true; }
             }
         }
 

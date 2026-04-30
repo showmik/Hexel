@@ -5,6 +5,7 @@
         Pencil,
         Line,
         Rectangle,
+        Ellipse,
         Fill,
         Marquee
     }

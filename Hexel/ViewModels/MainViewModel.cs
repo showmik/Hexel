@@ -215,6 +215,7 @@ namespace Hexel.ViewModels
 
         public bool IsDrawingLine { get; private set; }
         public bool IsDrawingRectangle { get; private set; }
+        public bool IsDrawingEllipse { get; private set; }
 
         // Selection fields (public so view can bind/observe)
         public bool HasActiveSelection { get; private set; }
@@ -439,6 +440,14 @@ namespace Hexel.ViewModels
                     _lineDrawState = drawState.Value;
                     PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
                 }
+                else if (CurrentTool == ToolMode.Ellipse)
+                {
+                    IsDrawingEllipse = true;
+                    _lineStartIdx = index;
+                    _lineCurrentIdx = index;
+                    _lineDrawState = drawState.Value;
+                    PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                }
                 else if (CurrentTool == ToolMode.Fill)
                 {
                     SaveStateForUndo();
@@ -490,6 +499,14 @@ namespace Hexel.ViewModels
                         PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
                     }
                 }
+                else if (CurrentTool == ToolMode.Ellipse && IsDrawingEllipse)
+                {
+                    if (_lineCurrentIdx != index)
+                    {
+                        _lineCurrentIdx = index;
+                        PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    }
+                }
             }
             else if (actionType == "Up")
             {
@@ -518,6 +535,19 @@ namespace Hexel.ViewModels
                     if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
                     {
                         DrawRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                        _lastClickedIndex = _lineCurrentIdx;
+                    }
+                    _lineStartIdx = -1;
+                    _lineCurrentIdx = -1;
+                    UpdateTextOutputs();
+                }
+
+                if (CurrentTool == ToolMode.Ellipse && IsDrawingEllipse)
+                {
+                    IsDrawingEllipse = false;
+                    if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                    {
+                        DrawEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
                         _lastClickedIndex = _lineCurrentIdx;
                     }
                     _lineStartIdx = -1;
@@ -667,6 +697,68 @@ namespace Hexel.ViewModels
             PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
         }
 
+        public void DrawEllipse(int startIdx, int endIdx, bool newState)
+        {
+            _historyService.SaveState(SpriteState);
+            _drawingService.DrawEllipse(SpriteState, startIdx, endIdx, newState);
+            _lastClickedIndex = endIdx;
+            RedrawGridFromMemory();
+            UpdateTextOutputs();
+        }
+
+        public void PreviewEllipse(int startIdx, int endIdx, bool newState)
+        {
+            RedrawGridFromMemory(); // Clear previous preview frame
+
+            int size = SpriteState.Size;
+            int x0 = startIdx % size;
+            int y0 = startIdx / size;
+            int x1 = endIdx % size;
+            int y1 = endIdx / size;
+
+            var previewColor = newState ? _colorOnUint : _colorOffUint;
+            var previewPrev = newState ? _previewOnUint : _previewOffUint;
+
+            // Local helper to draw pixels cleanly to the buffers
+            Action<int, int> drawPixel = (px, py) => {
+                if (px >= 0 && px < size && py >= 0 && py < size)
+                {
+                    int i = (py * size) + px;
+                    _canvasBuffer[i] = previewColor;
+                    _previewBuffer[i] = previewPrev;
+                }
+            };
+
+            // Bresenham's Ellipse Math (same as DrawingService)
+            int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
+            long dx = 4 * (1 - a) * b * b, dy = 4 * (b1 + 1) * a * a;
+            long err = dx + dy + b1 * a * a, e2;
+
+            if (x0 > x1) { x0 = x1; x1 += a; }
+            if (y0 > y1) y0 = y1;
+            y0 += (b + 1) / 2;
+            y1 = y0 - b1;
+            a *= 8 * a;
+            b1 = 8 * b * b;
+
+            do
+            {
+                drawPixel(x1, y0); drawPixel(x0, y0); drawPixel(x0, y1); drawPixel(x1, y1);
+                e2 = 2 * err;
+                if (e2 <= dy) { y0++; y1--; err += dy += a; }
+                if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += b1; }
+            } while (x0 <= x1);
+
+            while (y0 - y1 < b)
+            {
+                drawPixel(x0 - 1, y0); drawPixel(x1 + 1, y0); drawPixel(x0 - 1, y1); drawPixel(x1 + 1, y1);
+                y0++; y1--;
+            }
+
+            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _canvasBuffer, size * 4, 0);
+            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, size, size), _previewBuffer, size * 4, 0);
+        }
+
         public void ParseBinaryToState(string text)
         {
             _codeGen.ParseBinaryToState(text, SpriteState);
@@ -735,6 +827,7 @@ namespace Hexel.ViewModels
         {
             IsDrawingLine = false;
             IsDrawingRectangle = false;
+            IsDrawingEllipse = false;
             _lineStartIdx = -1;
             _lineCurrentIdx = -1;
             _lastClickedIndex = -1;
