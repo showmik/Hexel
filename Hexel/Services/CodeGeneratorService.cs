@@ -55,15 +55,22 @@ namespace Hexel.Services
             var hexFormatted = new StringBuilder();
             for (int i = 0; i < hexList.Count; i++)
             {
-                hexFormatted.Append(hexList[i]).Append(", ");
-                if ((i + 1) % bytesPerRow == 0) hexFormatted.AppendLine().Append("  ");
+                hexFormatted.Append(hexList[i]);
+                
+                // Only add a comma and space if it's not the last item
+                if (i < hexList.Count - 1)
+                {
+                    hexFormatted.Append(", ");
+                }
+
+                // Add a line break at the end of each row
+                if ((i + 1) % bytesPerRow == 0 && i < hexList.Count - 1) 
+                {
+                    hexFormatted.AppendLine();
+                }
             }
 
-            string hexFinal = $"const unsigned char sprite_{state.Size}x{state.Size}[] PROGMEM = {{\n  " +
-                              hexFormatted.ToString().TrimEnd(' ', ',', '\n', '\r') +
-                              "\n};";
-
-            return (binBuilder.ToString().TrimEnd('\r', '\n'), hexFinal);
+            return (binBuilder.ToString().TrimEnd('\r', '\n'), hexFormatted.ToString());
         }
 
         public (string Binary, string Hex) GenerateExportStrings(SpriteState state, bool isFloating, bool[,] floatingPixels, int floatX, int floatY, int floatW, int floatH, bool binaryUseComma, bool hexUseComma)
@@ -132,6 +139,7 @@ namespace Hexel.Services
 
         public void ParseBinaryToState(string binaryText, SpriteState state)
         {
+            Array.Clear(state.Pixels, 0, state.Pixels.Length);
             string[] lines = binaryText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             int row = 0;
 

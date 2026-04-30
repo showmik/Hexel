@@ -489,7 +489,16 @@ namespace Hexel
                 {
                     if (ViewModel.DeleteSelectionCommand.CanExecute(null))
                     {
+                        // 1. Execute the deletion in the ViewModel
                         ViewModel.DeleteSelectionCommand.Execute(null);
+
+                        // 2. NEW: Destroy the View's local cache of the floating pixels
+                        _isFloating = false;
+                        _floatingPixels = null;
+
+                        _hasActiveSelection = false;
+                        ClearSelectionVisuals();
+
                         e.Handled = true;
                     }
                 }

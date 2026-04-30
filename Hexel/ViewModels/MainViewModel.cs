@@ -618,6 +618,7 @@ namespace Hexel.ViewModels
                 _txtHex = hex;
                 OnPropertyChanged(nameof(TxtBinary));
                 OnPropertyChanged(nameof(TxtHex));
+                _isUpdatingProgrammatically = false; // Safe to release now
             }, null);
 
             _isUpdatingProgrammatically = false;
@@ -695,16 +696,26 @@ namespace Hexel.ViewModels
             if (CurrentTool == ToolMode.Marquee && HasActiveSelection)
             {
                 SaveStateForUndo();
-                for (int i = 0; i < SpriteState.Pixels.Length; i++)
-                {
-                    int x = i % SpriteState.Size;
-                    int y = i / SpriteState.Size;
 
-                    if (x >= SelMinX && x <= SelMaxX && y >= SelMinY && y <= SelMaxY)
+                if (IsFloating)
+                {
+                    // Destroy the floating pixels
+                    SyncFloatingState(false, null, 0, 0, 0, 0);
+                }
+                else
+                {
+                    // Standard static deletion logic
+                    for (int i = 0; i < SpriteState.Pixels.Length; i++)
                     {
-                        SpriteState.Pixels[i] = false;
+                        int x = i % SpriteState.Size;
+                        int y = i / SpriteState.Size;
+                        if (x >= SelMinX && x <= SelMaxX && y >= SelMinY && y <= SelMaxY)
+                        {
+                            SpriteState.Pixels[i] = false;
+                        }
                     }
                 }
+
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
             }
