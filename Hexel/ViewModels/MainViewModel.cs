@@ -29,6 +29,8 @@ namespace Hexel.ViewModels
         private readonly SolidColorBrush _previewOff;
         private readonly SolidColorBrush _previewOn;
         private bool _showGridLines = true;
+        private bool _binaryUseComma = false;
+        private bool _hexUseComma = true; // Checked by default for Hex is usually preferred, but you can change to false!
 
         // Core state backing fields
         private bool _isUpdatingProgrammatically = false;
@@ -77,6 +79,25 @@ namespace Hexel.ViewModels
 
         #region Properties
         // -- Core Properties --
+        public bool BinaryUseComma
+        {
+            get => _binaryUseComma;
+            set
+            {
+                if (SetProperty(ref _binaryUseComma, value)) UpdateTextOutputs();
+            }
+        }
+
+        public bool HexUseComma
+        {
+            get => _hexUseComma;
+            set
+            {
+                if (SetProperty(ref _hexUseComma, value)) UpdateTextOutputs();
+            }
+        }
+
+
         public bool ShowGridLines
         {
             get => _showGridLines;
@@ -560,7 +581,7 @@ namespace Hexel.ViewModels
 
         public (string Binary, string Hex) GenerateExportStrings(bool isFloating, bool[,] floatingPixels, int floatX, int floatY, int floatW, int floatH)
         {
-            return _codeGen.GenerateExportStrings(SpriteState, isFloating, floatingPixels, floatX, floatY, floatW, floatH);
+            return _codeGen.GenerateExportStrings(SpriteState, isFloating, floatingPixels, floatX, floatY, floatW, floatH, BinaryUseComma, HexUseComma);
         }
 
         public async System.Threading.Tasks.Task UpdateTextOutputsAsync()
@@ -569,7 +590,7 @@ namespace Hexel.ViewModels
             _isUpdatingProgrammatically = true;
 
             var (binary, hex) = await _codeGen.GenerateExportStringsAsync(
-                SpriteState, IsFloating, FloatingPixels, FloatingX, FloatingY, FloatingWidth, FloatingHeight);
+                SpriteState, IsFloating, FloatingPixels, FloatingX, FloatingY, FloatingWidth, FloatingHeight, BinaryUseComma, HexUseComma);
 
             // Marshal back to the UI thread generically
             _uiContext.Post(_ =>

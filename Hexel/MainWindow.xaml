@@ -476,9 +476,22 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0"
-                               Text="EDIT BINARY TO UPDATE GRID"
-                               Style="{StaticResource HeaderStyle}" />
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Binary Representation"
+                                   Style="{StaticResource HeaderStyle}"
+                                   VerticalAlignment="Center" />
+                        <CheckBox Grid.Column="1"
+                                  Content="Add commas"
+                                  IsChecked="{Binding BinaryUseComma}"
+                                  Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,0,8" />
+                    </Grid>
 
                     <Border Grid.Row="1"
                             Background="{DynamicResource Theme.BackgroundBrush}"
@@ -510,9 +523,22 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0"
-                               Text="EDIT ESP32 HEX ARRAY"
-                               Style="{StaticResource HeaderStyle}" />
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="HEX Representation"
+                                   Style="{StaticResource HeaderStyle}"
+                                   VerticalAlignment="Center" />
+                        <CheckBox Grid.Column="1"
+                                  Content="Add commas"
+                                  IsChecked="{Binding HexUseComma}"
+                                  Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,0,8" />
+                    </Grid>
 
                     <Border Grid.Row="1"
                             Margin="0,0,0,12"
