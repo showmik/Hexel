@@ -271,6 +271,7 @@ namespace Hexel
         private void UpdateLassoVisuals()
         {
             if (LassoOverlay == null || _lassoPoints.Count == 0) return;
+
             double gridWidth = (PixelGridContainer != null && PixelGridContainer.ActualWidth > 0) ? PixelGridContainer.ActualWidth : 400.0;
             double gridHeight = (PixelGridContainer != null && PixelGridContainer.ActualHeight > 0) ? PixelGridContainer.ActualHeight : 400.0;
             double cellWidth = gridWidth / ViewModel.SpriteState.Size;
@@ -284,23 +285,23 @@ namespace Hexel
                 dy = _floatingY - _lassoOriginalMinY;
             }
 
-            PointCollection points = new PointCollection();
-            foreach (var p in _lassoPoints)
+            // Either recycle the floating mask if we are dragging it, or build it fresh
+            bool[,] mask = null;
+            int w, h, currentMinX, currentMinY;
+
+            if (_isDraggingSelection && _floatingPixels != null)
             {
-                // Align polygon points to the center of the visual cell 
-                points.Add(new Point(((p.X + dx) * cellWidth) + (cellWidth / 2), ((p.Y + dy) * cellHeight) + (cellHeight / 2)));
+                mask = _floatingPixels;
+                w = _floatingWidth;
+                h = _floatingHeight;
+                currentMinX = _lassoOriginalMinX;
+                currentMinY = _lassoOriginalMinY;
             }
-
-            LassoOverlay.Points = points;
-            LassoOverlay.Visibility = Visibility.Visible;
-            if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
-
-            if (!_isDraggingSelection)
+            else
             {
-                int w = (_selMaxX - _selMinX) + 1;
-                int h = (_selMaxY - _selMinY) + 1;
-                bool[,] mask = new bool[w, h];
-
+                w = (_selMaxX - _selMinX) + 1;
+                h = (_selMaxY - _selMinY) + 1;
+                mask = new bool[w, h];
                 for (int y = _selMinY; y <= _selMaxY; y++)
                 {
                     for (int x = _selMinX; x <= _selMaxX; x++)
@@ -308,10 +309,35 @@ namespace Hexel
                         mask[x - _selMinX, y - _selMinY] = IsPointInPolygon(new Point(x, y), _lassoPoints);
                     }
                 }
-
                 ViewModel.SetSelectionBounds(true, _selMinX, _selMaxX, _selMinY, _selMaxY, mask);
                 _hasActiveSelection = true;
+                currentMinX = _selMinX;
+                currentMinY = _selMinY;
             }
+
+            // Generate a unified border by unioning cell rectangles
+            Geometry combined = null;
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    if (mask[x, y])
+                    {
+                        double rectX = (x + currentMinX + dx) * cellWidth;
+                        double rectY = (y + currentMinY + dy) * cellHeight;
+                        var rectGeom = new RectangleGeometry(new Rect(rectX, rectY, cellWidth, cellHeight));
+
+                        if (combined == null)
+                            combined = rectGeom;
+                        else
+                            combined = Geometry.Combine(combined, rectGeom, GeometryCombineMode.Union, null);
+                    }
+                }
+            }
+
+            LassoOverlay.Data = combined;
+            LassoOverlay.Visibility = Visibility.Visible;
+            if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
         }
 
         private void UpdateSelectionVisualsFromBounds()
@@ -497,39 +523,6 @@ namespace Hexel
                 Point pos = e.GetPosition(CanvasImage);
                 int hoverIndex = GetIndexFromMousePosition(pos, CanvasImage.ActualWidth, CanvasImage.ActualHeight);
                 ViewModel.ProcessToolInput(hoverIndex, "Enter", null, false);
-            }
-
-            if (_isDraggingSelection && Mouse.LeftButton == MouseButtonState.Pressed)
-            {
-                Point currentPos = e.GetPosition(PixelGridContainer);
-                double deltaX = currentPos.X - _dragStartMousePos.X;
-                double deltaY = currentPos.Y - _dragStartMousePos.Y;
-
-                double gridWidth = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
-                double gridHeight = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
-
-                double cellWidth = gridWidth / ViewModel.SpriteState.Size;
-                double cellHeight = gridHeight / ViewModel.SpriteState.Size;
-
-                int cellsMovedX = (int)Math.Round(deltaX / cellWidth);
-                int cellsMovedY = (int)Math.Round(deltaY / cellHeight);
-
-                int newX = _dragStartFloatingX + cellsMovedX;
-                int newY = _dragStartFloatingY + cellsMovedY;
-
-                if (newX != _floatingX || newY != _floatingY)
-                {
-                    _floatingX = newX;
-                    _floatingY = newY;
-                    _selMinX = _floatingX;
-                    _selMaxX = _floatingX + _floatingWidth - 1;
-                    _selMinY = _floatingY;
-                    _selMaxY = _floatingY + _floatingHeight - 1;
-
-                    UpdateSelectionVisualsFromBounds();
-                    ViewModel.SyncFloatingState(_isFloating, _floatingPixels, _floatingX, _floatingY, _floatingWidth, _floatingHeight);
-                    ViewModel.RedrawGridFromMemory();
-                }
             }
 
             if (_isDraggingSelection && Mouse.LeftButton == MouseButtonState.Pressed)

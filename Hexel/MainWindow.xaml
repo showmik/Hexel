@@ -335,7 +335,7 @@
                                            Visibility="Hidden"
                                            IsHitTestVisible="False" />
 
-                                <Polygon x:Name="LassoOverlay"
+                                <Path x:Name="LassoOverlay"
                                          Stroke="{DynamicResource Theme.WarningBrush}"
                                          StrokeThickness="2"
                                          StrokeDashArray="4,4"
