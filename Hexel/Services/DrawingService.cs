@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Hexel.Core;
 
@@ -8,8 +8,11 @@ namespace Hexel.Services
     {
         // ── Flood fill ────────────────────────────────────────────────────
 
-        public void ApplyFloodFill(SpriteState state, int startIndex, bool newState)
+        public void ApplyFloodFill(SpriteState state, int startX, int startY, bool newState)
         {
+            if (startX < 0 || startX >= state.Width || startY < 0 || startY >= state.Height) return;
+
+            int startIndex = (startY * state.Width) + startX;
             bool targetState = state.Pixels[startIndex];
             if (targetState == newState) return;
 
@@ -34,18 +37,16 @@ namespace Hexel.Services
 
         // ── Line ──────────────────────────────────────────────────────────
 
-        public void DrawLine(SpriteState state, int startIdx, int endIdx, bool newState)
+        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
         {
-            int x0 = startIdx % state.Width, y0 = startIdx / state.Width;
-            int x1 = endIdx % state.Width, y1 = endIdx / state.Width;
-
             int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
             int err = dx - dy;
 
             while (true)
             {
-                state.Pixels[(y0 * state.Width) + x0] = newState;
+                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height)
+                    state.Pixels[(y0 * state.Width) + x0] = newState;
                 if (x0 == x1 && y0 == y1) break;
 
                 int e2 = 2 * err;
@@ -56,48 +57,53 @@ namespace Hexel.Services
 
         // ── Rectangle ─────────────────────────────────────────────────────
 
-        public void DrawRectangle(SpriteState state, int startIdx, int endIdx, bool newState)
+        public void DrawRectangle(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
         {
-            if (startIdx == endIdx)
+            if (x0 == x1 && y0 == y1)
             {
                 // Degenerate case: single pixel
-                state.Pixels[startIdx] = newState;
+                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height)
+                    state.Pixels[(y0 * state.Width) + x0] = newState;
                 return;
             }
 
             int width = state.Width;
-            int x0 = startIdx % width, y0 = startIdx / width;
-            int x1 = endIdx % width, y1 = endIdx / width;
+            int height = state.Height;
 
             int minX = Math.Min(x0, x1), maxX = Math.Max(x0, x1);
             int minY = Math.Min(y0, y1), maxY = Math.Max(y0, y1);
 
             for (int x = minX; x <= maxX; x++)
             {
-                state.Pixels[(minY * width) + x] = newState;
-                state.Pixels[(maxY * width) + x] = newState;
+                if (x >= 0 && x < width)
+                {
+                    if (minY >= 0 && minY < height) state.Pixels[(minY * width) + x] = newState;
+                    if (maxY >= 0 && maxY < height) state.Pixels[(maxY * width) + x] = newState;
+                }
             }
             for (int y = minY + 1; y < maxY; y++)
             {
-                state.Pixels[(y * width) + minX] = newState;
-                state.Pixels[(y * width) + maxX] = newState;
+                if (y >= 0 && y < height)
+                {
+                    if (minX >= 0 && minX < width) state.Pixels[(y * width) + minX] = newState;
+                    if (maxX >= 0 && maxX < width) state.Pixels[(y * width) + maxX] = newState;
+                }
             }
         }
 
         // ── Ellipse ───────────────────────────────────────────────────────
 
-        public void DrawEllipse(SpriteState state, int startIdx, int endIdx, bool newState)
+        public void DrawEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
         {
-            if (startIdx == endIdx)
-            {
-                state.Pixels[startIdx] = newState;
-                return;
-            }
-
             int width = state.Width;
             int height = state.Height;
-            int x0 = startIdx % width, y0 = startIdx / width;
-            int x1 = endIdx % width, y1 = endIdx / width;
+
+            if (x0 == x1 && y0 == y1)
+            {
+                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+                    state.Pixels[(y0 * width) + x0] = newState;
+                return;
+            }
 
             int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
             long dx = 4L * (1 - a) * b * b, dy = 4L * (b1 + 1) * a * a;

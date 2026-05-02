@@ -27,7 +27,8 @@ namespace Hexel
         private bool _isPanning;
 
         // ── Last hovered pixel (avoids spamming ViewModel on same pixel) ──
-        private int _lastHoveredIndex = -1;
+        private int _lastHoveredX = -1;
+        private int _lastHoveredY = -1;
 
         // ── Status label fade timer ───────────────────────────────────────
         private System.Windows.Threading.DispatcherTimer? _statusTimer;
@@ -96,11 +97,11 @@ namespace Hexel
 
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
-                ViewModel.ProcessToolInput(-1, ToolAction.Up, DrawMode.None, false);
+                ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false);
             }
             else if (ViewModel.CurrentTool == ToolMode.Pencil)
             {
-                ViewModel.ProcessToolInput(-1, ToolAction.Up, DrawMode.None, false);
+                ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false);
             }
 
             if (e.ChangedButton == MouseButton.Left)
@@ -165,11 +166,8 @@ namespace Hexel
 
         // ── Selection tool handling ───────────────────────────────────────
 
-        private void HandleSelectionDown(MouseButtonEventArgs e, int index)
+        private void HandleSelectionDown(MouseButtonEventArgs e, int x, int y)
         {
-            int w = ViewModel.SpriteState.Width;
-            int x = index % w;
-            int y = index / w;
 
             if (_selection.HasActiveSelection && _selection.IsPixelInSelection(x, y))
             {
@@ -197,13 +195,9 @@ namespace Hexel
             }
         }
 
-        private void HandleSelectionMove(int index)
+        private void HandleSelectionMove(int x, int y)
         {
             if (!_selection.IsSelecting) return;
-
-            int w = ViewModel.SpriteState.Width;
-            int x = index % w;
-            int y = index / w;
 
             if (ViewModel.CurrentTool == ToolMode.Lasso)
                 _selection.AddLassoPoint(x, y);
@@ -450,12 +444,15 @@ namespace Hexel
             {
                 image.CaptureMouse();
 
-                int index = GetPixelIndex(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
+                var (x, y) = GetPixelCoordinates(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
 
                 if (ViewModel.CurrentTool == ToolMode.Marquee ||
                     ViewModel.CurrentTool == ToolMode.Lasso)
                 {
-                    HandleSelectionDown(e, index);
+                    // Clamp for selection tools which require in-bounds coordinates
+                    int cx = Math.Clamp(x, 0, ViewModel.SpriteState.Width - 1);
+                    int cy = Math.Clamp(y, 0, ViewModel.SpriteState.Height - 1);
+                    HandleSelectionDown(e, cx, cy);
                     return;
                 }
 
@@ -465,8 +462,9 @@ namespace Hexel
 
                 if (mode != DrawMode.None)
                 {
-                    _lastHoveredIndex = index;
-                    ViewModel.ProcessToolInput(index, ToolAction.Down, mode,
+                    _lastHoveredX = x;
+                    _lastHoveredY = y;
+                    ViewModel.ProcessToolInput(x, y, ToolAction.Down, mode,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
                 }
             }
@@ -485,17 +483,21 @@ namespace Hexel
             }
 
             var image = CanvasImage;
-            int index = GetPixelIndex(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
+            var (x, y) = GetPixelCoordinates(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
 
-            if (index != _lastHoveredIndex)
+            if (x != _lastHoveredX || y != _lastHoveredY)
             {
-                _lastHoveredIndex = index;
+                _lastHoveredX = x;
+                _lastHoveredY = y;
 
                 if ((ViewModel.CurrentTool == ToolMode.Marquee ||
                      ViewModel.CurrentTool == ToolMode.Lasso)
                     && e.LeftButton == MouseButtonState.Pressed)
                 {
-                    HandleSelectionMove(index);
+                    // Clamp for selection tools which require in-bounds coordinates
+                    int cx = Math.Clamp(x, 0, ViewModel.SpriteState.Width - 1);
+                    int cy = Math.Clamp(y, 0, ViewModel.SpriteState.Height - 1);
+                    HandleSelectionMove(cx, cy);
                     return;
                 }
 
@@ -505,7 +507,7 @@ namespace Hexel
 
                 if (mode != DrawMode.None || ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
                 {
-                    ViewModel.ProcessToolInput(index, ToolAction.Move, mode, false);
+                    ViewModel.ProcessToolInput(x, y, ToolAction.Move, mode, false);
                 }
             }
         }
@@ -583,15 +585,22 @@ namespace Hexel
 
         // ── Utility ───────────────────────────────────────────────────────
 
-        private int GetPixelIndex(Point pos, double actualWidth, double actualHeight)
+        private (int x, int y) GetPixelCoordinates(Point pos, double actualWidth, double actualHeight)
         {
             int w = ViewModel.SpriteState.Width;
             int h = ViewModel.SpriteState.Height;
-            if (actualWidth == 0 || actualHeight == 0) return 0;
+            if (actualWidth == 0 || actualHeight == 0) return (0, 0);
 
-            int x = Math.Clamp((int)(pos.X / actualWidth * w), 0, w - 1);
-            int y = Math.Clamp((int)(pos.Y / actualHeight * h), 0, h - 1);
-            return (y * w) + x;
+            int x = (int)Math.Floor(pos.X / actualWidth * w);
+            int y = (int)Math.Floor(pos.Y / actualHeight * h);
+
+            // When the mouse is inside the canvas area, clamp to valid pixel range
+            // (the right/bottom edge maps to w/h which is one past the last pixel).
+            // When truly outside, leave unclamped so shape tools can extend past edges.
+            if (pos.X >= 0 && pos.X <= actualWidth)  x = Math.Clamp(x, 0, w - 1);
+            if (pos.Y >= 0 && pos.Y <= actualHeight) y = Math.Clamp(y, 0, h - 1);
+
+            return (x, y);
         }
     }
 }

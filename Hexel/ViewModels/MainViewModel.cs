@@ -186,10 +186,14 @@ namespace Hexel.ViewModels
             (uint)((c.A << 24) | (c.R << 16) | (c.G << 8) | c.B);
 
         // ── Internal drawing tracking ─────────────────────────────────────
-        private int _lineStartIdx = -1;
-        private int _lineCurrentIdx = -1;
+        private const int NoPosition = int.MinValue;
+        private int _lineStartX = NoPosition;
+        private int _lineStartY = NoPosition;
+        private int _lineCurrentX = NoPosition;
+        private int _lineCurrentY = NoPosition;
         private bool _lineDrawState = false;
-        private int _lastClickedIndex = -1;
+        private int _lastClickedX = NoPosition;
+        private int _lastClickedY = NoPosition;
         private bool _pendingTextUpdateDuringDrag;
 
         // ── Events ────────────────────────────────────────────────────────
@@ -396,7 +400,7 @@ namespace Hexel.ViewModels
         /// Main entry point for all non-selection tool input from the View.
         /// Uses typed enums instead of the previous magic strings and bool? tri-state.
         /// </summary>
-        public void ProcessToolInput(int index, ToolAction action, DrawMode mode, bool isShiftDown)
+        public void ProcessToolInput(int x, int y, ToolAction action, DrawMode mode, bool isShiftDown)
         {
             // Marquee and Lasso are handled entirely in the View via SelectionService
             if (CurrentTool == ToolMode.Marquee || CurrentTool == ToolMode.Lasso) return;
@@ -404,11 +408,11 @@ namespace Hexel.ViewModels
             switch (action)
             {
                 case ToolAction.Down:
-                    HandleToolDown(index, mode, isShiftDown);
+                    HandleToolDown(x, y, mode, isShiftDown);
                     break;
 
                 case ToolAction.Move:
-                    HandleToolMove(index, mode);
+                    HandleToolMove(x, y, mode);
                     break;
 
                 case ToolAction.Up:
@@ -429,26 +433,26 @@ namespace Hexel.ViewModels
 
         // ── Preview methods (used during shape drag, do not commit to state) ──
 
-        public void PreviewLine(int startIdx, int endIdx, bool newState)
+        public void PreviewLine(int x0, int y0, int x1, int y1, bool newState)
         {
             RedrawGridFromMemory();
-            PlotLine(startIdx, endIdx, newState ? _colorOnUint : _colorOffUint,
+            PlotLine(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
                                        newState ? _previewOnUint : _previewOffUint);
             FlushBitmaps();
         }
 
-        public void PreviewRectangle(int startIdx, int endIdx, bool newState)
+        public void PreviewRectangle(int x0, int y0, int x1, int y1, bool newState)
         {
             RedrawGridFromMemory();
-            PlotRectangle(startIdx, endIdx, newState ? _colorOnUint : _colorOffUint,
+            PlotRectangle(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
                                              newState ? _previewOnUint : _previewOffUint);
             FlushBitmaps();
         }
 
-        public void PreviewEllipse(int startIdx, int endIdx, bool newState)
+        public void PreviewEllipse(int x0, int y0, int x1, int y1, bool newState)
         {
             RedrawGridFromMemory();
-            PlotEllipse(startIdx, endIdx, newState ? _colorOnUint : _colorOffUint,
+            PlotEllipse(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
                                            newState ? _previewOnUint : _previewOffUint);
             FlushBitmaps();
         }
@@ -496,7 +500,7 @@ namespace Hexel.ViewModels
 
         // ── Private: tool dispatch ────────────────────────────────────────
 
-        private void HandleToolDown(int index, DrawMode mode, bool isShiftDown)
+        private void HandleToolDown(int x, int y, DrawMode mode, bool isShiftDown)
         {
             bool newState = mode == DrawMode.Draw;
 
@@ -507,93 +511,106 @@ namespace Hexel.ViewModels
                     // ApplyFloodFill, resulting in two undo entries per fill operation.
                     // History is now saved exactly once, here at the call site.
                     _historyService.SaveState(SpriteState);
-                    _drawingService.ApplyFloodFill(SpriteState, index, newState);
-                    _lastClickedIndex = index;
+                    _drawingService.ApplyFloodFill(SpriteState, x, y, newState);
+                    _lastClickedX = x;
+                    _lastClickedY = y;
                     RedrawGridFromMemory();
                     UpdateTextOutputs();
                     break;
 
                 case ToolMode.Line:
                     IsDrawingLine = true;
-                    _lineStartIdx = index;
-                    _lineCurrentIdx = index;
+                    _lineStartX = x;
+                    _lineStartY = y;
+                    _lineCurrentX = x;
+                    _lineCurrentY = y;
                     _lineDrawState = newState;
-                    PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    PreviewLine(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
                     break;
 
                 case ToolMode.Rectangle:
                     IsDrawingRectangle = true;
-                    _lineStartIdx = index;
-                    _lineCurrentIdx = index;
+                    _lineStartX = x;
+                    _lineStartY = y;
+                    _lineCurrentX = x;
+                    _lineCurrentY = y;
                     _lineDrawState = newState;
-                    PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    PreviewRectangle(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
                     break;
 
                 case ToolMode.Ellipse:
                     IsDrawingEllipse = true;
-                    _lineStartIdx = index;
-                    _lineCurrentIdx = index;
+                    _lineStartX = x;
+                    _lineStartY = y;
+                    _lineCurrentX = x;
+                    _lineCurrentY = y;
                     _lineDrawState = newState;
-                    PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    PreviewEllipse(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
                     break;
 
                 case ToolMode.Pencil:
-                    if (isShiftDown && _lastClickedIndex != -1)
+                    if (isShiftDown && _lastClickedX != NoPosition)
                     {
                         _historyService.SaveState(SpriteState);
-                        _drawingService.DrawLine(SpriteState, _lastClickedIndex, index, newState);
-                        _lastClickedIndex = index;
+                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState);
+                        _lastClickedX = x;
+                        _lastClickedY = y;
                         RedrawGridFromMemory();
                         UpdateTextOutputs();
                     }
                     else
                     {
                         _historyService.SaveState(SpriteState);
-                        SetPixel(index, newState);
-                        _lastClickedIndex = index;
+                        SetPixel(x, y, newState);
+                        _lastClickedX = x;
+                        _lastClickedY = y;
                         UpdateTextOutputs();
                     }
                     break;
             }
         }
 
-        private void HandleToolMove(int index, DrawMode mode)
+        private void HandleToolMove(int x, int y, DrawMode mode)
         {
             bool newState = mode == DrawMode.Draw;
 
             switch (CurrentTool)
             {
                 case ToolMode.Line when IsDrawingLine:
-                    if (_lineCurrentIdx != index)
+                    if (_lineCurrentX != x || _lineCurrentY != y)
                     {
-                        _lineCurrentIdx = index;
-                        PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                        _lineCurrentX = x;
+                        _lineCurrentY = y;
+                        PreviewLine(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
                     }
                     break;
 
                 case ToolMode.Rectangle when IsDrawingRectangle:
-                    if (_lineCurrentIdx != index)
+                    if (_lineCurrentX != x || _lineCurrentY != y)
                     {
-                        _lineCurrentIdx = index;
-                        PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                        _lineCurrentX = x;
+                        _lineCurrentY = y;
+                        PreviewRectangle(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
                     }
                     break;
 
                 case ToolMode.Ellipse when IsDrawingEllipse:
-                    if (_lineCurrentIdx != index)
+                    if (_lineCurrentX != x || _lineCurrentY != y)
                     {
-                        _lineCurrentIdx = index;
-                        PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                        _lineCurrentX = x;
+                        _lineCurrentY = y;
+                        PreviewEllipse(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
                     }
                     break;
 
                 case ToolMode.Pencil when mode != DrawMode.None:
-                    if (_lastClickedIndex != -1 && _lastClickedIndex != index)
+                    if (_lastClickedX != NoPosition && (_lastClickedX != x || _lastClickedY != y))
                     {
                         // Continuous pencil drag: draw line segment but don't push undo
                         // (the undo entry was already pushed on Down)
-                        _drawingService.DrawLine(SpriteState, _lastClickedIndex, index, newState);
-                        _lastClickedIndex = index;
+                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState);
+                        _lastClickedX = x;
+                        _lastClickedY = y;
                         _pendingTextUpdateDuringDrag = true;
                         RedrawGridFromMemory();
                     }
@@ -606,11 +623,12 @@ namespace Hexel.ViewModels
             if (IsDrawingLine)
             {
                 IsDrawingLine = false;
-                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
-                    _drawingService.DrawLine(SpriteState, _lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    _lastClickedIndex = _lineCurrentIdx;
+                    _drawingService.DrawLine(SpriteState, _lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                    _lastClickedX = _lineCurrentX;
+                    _lastClickedY = _lineCurrentY;
                     RedrawGridFromMemory();
                 }
                 ResetLineTracking();
@@ -620,11 +638,12 @@ namespace Hexel.ViewModels
             if (IsDrawingRectangle)
             {
                 IsDrawingRectangle = false;
-                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
-                    _drawingService.DrawRectangle(SpriteState, _lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    _lastClickedIndex = _lineCurrentIdx;
+                    _drawingService.DrawRectangle(SpriteState, _lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                    _lastClickedX = _lineCurrentX;
+                    _lastClickedY = _lineCurrentY;
                     RedrawGridFromMemory();
                 }
                 ResetLineTracking();
@@ -634,11 +653,12 @@ namespace Hexel.ViewModels
             if (IsDrawingEllipse)
             {
                 IsDrawingEllipse = false;
-                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
-                    _drawingService.DrawEllipse(SpriteState, _lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    _lastClickedIndex = _lineCurrentIdx;
+                    _drawingService.DrawEllipse(SpriteState, _lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                    _lastClickedX = _lineCurrentX;
+                    _lastClickedY = _lineCurrentY;
                     RedrawGridFromMemory();
                 }
                 ResetLineTracking();
@@ -654,14 +674,18 @@ namespace Hexel.ViewModels
 
         private void ResetLineTracking()
         {
-            _lineStartIdx = -1;
-            _lineCurrentIdx = -1;
+            _lineStartX = NoPosition;
+            _lineStartY = NoPosition;
+            _lineCurrentX = NoPosition;
+            _lineCurrentY = NoPosition;
         }
 
         // ── Private: pixel helpers ────────────────────────────────────────
 
-        private void SetPixel(int index, bool state)
+        private void SetPixel(int x, int y, bool state)
         {
+            if (x < 0 || x >= SpriteState.Width || y < 0 || y >= SpriteState.Height) return;
+            int index = (y * SpriteState.Width) + x;
             if (SpriteState.Pixels[index] == state) return;
             SpriteState.Pixels[index] = state;
             RedrawGridFromMemory();
@@ -679,11 +703,8 @@ namespace Hexel.ViewModels
             _previewBuffer[i] = previewColor;
         }
 
-        private void PlotLine(int startIdx, int endIdx, uint cc, uint pc)
+        private void PlotLine(int x0, int y0, int x1, int y1, uint cc, uint pc)
         {
-            int w = SpriteState.Width;
-            int x0 = startIdx % w, y0 = startIdx / w;
-            int x1 = endIdx % w, y1 = endIdx / w;
             int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
             int err = dx - dy;
@@ -697,23 +718,16 @@ namespace Hexel.ViewModels
             }
         }
 
-        private void PlotRectangle(int startIdx, int endIdx, uint cc, uint pc)
+        private void PlotRectangle(int x0, int y0, int x1, int y1, uint cc, uint pc)
         {
-            int w = SpriteState.Width;
-            int x0 = startIdx % w, y0 = startIdx / w;
-            int x1 = endIdx % w, y1 = endIdx / w;
             int minX = Math.Min(x0, x1), maxX = Math.Max(x0, x1);
             int minY = Math.Min(y0, y1), maxY = Math.Max(y0, y1);
             for (int x = minX; x <= maxX; x++) { PlotPixel(x, minY, cc, pc); PlotPixel(x, maxY, cc, pc); }
             for (int y = minY; y <= maxY; y++) { PlotPixel(minX, y, cc, pc); PlotPixel(maxX, y, cc, pc); }
         }
 
-        private void PlotEllipse(int startIdx, int endIdx, uint cc, uint pc)
+        private void PlotEllipse(int x0, int y0, int x1, int y1, uint cc, uint pc)
         {
-            int w = SpriteState.Width;
-            int x0 = startIdx % w, y0 = startIdx / w;
-            int x1 = endIdx % w, y1 = endIdx / w;
-
             int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
             long dx = 4L * (1 - a) * b * b, dy = 4L * (b1 + 1) * a * a;
             long err = dx + dy + (long)b1 * a * a, e2;
