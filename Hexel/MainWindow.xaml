@@ -17,6 +17,15 @@
         <KeyBinding Key="Y"
                     Modifiers="Ctrl"
                     Command="{Binding RedoCommand}" />
+        <KeyBinding Key="OemPlus"
+                    Modifiers="Ctrl"
+                    Command="{x:Static NavigationCommands.IncreaseZoom}" />
+        <KeyBinding Key="OemMinus"
+                    Modifiers="Ctrl"
+                    Command="{x:Static NavigationCommands.DecreaseZoom}" />
+        <KeyBinding Key="D0"
+                    Modifiers="Ctrl"
+                    Command="{x:Static NavigationCommands.Zoom}" />
     </Window.InputBindings>
 
     <Grid>
@@ -226,13 +235,13 @@
                                 Padding="0" />
                         <Slider x:Name="ZoomSlider"
                                 Width="100"
-                                Minimum="0.5"
-                                Maximum="5.0"
+                                Minimum="0.1"
+                                Maximum="20.0"
                                 Value="1.0"
                                 TickFrequency="0.1"
                                 IsSnapToTickEnabled="True"
                                 VerticalAlignment="Center"
-                                ToolTip="Zoom Canvas (Ctrl+Scroll)" />
+                                ToolTip="Zoom Canvas (Scroll / Ctrl+Plus/Minus)" />
                         <Button Content="+"
                                 Width="28"
                                 Height="28"

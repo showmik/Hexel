@@ -53,6 +53,14 @@ namespace Hexel
 
             // Replace the old blocking MessageBox "Copied!" with a status label
             vm.CopyHexExecuted += (_, _) => ShowStatus("Copied to clipboard");
+
+            // Zoom keyboard shortcuts: Ctrl+Plus, Ctrl+Minus, Ctrl+0
+            CommandBindings.Add(new CommandBinding(NavigationCommands.IncreaseZoom,
+                (_, _) => ApplyZoomCentered(ZoomFactor)));
+            CommandBindings.Add(new CommandBinding(NavigationCommands.DecreaseZoom,
+                (_, _) => ApplyZoomCentered(1.0 / ZoomFactor)));
+            CommandBindings.Add(new CommandBinding(NavigationCommands.Zoom,
+                (_, _) => ZoomSlider.Value = 1.0));
         }
 
         // ── Tool selection ────────────────────────────────────────────────
@@ -383,20 +391,114 @@ namespace Hexel
 
         // ── Zoom & pan ────────────────────────────────────────────────────
 
+        private const double ZoomFactor = 1.15; // 15% per scroll notch
+
         private void BtnZoomIn_Click(object sender, RoutedEventArgs e)
-            => ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.2);
+            => ApplyZoomCentered(ZoomFactor);
 
         private void BtnZoomOut_Click(object sender, RoutedEventArgs e)
-            => ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.2);
+            => ApplyZoomCentered(1.0 / ZoomFactor);
 
         private void BtnZoomReset_Click(object sender, RoutedEventArgs e)
             => ZoomSlider.Value = 1.0;
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            // Hold Ctrl to pan/scroll normally; without Ctrl, scroll-wheel zooms
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                return; // let the ScrollViewer handle normal scrolling
+
             e.Handled = true;
-            double delta = e.Delta > 0 ? 0.2 : -0.2;
-            ZoomSlider.Value = Math.Clamp(ZoomSlider.Value + delta, ZoomSlider.Minimum, ZoomSlider.Maximum);
+
+            var sv = (ScrollViewer)sender;
+            double factor = e.Delta > 0 ? ZoomFactor : 1.0 / ZoomFactor;
+            double oldZoom = ZoomSlider.Value;
+            double newZoom = SnapToTick(Math.Clamp(oldZoom * factor, ZoomSlider.Minimum, ZoomSlider.Maximum), factor > 1.0 ? 1 : -1);
+
+            if (Math.Abs(newZoom - oldZoom) < 0.001) return;
+
+            // Compute the mouse position relative to the scroll viewport
+            var mouseInSv = e.GetPosition(sv);
+
+            // Current content offset under the mouse (in unscaled content coords)
+            double contentX = (sv.HorizontalOffset + mouseInSv.X) / oldZoom;
+            double contentY = (sv.VerticalOffset + mouseInSv.Y) / oldZoom;
+
+            ZoomSlider.Value = newZoom;
+
+            // Force layout so the new ScaleTransform is applied
+            sv.UpdateLayout();
+
+            // Scroll so that the same content point remains under the mouse
+            sv.ScrollToHorizontalOffset(contentX * newZoom - mouseInSv.X);
+            sv.ScrollToVerticalOffset(contentY * newZoom - mouseInSv.Y);
+        }
+
+        /// <summary>
+        /// Applies a multiplicative zoom step, centering on the viewport midpoint.
+        /// Used by the +/- buttons and Ctrl+Plus/Minus keyboard shortcuts.
+        /// </summary>
+        private void ApplyZoomCentered(double factor)
+        {
+            var sv = FindScrollViewer();
+            if (sv == null)
+            {
+                // Fallback: just change the slider value
+                ZoomSlider.Value = SnapToTick(Math.Clamp(ZoomSlider.Value * factor, ZoomSlider.Minimum, ZoomSlider.Maximum), factor > 1.0 ? 1 : -1);
+                return;
+            }
+
+            double oldZoom = ZoomSlider.Value;
+            double newZoom = SnapToTick(Math.Clamp(oldZoom * factor, ZoomSlider.Minimum, ZoomSlider.Maximum), factor > 1.0 ? 1 : -1);
+            if (Math.Abs(newZoom - oldZoom) < 0.001) return;
+
+            // Center of the viewport
+            double cx = sv.ViewportWidth / 2.0;
+            double cy = sv.ViewportHeight / 2.0;
+
+            double contentX = (sv.HorizontalOffset + cx) / oldZoom;
+            double contentY = (sv.VerticalOffset + cy) / oldZoom;
+
+            ZoomSlider.Value = newZoom;
+            sv.UpdateLayout();
+
+            sv.ScrollToHorizontalOffset(contentX * newZoom - cx);
+            sv.ScrollToVerticalOffset(contentY * newZoom - cy);
+        }
+
+        /// <summary>
+        /// Snaps a zoom value to the slider's tick grid, ensuring at least one tick
+        /// of movement in the intended <paramref name="direction"/> (positive = zoom in).
+        /// </summary>
+        private double SnapToTick(double value, double direction)
+        {
+            double tick = ZoomSlider.TickFrequency;
+            double snapped = Math.Round(value / tick) * tick;
+
+            // If rounding collapsed the step, force one tick in the intended direction
+            double current = ZoomSlider.Value;
+            if (Math.Abs(snapped - current) < 0.001)
+                snapped = direction > 0 ? current + tick : current - tick;
+
+            return Math.Clamp(snapped, ZoomSlider.Minimum, ZoomSlider.Maximum);
+        }
+
+        /// <summary>Locates the ScrollViewer that wraps the canvas.</summary>
+        private ScrollViewer? FindScrollViewer()
+        {
+            // The ScrollViewer is the direct child of the canvas panel Border
+            return CanvasImage != null ? FindParent<ScrollViewer>(CanvasImage) : null;
+        }
+
+        private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            var current = VisualTreeHelper.GetParent(child);
+            while (current != null)
+            {
+                if (current is T t) return t;
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
         }
 
         private void ScrollViewer_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -597,7 +699,7 @@ namespace Hexel
             // When the mouse is inside the canvas area, clamp to valid pixel range
             // (the right/bottom edge maps to w/h which is one past the last pixel).
             // When truly outside, leave unclamped so shape tools can extend past edges.
-            if (pos.X >= 0 && pos.X <= actualWidth)  x = Math.Clamp(x, 0, w - 1);
+            if (pos.X >= 0 && pos.X <= actualWidth) x = Math.Clamp(x, 0, w - 1);
             if (pos.Y >= 0 && pos.Y <= actualHeight) y = Math.Clamp(y, 0, h - 1);
 
             return (x, y);
