@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Style x:Key="HeaderStyle"
@@ -439,6 +439,391 @@
         </Setter>
     </Style>
 
+    <!-- ═══════════════════════════════════════════════════════════════
+         Vertical tool sidebar button — square, centered, no horiz margin
+         ═══════════════════════════════════════════════════════════════ -->
+    <Style x:Key="VerticalToolButtonStyle"
+           TargetType="RadioButton">
+        <Setter Property="Background"
+                Value="Transparent" />
+        <Setter Property="BorderBrush"
+                Value="Transparent" />
+        <Setter Property="BorderThickness"
+                Value="0" />
+        <Setter Property="Width"
+                Value="38" />
+        <Setter Property="Height"
+                Value="38" />
+        <Setter Property="Padding"
+                Value="8" />
+        <Setter Property="Margin"
+                Value="0" />
+        <Setter Property="Cursor"
+                Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="8"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter TargetName="Bd"
+                                    Property="Background"
+                                    Value="{DynamicResource Theme.ToolSidebarActiveBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked"
+                                 Value="True">
+                            <Setter TargetName="Bd"
+                                    Property="Background"
+                                    Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
+                            <Setter TargetName="Bd"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                            <Setter TargetName="Bd"
+                                    Property="BorderThickness"
+                                    Value="1" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Status bar panel — slim, dark, lives at the very bottom
+         ═══════════════════════════════════════════════════════════════ -->
+    <Style x:Key="StatusBarPanelStyle"
+           TargetType="Border">
+        <Setter Property="Background"
+                Value="{DynamicResource Theme.StatusBarBackgroundBrush}" />
+        <Setter Property="Padding"
+                Value="12,5" />
+        <Setter Property="CornerRadius"
+                Value="0" />
+        <Setter Property="BorderThickness"
+                Value="0,1,0,0" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource Theme.SeparatorBrush}" />
+    </Style>
+
+    <!-- Status bar text — muted, small -->
+    <Style x:Key="StatusBarTextStyle"
+           TargetType="TextBlock">
+        <Setter Property="Foreground"
+                Value="{DynamicResource Theme.TextMutedBrush}" />
+        <Setter Property="FontSize"
+                Value="11" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
+    </Style>
+
+    <!-- Status bar separator -->
+    <Style x:Key="StatusBarSeparatorStyle"
+           TargetType="Rectangle">
+        <Setter Property="Width"
+                Value="1" />
+        <Setter Property="Fill"
+                Value="{DynamicResource Theme.SeparatorBrush}" />
+        <Setter Property="Margin"
+                Value="10,3" />
+    </Style>
+
     <Geometry x:Key="Icon.Lasso">M64,72.53c35.35,0,64-16.24,64-36.26S99.35,0,64,0,0,16.24,0,36.26s28.65,36.26,64,36.26c0,0-13.5,1.54-10-13.24,3.94-16.65,30.76-17.35,35.24.06,6.33,24.65,9.18,66.71-71.76,68.65</Geometry>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Dark-themed Menu bar
+         ═══════════════════════════════════════════════════════════════ -->
+    <Style TargetType="{x:Type Menu}">
+        <Setter Property="Background"
+                Value="{DynamicResource Theme.MenuBarBackgroundBrush}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource Theme.TextMainBrush}" />
+        <Setter Property="FontSize"
+                Value="12" />
+        <Setter Property="Padding"
+                Value="4,2" />
+    </Style>
+
+    <!-- Checkmark geometry shared by checkable MenuItems -->
+    <Geometry x:Key="Icon.Checkmark">M 0,5 L 3,8 L 8,0</Geometry>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Dark-themed MenuItem (handles all roles)
+         ═══════════════════════════════════════════════════════════════ -->
+    <Style TargetType="{x:Type MenuItem}">
+        <Setter Property="Foreground"
+                Value="{DynamicResource Theme.TextMainBrush}" />
+        <Setter Property="Background"
+                Value="Transparent" />
+        <Setter Property="Padding"
+                Value="8,5" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type MenuItem}">
+                    <Grid>
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="0"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}"
+                                Margin="2,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"
+                                                      SharedSizeGroup="MenuCheckCol" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto"
+                                                      SharedSizeGroup="MenuGestureCol" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Check mark (visible for IsCheckable + IsChecked) -->
+                                <Path x:Name="CheckMark"
+                                      Grid.Column="0"
+                                      Data="{StaticResource Icon.Checkmark}"
+                                      Stroke="{DynamicResource Theme.PrimaryAccentBrush}"
+                                      StrokeThickness="1.6"
+                                      Width="10"
+                                      Height="10"
+                                      Stretch="Uniform"
+                                      Margin="0,0,8,0"
+                                      VerticalAlignment="Center"
+                                      Visibility="Collapsed" />
+
+                                <!-- Spacer when no checkmark (keeps alignment) -->
+                                <Border x:Name="CheckSpacer"
+                                        Grid.Column="0"
+                                        Width="18"
+                                        Visibility="Collapsed" />
+
+                                <!-- Header text -->
+                                <ContentPresenter Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  RecognizesAccessKey="True"
+                                                  VerticalAlignment="Center" />
+
+                                <!-- Keyboard shortcut text -->
+                                <TextBlock x:Name="GestureText"
+                                           Grid.Column="2"
+                                           Text="{TemplateBinding InputGestureText}"
+                                           Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                           FontSize="11"
+                                           Margin="28,0,0,0"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Submenu popup -->
+                        <Popup x:Name="PART_Popup"
+                               IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                               Placement="Bottom"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               PopupAnimation="Fade">
+                            <Border Background="{DynamicResource Theme.PanelBackgroundBrush}"
+                                    BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="4"
+                                    Margin="0,2,8,8"
+                                    Grid.IsSharedSizeScope="True">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="Black"
+                                                      BlurRadius="12"
+                                                      Opacity="0.45"
+                                                      Direction="270"
+                                                      ShadowDepth="3" />
+                                </Border.Effect>
+                                <StackPanel IsItemsHost="True"
+                                            KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <!-- ── TopLevelHeader (File, Edit …) ── -->
+                        <Trigger Property="Role"
+                                 Value="TopLevelHeader">
+                            <Setter TargetName="CheckSpacer"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                            <Setter TargetName="GestureText"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                            <Setter TargetName="Border"
+                                    Property="Padding"
+                                    Value="8,4" />
+                        </Trigger>
+
+                        <!-- ── TopLevelItem ── -->
+                        <Trigger Property="Role"
+                                 Value="TopLevelItem">
+                            <Setter TargetName="CheckSpacer"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                            <Setter TargetName="GestureText"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                            <Setter TargetName="Border"
+                                    Property="Padding"
+                                    Value="8,4" />
+                        </Trigger>
+
+                        <!-- ── SubmenuHeader (has children → popup goes Right) ── -->
+                        <Trigger Property="Role"
+                                 Value="SubmenuHeader">
+                            <Setter TargetName="PART_Popup"
+                                    Property="Placement"
+                                    Value="Right" />
+                            <Setter TargetName="CheckSpacer"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </Trigger>
+
+                        <!-- ── SubmenuItem ── -->
+                        <Trigger Property="Role"
+                                 Value="SubmenuItem">
+                            <Setter TargetName="CheckSpacer"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </Trigger>
+
+                        <!-- Hover / highlight -->
+                        <Trigger Property="IsHighlighted"
+                                 Value="True">
+                            <Setter TargetName="Border"
+                                    Property="Background"
+                                    Value="{DynamicResource Theme.MenuItemHoverBrush}" />
+                        </Trigger>
+
+                        <!-- Checked (for toggle items like Show Grid) -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsCheckable"
+                                           Value="True" />
+                                <Condition Property="IsChecked"
+                                           Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="CheckMark"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                            <Setter TargetName="CheckSpacer"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                        </MultiTrigger>
+
+                        <!-- Disabled -->
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter Property="Opacity"
+                                    Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Menu separator -->
+    <Style x:Key="MenuSeparatorStyle"
+           TargetType="{x:Type Separator}">
+        <Setter Property="Height"
+                Value="1" />
+        <Setter Property="Margin"
+                Value="6,4" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Separator}">
+                    <Border Background="{DynamicResource Theme.SeparatorBrush}"
+                            Height="1" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Clean Dark Expander Style
+         ═══════════════════════════════════════════════════════════════ -->
+    <Style x:Key="ExpanderHeaderFocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border BorderThickness="1" BorderBrush="{DynamicResource Theme.PrimaryAccentBrush}" CornerRadius="4" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ModernExpanderToggleButton" TargetType="{x:Type ToggleButton}">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource ExpanderHeaderFocusVisual}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0,8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="True"/>
+                            <TextBlock x:Name="Arrow" Grid.Column="1" Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Theme.TextMutedBrush}" FontSize="10" VerticalAlignment="Center" Margin="8,0,0,0" RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Arrow" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="180"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Arrow" Property="Foreground" Value="{DynamicResource Theme.TextBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ModernExpanderStyle" TargetType="{x:Type Expander}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Expander}">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                        <DockPanel>
+                            <ToggleButton x:Name="HeaderSite" DockPanel.Dock="Top" ContentTemplate="{TemplateBinding HeaderTemplate}" ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}" Content="{TemplateBinding Header}" Style="{StaticResource ModernExpanderToggleButton}" IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <ContentPresenter x:Name="ExpandSite" DockPanel.Dock="Bottom" Focusable="false" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" Visibility="Collapsed" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="true">
+                            <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
 </ResourceDictionary>

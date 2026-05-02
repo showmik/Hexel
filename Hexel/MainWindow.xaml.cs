@@ -670,6 +670,9 @@ namespace Hexel
             _isMouseOverCanvas = pos.X >= 0 && pos.X <= image.ActualWidth &&
                                  pos.Y >= 0 && pos.Y <= image.ActualHeight;
 
+            ViewModel.CursorX = x;
+            ViewModel.CursorY = y;
+
             // Always update the brush cursor position (even if pixel didn't change)
             UpdateBrushCursor(x, y, pos, image.ActualWidth, image.ActualHeight);
 

@@ -37,6 +37,22 @@ namespace Hexel.ViewModels
             set => SetProperty(ref _inputHeight, value);
         }
 
+        public string CanvasDimensionText => $"{SpriteState?.Width ?? 16}×{SpriteState?.Height ?? 16}";
+
+        private int _cursorX;
+        public int CursorX
+        {
+            get => _cursorX;
+            set => SetProperty(ref _cursorX, value);
+        }
+
+        private int _cursorY;
+        public int CursorY
+        {
+            get => _cursorY;
+            set => SetProperty(ref _cursorY, value);
+        }
+
         // ── Core state ────────────────────────────────────────────────────
         private SpriteState _spriteState = null!;
         public SpriteState SpriteState
@@ -364,6 +380,7 @@ namespace Hexel.ViewModels
             OnPropertyChanged(nameof(CanvasDisplayWidth));
             OnPropertyChanged(nameof(CanvasDisplayHeight));
             OnPropertyChanged(nameof(DynamicStrokeThickness));
+            OnPropertyChanged(nameof(CanvasDimensionText));
         }
 
         public void RedrawGridFromMemory()
