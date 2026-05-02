@@ -268,12 +268,9 @@
                               PreviewMouseDown="ScrollViewer_PreviewMouseDown"
                               PreviewMouseMove="ScrollViewer_PreviewMouseMove"
                               PreviewMouseUp="ScrollViewer_PreviewMouseUp">
-                    <Border BorderBrush="{DynamicResource Theme.PanelBackgroundBrush}"
-                            BorderThickness="4"
-                            Background="{DynamicResource Theme.CanvasBackgroundBrush}"
+                    <Border Background="{DynamicResource Theme.CanvasBackgroundBrush}"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            CornerRadius="4">
+                            VerticalAlignment="Center">
                         <Border.LayoutTransform>
                             <ScaleTransform ScaleX="{Binding Value, ElementName=ZoomSlider}"
                                             ScaleY="{Binding Value, ElementName=ZoomSlider}" />
