@@ -390,6 +390,7 @@
 
                             <!-- Selection overlays -->
                             <Canvas IsHitTestVisible="False"
+                                    ClipToBounds="True"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch">
 
@@ -408,6 +409,27 @@
                                       Fill="#40F2E94E"
                                       Visibility="Hidden"
                                       IsHitTestVisible="False" />
+
+                                <!-- Brush cursor overlay (pixel-accurate bitmap) -->
+                                <Image x:Name="BrushCursorOverlay"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                       Stretch="Fill"
+                                       Visibility="Hidden"
+                                       IsHitTestVisible="False" />
+
+                                <!-- Crosshair lines (follow mouse smoothly) -->
+                                <Line x:Name="CrosshairH"
+                                      Stroke="#CCFFFFFF"
+                                      StrokeThickness="1"
+                                      Visibility="Hidden"
+                                      IsHitTestVisible="False"
+                                      SnapsToDevicePixels="True" />
+                                <Line x:Name="CrosshairV"
+                                      Stroke="#CCFFFFFF"
+                                      StrokeThickness="1"
+                                      Visibility="Hidden"
+                                      IsHitTestVisible="False"
+                                      SnapsToDevicePixels="True" />
                             </Canvas>
                         </Grid>
                     </Border>

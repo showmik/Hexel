@@ -33,6 +33,12 @@ namespace Hexel
         // ── Status label fade timer ───────────────────────────────────────
         private System.Windows.Threading.DispatcherTimer? _statusTimer;
 
+        // ── Brush cursor bitmap cache ─────────────────────────────────────
+        private System.Windows.Media.Imaging.WriteableBitmap? _brushCursorBitmap;
+        private int _brushCursorCachedSize = -1;
+        private Point _lastCanvasMousePos;
+        private bool _isMouseOverCanvas;
+
         // ── Constructor ───────────────────────────────────────────────────
 
         public MainWindow(ViewModels.MainViewModel vm, ISelectionService selection)
@@ -61,6 +67,13 @@ namespace Hexel
                 (_, _) => ApplyZoomCentered(1.0 / ZoomFactor)));
             CommandBindings.Add(new CommandBinding(NavigationCommands.Zoom,
                 (_, _) => ZoomSlider.Value = 1.0));
+
+            // Refresh brush cursor immediately when BrushSize changes (keyboard, slider, etc.)
+            vm.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(vm.BrushSize))
+                    RefreshBrushCursor();
+            };
         }
 
         // ── Tool selection ────────────────────────────────────────────────
@@ -86,6 +99,10 @@ namespace Hexel
             {
                 CommitCurrentSelection();
             }
+
+            // Hide the brush cursor when switching away from pencil
+            if (ViewModel.CurrentTool != ToolMode.Pencil)
+                HideBrushCursor();
         }
 
         // ── Global overrides: mouse up, mouse move, key down ─────────────
@@ -640,11 +657,21 @@ namespace Hexel
                 sv.ScrollToHorizontalOffset(_panStartScroll.X - delta.X);
                 sv.ScrollToVerticalOffset(_panStartScroll.Y - delta.Y);
                 e.Handled = true;
+                HideBrushCursor();
                 return;
             }
 
             var image = CanvasImage;
-            var (x, y) = GetPixelCoordinates(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
+            var pos = e.GetPosition(image);
+            var (x, y) = GetPixelCoordinates(pos, image.ActualWidth, image.ActualHeight);
+
+            // Track mouse position for brush cursor refresh on size change
+            _lastCanvasMousePos = pos;
+            _isMouseOverCanvas = pos.X >= 0 && pos.X <= image.ActualWidth &&
+                                 pos.Y >= 0 && pos.Y <= image.ActualHeight;
+
+            // Always update the brush cursor position (even if pixel didn't change)
+            UpdateBrushCursor(x, y, pos, image.ActualWidth, image.ActualHeight);
 
             if (x != _lastHoveredX || y != _lastHoveredY)
             {
@@ -762,6 +789,181 @@ namespace Hexel
             if (pos.Y >= 0 && pos.Y <= actualHeight) y = Math.Clamp(y, 0, h - 1);
 
             return (x, y);
+        }
+
+        // ── Brush cursor overlay ───────────────────────────────────────────
+
+        /// <summary>
+        /// Rebuilds the brush stamp bitmap when brush size changes.
+        /// Replicates the same circular pattern as DrawBrushStamp so the
+        /// preview is pixel-accurate.
+        /// </summary>
+        private void RebuildBrushCursorBitmap(int brushSize)
+        {
+            if (brushSize == _brushCursorCachedSize && _brushCursorBitmap != null) return;
+            _brushCursorCachedSize = brushSize;
+
+            _brushCursorBitmap = new System.Windows.Media.Imaging.WriteableBitmap(
+                brushSize, brushSize, 96, 96, PixelFormats.Bgra32, null);
+
+            var pixels = new uint[brushSize * brushSize];
+
+            // Edge color: bright white outline. Fill: semi-transparent.
+            const uint edgeColor = 0xDDFFFFFF; // ~87% opaque white
+            const uint fillColor = 0x40FFFFFF; // ~25% opaque white
+
+            if (brushSize <= 1)
+            {
+                pixels[0] = edgeColor;
+            }
+            else
+            {
+                int offset = (brushSize - 1) / 2;
+                int rSq = brushSize * brushSize / 4;
+
+                // First pass: mark which pixels are in the stamp
+                var inStamp = new bool[brushSize * brushSize];
+                for (int dy = -offset; dy < brushSize - offset; dy++)
+                {
+                    for (int dx = -offset; dx < brushSize - offset; dx++)
+                    {
+                        if (dx * dx + dy * dy > rSq) continue;
+                        int px = dx + offset, py = dy + offset;
+                        inStamp[py * brushSize + px] = true;
+                    }
+                }
+
+                // Second pass: fill interior, outline edges
+                for (int py = 0; py < brushSize; py++)
+                {
+                    for (int px = 0; px < brushSize; px++)
+                    {
+                        if (!inStamp[py * brushSize + px]) continue;
+
+                        // Check if any neighbor is outside the stamp → edge pixel
+                        bool isEdge = px == 0 || py == 0 || px == brushSize - 1 || py == brushSize - 1
+                            || !inStamp[py * brushSize + (px - 1)]
+                            || !inStamp[py * brushSize + (px + 1)]
+                            || !inStamp[(py - 1) * brushSize + px]
+                            || !inStamp[(py + 1) * brushSize + px];
+
+                        pixels[py * brushSize + px] = isEdge ? edgeColor : fillColor;
+                    }
+                }
+            }
+
+            _brushCursorBitmap.WritePixels(
+                new Int32Rect(0, 0, brushSize, brushSize), pixels, brushSize * 4, 0);
+            BrushCursorOverlay.Source = _brushCursorBitmap;
+        }
+
+        /// <summary>
+        /// Called when BrushSize changes (keyboard, slider, etc.) to instantly
+        /// refresh the cursor overlay using the last known mouse position.
+        /// </summary>
+        private void RefreshBrushCursor()
+        {
+            if (!_isMouseOverCanvas || BrushCursorOverlay == null) return;
+
+            var image = CanvasImage;
+            if (image == null || image.ActualWidth == 0) return;
+
+            // Invalidate the bitmap cache so it rebuilds with the new size
+            _brushCursorCachedSize = -1;
+
+            var (x, y) = GetPixelCoordinates(_lastCanvasMousePos, image.ActualWidth, image.ActualHeight);
+            UpdateBrushCursor(x, y, _lastCanvasMousePos, image.ActualWidth, image.ActualHeight);
+        }
+
+        private void UpdateBrushCursor(int pixelX, int pixelY, Point mousePos, double imgWidth, double imgHeight)
+        {
+            if (BrushCursorOverlay == null) return;
+
+            if (ViewModel.CurrentTool != ToolMode.Pencil)
+            {
+                HideBrushCursor();
+                return;
+            }
+
+            int brushSize = ViewModel.BrushSize;
+            int w = ViewModel.SpriteState.Width;
+            int h = ViewModel.SpriteState.Height;
+
+            double gw = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
+            double gh = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
+            double cw = gw / w;
+            double ch = gh / h;
+
+            // Shrink factor: the bitmap represents the full stamp footprint but we
+            // draw it slightly smaller so the outline sits inside the pixel cell,
+            // not straddling the grid line of the neighbouring cell.
+            const double shrink = 0.85;
+            double cursorW = brushSize * cw * shrink;
+            double cursorH = brushSize * ch * shrink;
+
+            // Hide only when the entire stamp would be outside the canvas.
+            // Half-widths in pixel-space for the clamped overlap check:
+            double halfW = cursorW / 2.0;
+            double halfH = cursorH / 2.0;
+
+            bool completelyOutside =
+                mousePos.X + halfW < 0 || mousePos.X - halfW > imgWidth ||
+                mousePos.Y + halfH < 0 || mousePos.Y - halfH > imgHeight;
+
+            if (completelyOutside)
+            {
+                HideBrushCursor();
+                return;
+            }
+
+            RebuildBrushCursorBitmap(brushSize);
+
+            BrushCursorOverlay.Width = cursorW;
+            BrushCursorOverlay.Height = cursorH;
+
+            // Follow the mouse freely — the overlay Canvas clips anything outside its bounds.
+            double left = mousePos.X - halfW;
+            double top  = mousePos.Y - halfH;
+
+            Canvas.SetLeft(BrushCursorOverlay, left);
+            Canvas.SetTop(BrushCursorOverlay, top);
+            BrushCursorOverlay.Visibility = Visibility.Visible;
+
+            // Crosshair at exact mouse position
+            double crossLen = Math.Max(cw, 6.0);
+            CrosshairH.X1 = mousePos.X - crossLen;
+            CrosshairH.X2 = mousePos.X + crossLen;
+            CrosshairH.Y1 = mousePos.Y;
+            CrosshairH.Y2 = mousePos.Y;
+            CrosshairV.X1 = mousePos.X;
+            CrosshairV.X2 = mousePos.X;
+            CrosshairV.Y1 = mousePos.Y - crossLen;
+            CrosshairV.Y2 = mousePos.Y + crossLen;
+            CrosshairH.Visibility = Visibility.Visible;
+            CrosshairV.Visibility = Visibility.Visible;
+
+            if (CanvasImage.Cursor != Cursors.None)
+                CanvasImage.Cursor = Cursors.None;
+        }
+
+        private void HideBrushCursor()
+        {
+            if (BrushCursorOverlay != null)
+                BrushCursorOverlay.Visibility = Visibility.Hidden;
+            if (CrosshairH != null)
+                CrosshairH.Visibility = Visibility.Hidden;
+            if (CrosshairV != null)
+                CrosshairV.Visibility = Visibility.Hidden;
+
+            _isMouseOverCanvas = false;
+
+            if (CanvasImage != null && CanvasImage.Cursor == Cursors.None)
+                CanvasImage.Cursor = null;
+        }
+
+        private void CanvasImage_MouseLeave(object sender, MouseEventArgs e)
+        {
+            HideBrushCursor();
         }
     }
 }
