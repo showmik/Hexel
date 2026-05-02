@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Hexel.Core;
 using Hexel.Services;
 using System;
-using System.Collections.ObjectModel;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -12,145 +12,90 @@ namespace Hexel.ViewModels
 {
     public class MainViewModel : ObservableObject
     {
-        private int _inputWidth = 16;
-        public int InputWidth
+        // ── Services ──────────────────────────────────────────────────────
+        private readonly ICodeGeneratorService _codeGen;
+        private readonly IDrawingService _drawingService;
+        private readonly IHistoryService _historyService;
+        private readonly ISelectionService _selectionService;
+        private readonly IClipboardService _clipboardService;
+        private readonly IDialogService _dialogService;
+        private readonly IFileService _fileService;
+        private readonly SynchronizationContext _uiContext;
+
+        // ── Canvas size input ─────────────────────────────────────────────
+        private string _inputWidth = "16";
+        private string _inputHeight = "16";
+
+        public string InputWidth
         {
             get => _inputWidth;
             set => SetProperty(ref _inputWidth, value);
         }
-
-        private int _inputHeight = 16;
-        public int InputHeight
+        public string InputHeight
         {
             get => _inputHeight;
             set => SetProperty(ref _inputHeight, value);
         }
 
-        public IRelayCommand NewCanvasCommand { get; }
+        // ── Core state ────────────────────────────────────────────────────
+        private SpriteState _spriteState = null!;
+        public SpriteState SpriteState
+        {
+            get => _spriteState;
+            private set => SetProperty(ref _spriteState, value);
+        }
 
-        #region Services & Dependencies
-        private readonly ICodeGeneratorService _codeGen;
-        private readonly IDrawingService _drawingService;
-        private readonly IHistoryService _historyService;
-        private readonly System.Threading.SynchronizationContext _uiContext;
-        private readonly IClipboardService _clipboardService;
-        private readonly IDialogService _dialogService;
-        private readonly IFileService _fileService;
-        #endregion
+        private bool _isDisplayInverted;
+        public bool IsDisplayInverted
+        {
+            get => _isDisplayInverted;
+            set
+            {
+                if (SetProperty(ref _isDisplayInverted, value) && SpriteState != null)
+                    SpriteState.IsDisplayInverted = value;
+            }
+        }
 
-        #region Private Fields
-        // Brushes used for UI representation
-        private readonly SolidColorBrush _colorOff;
-        private readonly SolidColorBrush _colorOn;
-        private readonly SolidColorBrush _previewOff;
-        private readonly SolidColorBrush _previewOn;
         private bool _showGridLines = true;
-        private bool _binaryUseComma = false;
-        private bool _hexUseComma = true; // Checked by default for Hex is usually preferred, but you can change to false!
-
-        // Core state backing fields
-        private bool _isUpdatingProgrammatically = false;
-        private SpriteState _spriteState;
-        private bool _isDisplayInverted = false;
-
-        // Text backing fields
-        private string _txtBinary = string.Empty;
-        private string _txtHex = string.Empty;
-
-        // Tool & interaction backing fields
-        private ToolMode _currentTool = ToolMode.Pencil;
-        private int _lastClickedIndex = -1;
-
-        // Tool tracking state
-        private int _lineStartIdx = -1;
-        private int _lineCurrentIdx = -1;
-        private bool _lineDrawState = false;
-        private bool _pendingTextUpdateDuringDrag = false;
-        #endregion
-
-        #region WritableBitmaps & Pixel Collections
-        private WriteableBitmap _canvasBitmap;
-        public WriteableBitmap CanvasBitmap
-        {
-            get => _canvasBitmap;
-            set => SetProperty(ref _canvasBitmap, value);
-        }
-
-        private WriteableBitmap _previewBitmap;
-        public WriteableBitmap PreviewBitmap
-        {
-            get => _previewBitmap;
-            set => SetProperty(ref _previewBitmap, value);
-        }
-
-        // Buffers and color representations
-        private uint[] _canvasBuffer;
-        private uint[] _previewBuffer;
-        private uint _colorOffUint, _colorOnUint, _previewOffUint, _previewOnUint;
-
-        // Helper to convert WPF Color to BGRA32 uint for the WriteableBitmap
-        private uint ToBgra32(Color c) => (uint)((c.A << 24) | (c.R << 16) | (c.G << 8) | c.B);
-        #endregion
-
-        #region Properties
-        public event EventHandler HistoryRestored;
-
-
-        // -- Core Properties --
-        public bool BinaryUseComma
-        {
-            get => _binaryUseComma;
-            set
-            {
-                if (SetProperty(ref _binaryUseComma, value)) UpdateTextOutputs();
-            }
-        }
-
-        public bool HexUseComma
-        {
-            get => _hexUseComma;
-            set
-            {
-                if (SetProperty(ref _hexUseComma, value)) UpdateTextOutputs();
-            }
-        }
-
-
         public bool ShowGridLines
         {
             get => _showGridLines;
             set => SetProperty(ref _showGridLines, value);
         }
 
-        public SpriteState SpriteState
+        // ── Tool state ────────────────────────────────────────────────────
+        private ToolMode _currentTool = ToolMode.Pencil;
+        public ToolMode CurrentTool
         {
-            get => _spriteState;
-            set => SetProperty(ref _spriteState, value);
+            get => _currentTool;
+            set => SetProperty(ref _currentTool, value);
         }
 
-        // Helper to calculate the perfect pixel size based on the canvas aspect ratio
-        private double _cellSize => SpriteState != null ? Math.Min(400.0 / SpriteState.Width, 400.0 / SpriteState.Height) : 25.0;
+        // Flags read by the View to know whether a shape preview is in progress
+        public bool IsDrawingLine { get; private set; }
+        public bool IsDrawingRectangle { get; private set; }
+        public bool IsDrawingEllipse { get; private set; }
 
-        // Dynamic dimensions for the main drawing container
-        public double CanvasDisplayWidth => (SpriteState?.Width ?? 16) * _cellSize;
-        public double CanvasDisplayHeight => (SpriteState?.Height ?? 16) * _cellSize;
-
-        // The background checkerboard grid lines
-        public Rect GridViewport => new Rect(0, 0, _cellSize, _cellSize);
-        // Dynamic thickness that scales down with the cell size but stays visible
-        public double DynamicStrokeThickness => SpriteState != null ? Math.Max(0.5, _cellSize * 0.08) : 2.0;
-
-        // Replaces the "vm.SpriteState.Size * 2" math from your code-behind
-        public int PreviewWidth => (SpriteState?.Width ?? 16) * 2;
-        public int PreviewHeight => (SpriteState?.Height ?? 16) * 2;
-
-        public bool IsDisplayInverted
+        // ── Export format options ─────────────────────────────────────────
+        private bool _binaryUseComma = false;
+        public bool BinaryUseComma
         {
-            get => _isDisplayInverted;
-            set => SetProperty(ref _isDisplayInverted, value);
+            get => _binaryUseComma;
+            set { if (SetProperty(ref _binaryUseComma, value)) UpdateTextOutputs(); }
         }
 
-        // -- Text Code Properties --
+        private bool _hexUseComma = true;
+        public bool HexUseComma
+        {
+            get => _hexUseComma;
+            set { if (SetProperty(ref _hexUseComma, value)) UpdateTextOutputs(); }
+        }
+
+        // ── Text output properties ────────────────────────────────────────
+        // volatile so the flag is visible across threads without a full lock
+        private volatile bool _isUpdatingProgrammatically;
+
+        private string _txtBinary = string.Empty;
         public string TxtBinary
         {
             get => _txtBinary;
@@ -158,30 +103,25 @@ namespace Hexel.ViewModels
             {
                 if (_isUpdatingProgrammatically) return;
                 SetProperty(ref _txtBinary, value);
-
-                // 1. Create a backup of the current state
-                var backupState = SpriteState.Clone();
-
+                var backup = SpriteState.Clone();
                 try
                 {
-                    // 2. Attempt to parse the new text
                     _codeGen.ParseBinaryToState(value, SpriteState);
                     RedrawGridFromMemory();
                 }
-                catch (Exception)
+                catch
                 {
-                    // 3. If parsing fails (e.g., malformed text), revert to the backup
-                    SpriteState = backupState;
-                    RedrawGridFromMemory(); // Ensure UI matches the reverted state
+                    SpriteState = backup;
+                    RedrawGridFromMemory();
                 }
                 finally
                 {
-                    // Always update the text outputs to reflect the final state
                     UpdateTextOutputs();
                 }
             }
         }
 
+        private string _txtHex = string.Empty;
         public string TxtHex
         {
             get => _txtHex;
@@ -189,17 +129,15 @@ namespace Hexel.ViewModels
             {
                 if (_isUpdatingProgrammatically) return;
                 SetProperty(ref _txtHex, value);
-
-                var backupState = SpriteState.Clone();
-
+                var backup = SpriteState.Clone();
                 try
                 {
                     _codeGen.ParseHexToState(value, SpriteState);
                     RedrawGridFromMemory();
                 }
-                catch (Exception)
+                catch
                 {
-                    SpriteState = backupState;
+                    SpriteState = backup;
                     RedrawGridFromMemory();
                 }
                 finally
@@ -209,34 +147,60 @@ namespace Hexel.ViewModels
             }
         }
 
-        // -- Tool & Selection Properties --
-        public ToolMode CurrentTool
+        // ── Canvas display helpers ────────────────────────────────────────
+        private const double CanvasTargetPx = 400.0;
+
+        private double CellSize =>
+            SpriteState != null
+                ? Math.Min(CanvasTargetPx / SpriteState.Width, CanvasTargetPx / SpriteState.Height)
+                : 25.0;
+
+        public double CanvasDisplayWidth => (SpriteState?.Width ?? 16) * CellSize;
+        public double CanvasDisplayHeight => (SpriteState?.Height ?? 16) * CellSize;
+
+        public Rect GridViewport => new Rect(0, 0, CellSize, CellSize);
+        public double DynamicStrokeThickness => SpriteState != null ? Math.Max(0.5, CellSize * 0.08) : 2.0;
+        public int PreviewWidth => (SpriteState?.Width ?? 16) * 2;
+        public int PreviewHeight => (SpriteState?.Height ?? 16) * 2;
+
+        // ── WritableBitmaps ───────────────────────────────────────────────
+        private WriteableBitmap _canvasBitmap = null!;
+        public WriteableBitmap CanvasBitmap
         {
-            get => _currentTool;
-            set => SetProperty(ref _currentTool, value);
+            get => _canvasBitmap;
+            set => SetProperty(ref _canvasBitmap, value);
         }
 
-        public bool IsDrawingLine { get; private set; }
-        public bool IsDrawingRectangle { get; private set; }
-        public bool IsDrawingEllipse { get; private set; }
-        public bool[,] SelectionMask { get; private set; }
-        public bool HasActiveSelection { get; private set; }
-        public bool IsSelecting { get; private set; }
-        public bool IsFloating { get; private set; }
-        public int SelectionStartIdx { get; private set; } = -1;
-        public int SelectionEndIdx { get; private set; } = -1;
-        public int SelMinX { get; private set; } = -1;
-        public int SelMaxX { get; private set; } = -1;
-        public int SelMinY { get; private set; } = -1;
-        public int SelMaxY { get; private set; } = -1;
-        public bool[,] FloatingPixels { get; private set; }
-        public int FloatingX { get; private set; }
-        public int FloatingY { get; private set; }
-        public int FloatingWidth { get; private set; }
-        public int FloatingHeight { get; private set; }
-        #endregion
+        private WriteableBitmap _previewBitmap = null!;
+        public WriteableBitmap PreviewBitmap
+        {
+            get => _previewBitmap;
+            set => SetProperty(ref _previewBitmap, value);
+        }
 
-        #region Commands
+        private uint[] _canvasBuffer = Array.Empty<uint>();
+        private uint[] _previewBuffer = Array.Empty<uint>();
+
+        private uint _colorOffUint, _colorOnUint, _previewOffUint, _previewOnUint;
+        private static uint ToBgra32(Color c) =>
+            (uint)((c.A << 24) | (c.R << 16) | (c.G << 8) | c.B);
+
+        // ── Internal drawing tracking ─────────────────────────────────────
+        private int _lineStartIdx = -1;
+        private int _lineCurrentIdx = -1;
+        private bool _lineDrawState = false;
+        private int _lastClickedIndex = -1;
+        private bool _pendingTextUpdateDuringDrag;
+
+        // ── Events ────────────────────────────────────────────────────────
+        /// <summary>
+        /// Raised after Undo/Redo so the View can clear any in-progress selection
+        /// overlays that may now be invalid.
+        /// </summary>
+        public event EventHandler? HistoryRestored;
+
+        // ── Commands ──────────────────────────────────────────────────────
+        public IRelayCommand NewCanvasCommand { get; }
         public IRelayCommand UndoCommand { get; }
         public IRelayCommand RedoCommand { get; }
         public IRelayCommand ClearCommand { get; }
@@ -245,88 +209,90 @@ namespace Hexel.ViewModels
         public IRelayCommand CopyHexCommand { get; }
         public IRelayCommand SaveCommand { get; }
         public IRelayCommand LoadCommand { get; }
-        #endregion
 
-        #region Constructor
-        public MainViewModel(ICodeGeneratorService codeGen,
-                             IDrawingService drawingService,
-                             IHistoryService historyService,
-                             IClipboardService clipboardService,
-                             IDialogService dialogService,
-                             IFileService fileService)
+        // ── Constructor ───────────────────────────────────────────────────
+        public MainViewModel(
+            ICodeGeneratorService codeGen,
+            IDrawingService drawingService,
+            IHistoryService historyService,
+            ISelectionService selectionService,
+            IClipboardService clipboardService,
+            IDialogService dialogService,
+            IFileService fileService)
         {
-            _uiContext = System.Threading.SynchronizationContext.Current ?? new System.Threading.SynchronizationContext();
+            _uiContext = SynchronizationContext.Current ?? new SynchronizationContext();
             _codeGen = codeGen ?? throw new ArgumentNullException(nameof(codeGen));
             _drawingService = drawingService ?? throw new ArgumentNullException(nameof(drawingService));
             _historyService = historyService ?? throw new ArgumentNullException(nameof(historyService));
+            _selectionService = selectionService ?? throw new ArgumentNullException(nameof(selectionService));
             _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
 
-            // Initialize commands
+            // ── Commands ──────────────────────────────────────────────────
+
             NewCanvasCommand = new RelayCommand(() =>
             {
-                // Optional: Add a dialog confirming they want to wipe the canvas
-                InitializeGrid(InputWidth, InputHeight);
+                if (!int.TryParse(InputWidth, out int w) || w <= 0 ||
+                    !int.TryParse(InputHeight, out int h) || h <= 0)
+                {
+                    InputWidth = (SpriteState?.Width ?? 16).ToString();
+                    InputHeight = (SpriteState?.Height ?? 16).ToString();
+                    return;
+                }
+
+                // Guard against crash-inducing sizes
+                if (w > SpriteState.MaxDimension || h > SpriteState.MaxDimension)
+                {
+                    _dialogService.ShowMessage(
+                        $"Maximum canvas size is {SpriteState.MaxDimension}×{SpriteState.MaxDimension}.");
+                    return;
+                }
+
+                InitializeGrid(w, h);
             });
 
             SaveCommand = new RelayCommand(() =>
             {
-                try
-                {
-                    _fileService.SaveSprite(SpriteState);
-                }
-                catch (Exception ex)
-                {
-                    _dialogService.ShowMessage($"Error saving file: {ex.Message}");
-                }
+                try { _fileService.SaveSprite(SpriteState); }
+                catch (Exception ex) { _dialogService.ShowMessage($"Error saving: {ex.Message}"); }
             });
 
             LoadCommand = new RelayCommand(() =>
             {
                 try
                 {
-                    var loadedState = _fileService.LoadSprite();
-                    if (loadedState != null && loadedState.Pixels != null)
+                    var loaded = _fileService.LoadSprite();
+                    if (loaded?.Pixels == null) return;
+
+                    _historyService.SaveState(SpriteState);
+
+                    if (InputWidth != loaded.Width.ToString() ||
+                        InputHeight != loaded.Height.ToString())
                     {
-                        _historyService.SaveState(SpriteState);
-
-                        // Update to check Width and Height instead of GridSize
-                        if (InputWidth != loadedState.Width || InputHeight != loadedState.Height)
-                        {
-                            InputWidth = loadedState.Width;
-                            InputHeight = loadedState.Height;
-                            InitializeGrid(InputWidth, InputHeight);
-                        }
-
-                        SpriteState.Pixels = (bool[])loadedState.Pixels.Clone();
-                        RedrawGridFromMemory();
-                        UpdateTextOutputs();
+                        InputWidth = loaded.Width.ToString();
+                        InputHeight = loaded.Height.ToString();
+                        InitializeGrid(loaded.Width, loaded.Height);
                     }
+
+                    SpriteState.Pixels = (bool[])loaded.Pixels.Clone();
+                    IsDisplayInverted = loaded.IsDisplayInverted;
+                    RedrawGridFromMemory();
+                    UpdateTextOutputs();
                 }
-                catch (Exception ex)
-                {
-                    _dialogService.ShowMessage($"Error loading file: {ex.Message}");
-                }
+                catch (Exception ex) { _dialogService.ShowMessage($"Error loading: {ex.Message}"); }
             });
 
+            // CopyHexCommand no longer shows a blocking MessageBox — the View
+            // shows a non-modal status message instead via the CopyHexExecuted event.
             CopyHexCommand = new RelayCommand(() =>
             {
                 _clipboardService.SetText(TxtHex);
-                _dialogService.ShowMessage("Copied!");
+                CopyHexExecuted?.Invoke(this, EventArgs.Empty);
             });
 
-            UndoCommand = new RelayCommand(() =>
-            {
-                var previousState = _historyService.Undo(SpriteState);
-                RestoreState(previousState);
-            });
-
-            RedoCommand = new RelayCommand(() =>
-            {
-                var nextState = _historyService.Redo(SpriteState);
-                RestoreState(nextState);
-            });
+            UndoCommand = new RelayCommand(() => RestoreState(_historyService.Undo(SpriteState)));
+            RedoCommand = new RelayCommand(() => RestoreState(_historyService.Redo(SpriteState)));
 
             ClearCommand = new RelayCommand(() =>
             {
@@ -338,46 +304,36 @@ namespace Hexel.ViewModels
 
             InvertCommand = new RelayCommand(() =>
             {
-                _historyService.SaveState(SpriteState);
+                _historyService.SaveState(SpriteState);   // saves IsDisplayInverted = current value
                 _drawingService.InvertGrid(SpriteState);
-                IsDisplayInverted = !IsDisplayInverted;
+                IsDisplayInverted = !IsDisplayInverted;   // setter keeps SpriteState in sync
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
             });
 
-            DeleteSelectionCommand = new RelayCommand(DeleteSelection);
-
-            // Setup state & brushes
-            InitializeGrid(InputWidth, InputHeight);
-
-            _colorOff = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PanelBackgroundBrush"];
-            _colorOn = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.PrimaryAccentBrush"];
-            _previewOff = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.OledOffBrush"];
-            _previewOn = (SolidColorBrush)System.Windows.Application.Current.Resources["Theme.OledOnBrush"];
-
-            _colorOffUint = ToBgra32(_colorOff.Color);
-            _colorOnUint = ToBgra32(_colorOn.Color);
-            _previewOffUint = ToBgra32(_previewOff.Color);
-            _previewOnUint = ToBgra32(_previewOn.Color);
-
-            // Try to freeze shared brushes for minor perf/thread-safety benefit
-            try
+            DeleteSelectionCommand = new RelayCommand(() =>
             {
-                if (_colorOff.CanFreeze) _colorOff.Freeze();
-                if (_colorOn.CanFreeze) _colorOn.Freeze();
-                if (_previewOff.CanFreeze) _previewOff.Freeze();
-                if (_previewOn.CanFreeze) _previewOn.Freeze();
-            }
-            catch
-            {
-                // ignore
-            }
+                if (!_selectionService.HasActiveSelection) return;
+                SaveStateForUndo();
+                _selectionService.DeleteSelection(SpriteState);
+                RedrawGridFromMemory();
+                UpdateTextOutputs();
+            });
 
+            // ── Initialization ────────────────────────────────────────────
+            InitializeGrid(int.Parse(InputWidth), int.Parse(InputHeight));
+            InitializeBrushColors();
             UpdateTextOutputs();
         }
-        #endregion
 
-        #region Public Methods
+        /// <summary>
+        /// Raised when a hex copy succeeds. The View subscribes to show a brief
+        /// non-blocking status indicator instead of a MessageBox.
+        /// </summary>
+        public event EventHandler? CopyHexExecuted;
+
+        // ── Public methods called by the View ─────────────────────────────
+
         public void InitializeGrid(int width, int height)
         {
             SpriteState = new SpriteState(width, height);
@@ -391,7 +347,6 @@ namespace Hexel.ViewModels
             UpdateTextOutputs();
             RedrawGridFromMemory();
 
-            // ADD THESE THREE LINES: Notify UI that the canvas dimensions changed
             OnPropertyChanged(nameof(GridViewport));
             OnPropertyChanged(nameof(PreviewWidth));
             OnPropertyChanged(nameof(PreviewHeight));
@@ -411,15 +366,20 @@ namespace Hexel.ViewModels
             {
                 for (int x = 0; x < w; x++)
                 {
-                    int i = (y * w) + x; // 1D array math using Width
+                    int i = (y * w) + x;
                     bool isPixelOn = SpriteState.Pixels[i];
 
-                    if (IsFloating && FloatingPixels != null)
+                    // Overlay the floating selection layer if one is active
+                    if (_selectionService.IsFloating && _selectionService.FloatingPixels != null)
                     {
-                        int floatLocalX = x - FloatingX;
-                        int floatLocalY = y - FloatingY;
-                        if (floatLocalX >= 0 && floatLocalX < FloatingWidth && floatLocalY >= 0 && floatLocalY < FloatingHeight)
-                            if (FloatingPixels[floatLocalX, floatLocalY]) isPixelOn = true;
+                        int fx = x - _selectionService.FloatingX;
+                        int fy = y - _selectionService.FloatingY;
+                        if (fx >= 0 && fx < _selectionService.FloatingWidth &&
+                            fy >= 0 && fy < _selectionService.FloatingHeight &&
+                            _selectionService.FloatingPixels[fx, fy])
+                        {
+                            isPixelOn = true;
+                        }
                     }
 
                     _canvasBuffer[i] = isPixelOn ? _colorOnUint : _colorOffUint;
@@ -427,215 +387,37 @@ namespace Hexel.ViewModels
                 }
             }
 
-            // Write the flat arrays directly to the bitmap textures in one pass
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
+            var rect = new Int32Rect(0, 0, w, h);
+            CanvasBitmap.WritePixels(rect, _canvasBuffer, w * 4, 0);
+            PreviewBitmap.WritePixels(rect, _previewBuffer, w * 4, 0);
         }
 
-        public void ProcessToolInput(int index, string actionType, bool? drawState, bool isShiftDown)
+        /// <summary>
+        /// Main entry point for all non-selection tool input from the View.
+        /// Uses typed enums instead of the previous magic strings and bool? tri-state.
+        /// </summary>
+        public void ProcessToolInput(int index, ToolAction action, DrawMode mode, bool isShiftDown)
         {
-            if (CurrentTool == ToolMode.Marquee) return; // Marquee is handled separately
+            // Marquee and Lasso are handled entirely in the View via SelectionService
+            if (CurrentTool == ToolMode.Marquee || CurrentTool == ToolMode.Lasso) return;
 
-            if (actionType == "Down" && drawState.HasValue)
+            switch (action)
             {
-                if (CurrentTool == ToolMode.Line)
-                {
-                    IsDrawingLine = true;
-                    _lineStartIdx = index;
-                    _lineCurrentIdx = index;
-                    _lineDrawState = drawState.Value;
-                    PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                }
-                else if (CurrentTool == ToolMode.Rectangle)
-                {
-                    IsDrawingRectangle = true;
-                    _lineStartIdx = index;
-                    _lineCurrentIdx = index;
-                    _lineDrawState = drawState.Value;
-                    PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                }
-                else if (CurrentTool == ToolMode.Ellipse)
-                {
-                    IsDrawingEllipse = true;
-                    _lineStartIdx = index;
-                    _lineCurrentIdx = index;
-                    _lineDrawState = drawState.Value;
-                    PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                }
-                else if (CurrentTool == ToolMode.Fill)
-                {
-                    SaveStateForUndo();
-                    ApplyFloodFill(index, drawState.Value);
-                    _lastClickedIndex = index;
-                }
-                else if (CurrentTool == ToolMode.Pencil)
-                {
-                    if (isShiftDown && _lastClickedIndex != -1)
-                    {
-                        // DrawLine already handles SaveState, updating _lastClickedIndex, 
-                        // and triggering UpdateTextOutputs internally.
-                        DrawLine(_lastClickedIndex, index, drawState.Value);
-                    }
-                    else
-                    {
-                        // Standard single-pixel click
-                        SaveStateForUndo();
-                        SetPixel(index, drawState.Value);
-                        _lastClickedIndex = index;
-                        UpdateTextOutputs();
-                    }
-                }
-            }
-            else if (actionType == "Enter")
-            {
-                if (CurrentTool == ToolMode.Line && IsDrawingLine)
-                {
-                    if (_lineCurrentIdx != index)
-                    {
-                        _lineCurrentIdx = index;
-                        PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    }
-                }
-                else if (CurrentTool == ToolMode.Pencil && drawState.HasValue)
-                {
-                    if (_lastClickedIndex != -1 && _lastClickedIndex != index)
-                    {
-                        DrawLineContinuous(_lastClickedIndex, index, drawState.Value);
-                        _lastClickedIndex = index;
-                        _pendingTextUpdateDuringDrag = true;
-                    }
-                }
-                else if (CurrentTool == ToolMode.Rectangle && IsDrawingRectangle)
-                {
-                    if (_lineCurrentIdx != index)
-                    {
-                        _lineCurrentIdx = index;
-                        PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    }
-                }
-                else if (CurrentTool == ToolMode.Ellipse && IsDrawingEllipse)
-                {
-                    if (_lineCurrentIdx != index)
-                    {
-                        _lineCurrentIdx = index;
-                        PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                    }
-                }
-            }
-            else if (actionType == "Up")
-            {
-                if (CurrentTool == ToolMode.Line && IsDrawingLine)
-                {
-                    IsDrawingLine = false;
-                    if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
-                    {
-                        DrawLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                        _lastClickedIndex = _lineCurrentIdx;
-                    }
-                    _lineStartIdx = -1;
-                    _lineCurrentIdx = -1;
-                    UpdateTextOutputs();
-                }
+                case ToolAction.Down:
+                    HandleToolDown(index, mode, isShiftDown);
+                    break;
 
-                if (CurrentTool == ToolMode.Pencil && _pendingTextUpdateDuringDrag)
-                {
-                    UpdateTextOutputs();
-                    _pendingTextUpdateDuringDrag = false;
-                }
+                case ToolAction.Move:
+                    HandleToolMove(index, mode);
+                    break;
 
-                if (CurrentTool == ToolMode.Rectangle && IsDrawingRectangle)
-                {
-                    IsDrawingRectangle = false;
-                    if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
-                    {
-                        DrawRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                        _lastClickedIndex = _lineCurrentIdx;
-                    }
-                    _lineStartIdx = -1;
-                    _lineCurrentIdx = -1;
-                    UpdateTextOutputs();
-                }
-
-                if (CurrentTool == ToolMode.Ellipse && IsDrawingEllipse)
-                {
-                    IsDrawingEllipse = false;
-                    if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
-                    {
-                        DrawEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
-                        _lastClickedIndex = _lineCurrentIdx;
-                    }
-                    _lineStartIdx = -1;
-                    _lineCurrentIdx = -1;
-                    UpdateTextOutputs();
-                }
+                case ToolAction.Up:
+                    HandleToolUp();
+                    break;
             }
         }
 
-        public void PreviewLine(int startIdx, int endIdx, bool newState)
-        {
-            RedrawGridFromMemory();
-
-            int w = SpriteState.Width;
-            int h = SpriteState.Height;
-            int x0 = startIdx % w;
-            int y0 = startIdx / w;
-            int x1 = endIdx % w;
-            int y1 = endIdx / w;
-
-            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
-            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-            int err = dx - dy;
-
-            var previewColor = newState ? _colorOnUint : _colorOffUint;
-            var previewPrev = newState ? _previewOnUint : _previewOffUint;
-
-            while (true)
-            {
-                int i = (y0 * w) + x0;
-                _canvasBuffer[i] = previewColor;
-                _previewBuffer[i] = previewPrev;
-
-                if (x0 == x1 && y0 == y1) break;
-                int e2 = 2 * err;
-                if (e2 > -dy) { err -= dy; x0 += sx; }
-                if (e2 < dx) { err += dx; y0 += sy; }
-            }
-
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
-        }
-
-        public void SaveStateForUndo()
-        {
-            _historyService.SaveState(SpriteState);
-        }
-
-        public void ApplyFloodFill(int index, bool newState)
-        {
-            _historyService.SaveState(SpriteState);
-            _drawingService.ApplyFloodFill(SpriteState, index, newState);
-            _lastClickedIndex = index;
-            RedrawGridFromMemory();
-            UpdateTextOutputs();
-        }
-
-        public void DrawLine(int startIdx, int endIdx, bool newState)
-        {
-            _historyService.SaveState(SpriteState);
-            _drawingService.DrawLine(SpriteState, startIdx, endIdx, newState);
-            _lastClickedIndex = endIdx;
-            RedrawGridFromMemory();
-            UpdateTextOutputs();
-        }
-
-        public void DrawLineContinuous(int startIdx, int endIdx, bool newState)
-        {
-            // Draws the line without saving to the Undo history stack
-            _drawingService.DrawLine(SpriteState, startIdx, endIdx, newState);
-
-            // Updates the visual brushes (using the optimized diffing we added earlier)
-            RedrawGridFromMemory();
-        }
+        public void SaveStateForUndo() => _historyService.SaveState(SpriteState);
 
         public void ShiftGrid(int offsetX, int offsetY)
         {
@@ -645,91 +427,296 @@ namespace Hexel.ViewModels
             UpdateTextOutputs();
         }
 
-        public void SetPixel(int index, bool state)
-        {
-            if (SpriteState.Pixels[index] != state)
-            {
-                SpriteState.Pixels[index] = state;
-                RedrawGridFromMemory();
-            }
-        }
+        // ── Preview methods (used during shape drag, do not commit to state) ──
 
-        public void DrawRectangle(int startIdx, int endIdx, bool newState)
+        public void PreviewLine(int startIdx, int endIdx, bool newState)
         {
-            _historyService.SaveState(SpriteState);
-            _drawingService.DrawRectangle(SpriteState, startIdx, endIdx, newState);
-            _lastClickedIndex = endIdx;
             RedrawGridFromMemory();
-            UpdateTextOutputs();
+            PlotLine(startIdx, endIdx, newState ? _colorOnUint : _colorOffUint,
+                                       newState ? _previewOnUint : _previewOffUint);
+            FlushBitmaps();
         }
 
         public void PreviewRectangle(int startIdx, int endIdx, bool newState)
         {
             RedrawGridFromMemory();
-
-            int w = SpriteState.Width;
-            int h = SpriteState.Height;
-            int x0 = startIdx % w;
-            int y0 = startIdx / w;
-            int x1 = endIdx % w;
-            int y1 = endIdx / w;
-
-            int minX = Math.Min(x0, x1);
-            int maxX = Math.Max(x0, x1);
-            int minY = Math.Min(y0, y1);
-            int maxY = Math.Max(y0, y1);
-
-            var previewColor = newState ? _colorOnUint : _colorOffUint;
-            var previewPrev = newState ? _previewOnUint : _previewOffUint;
-
-            Action<int, int> drawPixel = (px, py) => {
-                int i = (py * w) + px;
-                _canvasBuffer[i] = previewColor;
-                _previewBuffer[i] = previewPrev;
-            };
-
-            for (int x = minX; x <= maxX; x++) { drawPixel(x, minY); drawPixel(x, maxY); }
-            for (int y = minY; y <= maxY; y++) { drawPixel(minX, y); drawPixel(maxX, y); }
-
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
-        }
-
-        public void DrawEllipse(int startIdx, int endIdx, bool newState)
-        {
-            _historyService.SaveState(SpriteState);
-            _drawingService.DrawEllipse(SpriteState, startIdx, endIdx, newState);
-            _lastClickedIndex = endIdx;
-            RedrawGridFromMemory();
-            UpdateTextOutputs();
+            PlotRectangle(startIdx, endIdx, newState ? _colorOnUint : _colorOffUint,
+                                             newState ? _previewOnUint : _previewOffUint);
+            FlushBitmaps();
         }
 
         public void PreviewEllipse(int startIdx, int endIdx, bool newState)
         {
             RedrawGridFromMemory();
+            PlotEllipse(startIdx, endIdx, newState ? _colorOnUint : _colorOffUint,
+                                           newState ? _previewOnUint : _previewOffUint);
+            FlushBitmaps();
+        }
 
+        // ── Text output ───────────────────────────────────────────────────
+
+        public void UpdateTextOutputs() => _ = UpdateTextOutputsAsync();
+
+        public async System.Threading.Tasks.Task UpdateTextOutputsAsync()
+        {
+            if (_isUpdatingProgrammatically) return;
+            _isUpdatingProgrammatically = true;
+
+            try
+            {
+                var (binary, hex) = await _codeGen.GenerateExportStringsAsync(
+                    SpriteState,
+                    _selectionService.IsFloating,
+                    _selectionService.FloatingPixels,
+                    _selectionService.FloatingX,
+                    _selectionService.FloatingY,
+                    _selectionService.FloatingWidth,
+                    _selectionService.FloatingHeight,
+                    BinaryUseComma,
+                    HexUseComma);
+
+                // Only reset the flag inside the Post callback — resetting it earlier
+                // (before the callback runs) allowed a second async call to start
+                // before the UI had actually been updated, causing a race condition.
+                _uiContext.Post(_ =>
+                {
+                    _txtBinary = binary;
+                    _txtHex = hex;
+                    OnPropertyChanged(nameof(TxtBinary));
+                    OnPropertyChanged(nameof(TxtHex));
+                    _isUpdatingProgrammatically = false;
+                }, null);
+            }
+            catch
+            {
+                // Always release the flag if the async work itself throws
+                _isUpdatingProgrammatically = false;
+            }
+        }
+
+        // ── Private: tool dispatch ────────────────────────────────────────
+
+        private void HandleToolDown(int index, DrawMode mode, bool isShiftDown)
+        {
+            bool newState = mode == DrawMode.Draw;
+
+            switch (CurrentTool)
+            {
+                case ToolMode.Fill:
+                    // BUG FIX: previously SaveStateForUndo() was called here AND inside
+                    // ApplyFloodFill, resulting in two undo entries per fill operation.
+                    // History is now saved exactly once, here at the call site.
+                    _historyService.SaveState(SpriteState);
+                    _drawingService.ApplyFloodFill(SpriteState, index, newState);
+                    _lastClickedIndex = index;
+                    RedrawGridFromMemory();
+                    UpdateTextOutputs();
+                    break;
+
+                case ToolMode.Line:
+                    IsDrawingLine = true;
+                    _lineStartIdx = index;
+                    _lineCurrentIdx = index;
+                    _lineDrawState = newState;
+                    PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    break;
+
+                case ToolMode.Rectangle:
+                    IsDrawingRectangle = true;
+                    _lineStartIdx = index;
+                    _lineCurrentIdx = index;
+                    _lineDrawState = newState;
+                    PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    break;
+
+                case ToolMode.Ellipse:
+                    IsDrawingEllipse = true;
+                    _lineStartIdx = index;
+                    _lineCurrentIdx = index;
+                    _lineDrawState = newState;
+                    PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    break;
+
+                case ToolMode.Pencil:
+                    if (isShiftDown && _lastClickedIndex != -1)
+                    {
+                        _historyService.SaveState(SpriteState);
+                        _drawingService.DrawLine(SpriteState, _lastClickedIndex, index, newState);
+                        _lastClickedIndex = index;
+                        RedrawGridFromMemory();
+                        UpdateTextOutputs();
+                    }
+                    else
+                    {
+                        _historyService.SaveState(SpriteState);
+                        SetPixel(index, newState);
+                        _lastClickedIndex = index;
+                        UpdateTextOutputs();
+                    }
+                    break;
+            }
+        }
+
+        private void HandleToolMove(int index, DrawMode mode)
+        {
+            bool newState = mode == DrawMode.Draw;
+
+            switch (CurrentTool)
+            {
+                case ToolMode.Line when IsDrawingLine:
+                    if (_lineCurrentIdx != index)
+                    {
+                        _lineCurrentIdx = index;
+                        PreviewLine(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    }
+                    break;
+
+                case ToolMode.Rectangle when IsDrawingRectangle:
+                    if (_lineCurrentIdx != index)
+                    {
+                        _lineCurrentIdx = index;
+                        PreviewRectangle(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    }
+                    break;
+
+                case ToolMode.Ellipse when IsDrawingEllipse:
+                    if (_lineCurrentIdx != index)
+                    {
+                        _lineCurrentIdx = index;
+                        PreviewEllipse(_lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    }
+                    break;
+
+                case ToolMode.Pencil when mode != DrawMode.None:
+                    if (_lastClickedIndex != -1 && _lastClickedIndex != index)
+                    {
+                        // Continuous pencil drag: draw line segment but don't push undo
+                        // (the undo entry was already pushed on Down)
+                        _drawingService.DrawLine(SpriteState, _lastClickedIndex, index, newState);
+                        _lastClickedIndex = index;
+                        _pendingTextUpdateDuringDrag = true;
+                        RedrawGridFromMemory();
+                    }
+                    break;
+            }
+        }
+
+        private void HandleToolUp()
+        {
+            if (IsDrawingLine)
+            {
+                IsDrawingLine = false;
+                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                {
+                    _historyService.SaveState(SpriteState);
+                    _drawingService.DrawLine(SpriteState, _lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    _lastClickedIndex = _lineCurrentIdx;
+                    RedrawGridFromMemory();
+                }
+                ResetLineTracking();
+                UpdateTextOutputs();
+            }
+
+            if (IsDrawingRectangle)
+            {
+                IsDrawingRectangle = false;
+                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                {
+                    _historyService.SaveState(SpriteState);
+                    _drawingService.DrawRectangle(SpriteState, _lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    _lastClickedIndex = _lineCurrentIdx;
+                    RedrawGridFromMemory();
+                }
+                ResetLineTracking();
+                UpdateTextOutputs();
+            }
+
+            if (IsDrawingEllipse)
+            {
+                IsDrawingEllipse = false;
+                if (_lineStartIdx != -1 && _lineCurrentIdx != -1)
+                {
+                    _historyService.SaveState(SpriteState);
+                    _drawingService.DrawEllipse(SpriteState, _lineStartIdx, _lineCurrentIdx, _lineDrawState);
+                    _lastClickedIndex = _lineCurrentIdx;
+                    RedrawGridFromMemory();
+                }
+                ResetLineTracking();
+                UpdateTextOutputs();
+            }
+
+            if (CurrentTool == ToolMode.Pencil && _pendingTextUpdateDuringDrag)
+            {
+                _pendingTextUpdateDuringDrag = false;
+                UpdateTextOutputs();
+            }
+        }
+
+        private void ResetLineTracking()
+        {
+            _lineStartIdx = -1;
+            _lineCurrentIdx = -1;
+        }
+
+        // ── Private: pixel helpers ────────────────────────────────────────
+
+        private void SetPixel(int index, bool state)
+        {
+            if (SpriteState.Pixels[index] == state) return;
+            SpriteState.Pixels[index] = state;
+            RedrawGridFromMemory();
+        }
+
+        // ── Private: bitmap plotting (for previews) ───────────────────────
+
+        private void PlotPixel(int x, int y, uint canvasColor, uint previewColor)
+        {
             int w = SpriteState.Width;
             int h = SpriteState.Height;
-            int x0 = startIdx % w;
-            int y0 = startIdx / w;
-            int x1 = endIdx % w;
-            int y1 = endIdx / w;
+            if (x < 0 || x >= w || y < 0 || y >= h) return;
+            int i = (y * w) + x;
+            _canvasBuffer[i] = canvasColor;
+            _previewBuffer[i] = previewColor;
+        }
 
-            var previewColor = newState ? _colorOnUint : _colorOffUint;
-            var previewPrev = newState ? _previewOnUint : _previewOffUint;
+        private void PlotLine(int startIdx, int endIdx, uint cc, uint pc)
+        {
+            int w = SpriteState.Width;
+            int x0 = startIdx % w, y0 = startIdx / w;
+            int x1 = endIdx % w, y1 = endIdx / w;
+            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+            while (true)
+            {
+                PlotPixel(x0, y0, cc, pc);
+                if (x0 == x1 && y0 == y1) break;
+                int e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+        }
 
-            Action<int, int> drawPixel = (px, py) => {
-                if (px >= 0 && px < w && py >= 0 && py < h)
-                {
-                    int i = (py * w) + px;
-                    _canvasBuffer[i] = previewColor;
-                    _previewBuffer[i] = previewPrev;
-                }
-            };
+        private void PlotRectangle(int startIdx, int endIdx, uint cc, uint pc)
+        {
+            int w = SpriteState.Width;
+            int x0 = startIdx % w, y0 = startIdx / w;
+            int x1 = endIdx % w, y1 = endIdx / w;
+            int minX = Math.Min(x0, x1), maxX = Math.Max(x0, x1);
+            int minY = Math.Min(y0, y1), maxY = Math.Max(y0, y1);
+            for (int x = minX; x <= maxX; x++) { PlotPixel(x, minY, cc, pc); PlotPixel(x, maxY, cc, pc); }
+            for (int y = minY; y <= maxY; y++) { PlotPixel(minX, y, cc, pc); PlotPixel(maxX, y, cc, pc); }
+        }
+
+        private void PlotEllipse(int startIdx, int endIdx, uint cc, uint pc)
+        {
+            int w = SpriteState.Width;
+            int x0 = startIdx % w, y0 = startIdx / w;
+            int x1 = endIdx % w, y1 = endIdx / w;
 
             int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
-            long dx = 4 * (1 - a) * b * b, dy = 4 * (b1 + 1) * a * a;
-            long err = dx + dy + b1 * a * a, e2;
+            long dx = 4L * (1 - a) * b * b, dy = 4L * (b1 + 1) * a * a;
+            long err = dx + dy + (long)b1 * a * a, e2;
 
             if (x0 > x1) { x0 = x1; x1 += a; }
             if (y0 > y1) y0 = y1;
@@ -740,157 +727,67 @@ namespace Hexel.ViewModels
 
             do
             {
-                drawPixel(x1, y0); drawPixel(x0, y0); drawPixel(x0, y1); drawPixel(x1, y1);
+                PlotPixel(x1, y0, cc, pc); PlotPixel(x0, y0, cc, pc);
+                PlotPixel(x0, y1, cc, pc); PlotPixel(x1, y1, cc, pc);
                 e2 = 2 * err;
                 if (e2 <= dy) { y0++; y1--; err += dy += a; }
                 if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += b1; }
-            } while (x0 <= x1);
+            }
+            while (x0 <= x1);
 
             while (y0 - y1 < b)
             {
-                drawPixel(x0 - 1, y0); drawPixel(x1 + 1, y0); drawPixel(x0 - 1, y1); drawPixel(x1 + 1, y1);
+                PlotPixel(x0 - 1, y0, cc, pc); PlotPixel(x1 + 1, y0, cc, pc);
+                PlotPixel(x0 - 1, y1, cc, pc); PlotPixel(x1 + 1, y1, cc, pc);
                 y0++; y1--;
             }
-
-            CanvasBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _canvasBuffer, w * 4, 0);
-            PreviewBitmap.WritePixels(new System.Windows.Int32Rect(0, 0, w, h), _previewBuffer, w * 4, 0);
         }
 
-        public void ParseBinaryToState(string text)
+        private void FlushBitmaps()
         {
-            _codeGen.ParseBinaryToState(text, SpriteState);
-            UpdateTextOutputs();
+            var rect = new Int32Rect(0, 0, SpriteState.Width, SpriteState.Height);
+            CanvasBitmap.WritePixels(rect, _canvasBuffer, SpriteState.Width * 4, 0);
+            PreviewBitmap.WritePixels(rect, _previewBuffer, SpriteState.Width * 4, 0);
         }
 
-        public void ParseHexToState(string text)
-        {
-            _codeGen.ParseHexToState(text, SpriteState);
-            UpdateTextOutputs();
-        }
-
-        public (string Binary, string Hex) GenerateExportStrings(bool isFloating, bool[,] floatingPixels, int floatX, int floatY, int floatW, int floatH)
-        {
-            return _codeGen.GenerateExportStrings(SpriteState, isFloating, floatingPixels, floatX, floatY, floatW, floatH, BinaryUseComma, HexUseComma);
-        }
-
-        public async System.Threading.Tasks.Task UpdateTextOutputsAsync()
-        {
-            if (_isUpdatingProgrammatically) return;
-            _isUpdatingProgrammatically = true;
-
-            var (binary, hex) = await _codeGen.GenerateExportStringsAsync(
-                SpriteState, IsFloating, FloatingPixels, FloatingX, FloatingY, FloatingWidth, FloatingHeight, BinaryUseComma, HexUseComma);
-
-            // Marshal back to the UI thread generically
-            _uiContext.Post(_ =>
-            {
-                _txtBinary = binary;
-                _txtHex = hex;
-                OnPropertyChanged(nameof(TxtBinary));
-                OnPropertyChanged(nameof(TxtHex));
-                _isUpdatingProgrammatically = false; // Safe to release now
-            }, null);
-
-            _isUpdatingProgrammatically = false;
-        }
-
-        // Backwards-compatible synchronous wrapper
-        public void UpdateTextOutputs()
-        {
-            // Fire-and-forget is now safe because the inner method explicitly handles UI thread marshaling
-            _ = UpdateTextOutputsAsync();
-        }
-
-        public void SyncFloatingState(bool isFloating, bool[,] pixels, int x, int y, int w, int h)
-        {
-            IsFloating = isFloating;
-            FloatingPixels = pixels;
-            FloatingX = x;
-            FloatingY = y;
-            FloatingWidth = w;
-            FloatingHeight = h;
-        }
-
-        public void SetSelectionBounds(bool hasSelection, int minX, int maxX, int minY, int maxY, bool[,] mask = null)
-        {
-            HasActiveSelection = hasSelection;
-            SelMinX = minX;
-            SelMaxX = maxX;
-            SelMinY = minY;
-            SelMaxY = maxY;
-            SelectionMask = mask;
-        }
-
-        public void CancelCurrentOperation()
-        {
-            IsDrawingLine = false;
-            IsDrawingRectangle = false;
-            IsDrawingEllipse = false;
-            _lineStartIdx = -1;
-            _lineCurrentIdx = -1;
-            _lastClickedIndex = -1;
-            if (IsFloating)
-            {
-                SyncFloatingState(false, null, 0, 0, 0, 0);
-            }
-            SetSelectionBounds(false, -1, -1, -1, -1, null);
-        }
+        // ── Private: history restore ──────────────────────────────────────
 
         private void RestoreState(SpriteState state)
         {
-            if (state == null || state == SpriteState) return;
-            CancelCurrentOperation();
+            if (state == null || ReferenceEquals(state, SpriteState)) return;
 
-            if (InputWidth != state.Width || InputHeight != state.Height)
+            // Cancel any in-progress selection or floating layer
+            _selectionService.Cancel();
+
+            if (InputWidth != state.Width.ToString() ||
+                InputHeight != state.Height.ToString())
             {
-                InputWidth = state.Width;
-                InputHeight = state.Height;
-                InitializeGrid(InputWidth, InputHeight);
+                InputWidth = state.Width.ToString();
+                InputHeight = state.Height.ToString();
+                InitializeGrid(state.Width, state.Height);
             }
 
             SpriteState = state;
+            IsDisplayInverted = state.IsDisplayInverted; // restores the visual invert flag
             RedrawGridFromMemory();
             UpdateTextOutputs();
             HistoryRestored?.Invoke(this, EventArgs.Empty);
         }
 
-        #endregion
+        // ── Private: color initialization ─────────────────────────────────
 
-        #region Private Methods
-        private void DeleteSelection()
+        private void InitializeBrushColors()
         {
-            if ((CurrentTool == ToolMode.Marquee || CurrentTool == ToolMode.Lasso) && HasActiveSelection)
-            {
-                SaveStateForUndo();
-                if (IsFloating)
-                {
-                    SyncFloatingState(false, null, 0, 0, 0, 0);
-                }
-                else
-                {
-                    int w = SpriteState.Width;
-                    for (int i = 0; i < SpriteState.Pixels.Length; i++)
-                    {
-                        int x = i % w;
-                        int y = i / w;
-                        if (x >= SelMinX && x <= SelMaxX && y >= SelMinY && y <= SelMaxY)
-                        {
-                            if (SelectionMask != null)
-                            {
-                                if (SelectionMask[x - SelMinX, y - SelMinY])
-                                    SpriteState.Pixels[i] = false;
-                            }
-                            else
-                            {
-                                SpriteState.Pixels[i] = false;
-                            }
-                        }
-                    }
-                }
-                RedrawGridFromMemory();
-                UpdateTextOutputs();
-            }
+            var res = Application.Current.Resources;
+            var colorOff = ((SolidColorBrush)res["Theme.PanelBackgroundBrush"]).Color;
+            var colorOn = ((SolidColorBrush)res["Theme.PrimaryAccentBrush"]).Color;
+            var prevOff = ((SolidColorBrush)res["Theme.OledOffBrush"]).Color;
+            var prevOn = ((SolidColorBrush)res["Theme.OledOnBrush"]).Color;
+
+            _colorOffUint = ToBgra32(colorOff);
+            _colorOnUint = ToBgra32(colorOn);
+            _previewOffUint = ToBgra32(prevOff);
+            _previewOnUint = ToBgra32(prevOn);
         }
-        #endregion
     }
 }

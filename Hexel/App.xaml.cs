@@ -6,12 +6,9 @@ using Hexel.ViewModels;
 
 namespace Hexel
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
-        private IServiceProvider _serviceProvider;
+        private IServiceProvider _serviceProvider = null!;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -21,21 +18,25 @@ namespace Hexel
             ConfigureServices(services);
             _serviceProvider = services.BuildServiceProvider();
 
-            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-            mainWindow.Show();
+            _serviceProvider.GetRequiredService<MainWindow>().Show();
         }
 
-        private void ConfigureServices(IServiceCollection services)
+        private static void ConfigureServices(IServiceCollection services)
         {
+            // All singletons so state is shared across the app lifetime
             services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
             services.AddSingleton<IDrawingService, DrawingService>();
             services.AddSingleton<IHistoryService, HistoryService>();
+            services.AddSingleton<ISelectionService, SelectionService>();
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<IFileService, FileService>();
             services.AddSingleton<MainViewModel>();
-            services.AddTransient<MainWindow>(sp => new MainWindow(sp.GetRequiredService<MainViewModel>()));
+
+            // MainWindow is transient (created once on startup, not pooled)
+            services.AddTransient<MainWindow>(sp => new MainWindow(
+                sp.GetRequiredService<MainViewModel>(),
+                sp.GetRequiredService<ISelectionService>()));
         }
     }
-
 }

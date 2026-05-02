@@ -176,6 +176,8 @@
                 Value="{DynamicResource Theme.PrimaryAccentBrush}" />
         <Setter Property="VerticalContentAlignment"
                 Value="Center" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
