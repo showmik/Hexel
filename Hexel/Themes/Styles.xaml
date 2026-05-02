@@ -32,10 +32,10 @@
         <Setter Property="Effect">
             <Setter.Value>
                 <DropShadowEffect Color="Black"
-                                  BlurRadius="10"
-                                  Opacity="0.15"
+                                  BlurRadius="6"
+                                  Opacity="0.08"
                                   Direction="270"
-                                  ShadowDepth="4" />
+                                  ShadowDepth="2" />
             </Setter.Value>
         </Setter>
     </Style>
@@ -501,18 +501,16 @@
     <!-- ═══════════════════════════════════════════════════════════════
          Status bar panel — slim, dark, lives at the very bottom
          ═══════════════════════════════════════════════════════════════ -->
-    <Style x:Key="StatusBarPanelStyle"
+    <Style x:Key="StatusBarPanel"
            TargetType="Border">
         <Setter Property="Background"
-                Value="{DynamicResource Theme.StatusBarBackgroundBrush}" />
-        <Setter Property="Padding"
-                Value="12,5" />
-        <Setter Property="CornerRadius"
-                Value="0" />
+                Value="{DynamicResource Theme.PanelBackgroundBrush}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource Theme.PanelBorderBrush}" />
         <Setter Property="BorderThickness"
                 Value="0,1,0,0" />
-        <Setter Property="BorderBrush"
-                Value="{DynamicResource Theme.SeparatorBrush}" />
+        <Setter Property="Padding"
+                Value="10,4" />
     </Style>
 
     <!-- Status bar text — muted, small -->
@@ -543,7 +541,7 @@
     <!-- ═══════════════════════════════════════════════════════════════
          Dark-themed Menu bar
          ═══════════════════════════════════════════════════════════════ -->
-    <Style TargetType="{x:Type Menu}">
+    <Style x:Key="ThemedMenuStyle" TargetType="{x:Type Menu}">
         <Setter Property="Background"
                 Value="{DynamicResource Theme.MenuBarBackgroundBrush}" />
         <Setter Property="Foreground"
@@ -553,6 +551,7 @@
         <Setter Property="Padding"
                 Value="4,2" />
     </Style>
+    <Style TargetType="{x:Type Menu}" BasedOn="{StaticResource ThemedMenuStyle}" />
 
     <!-- Checkmark geometry shared by checkable MenuItems -->
     <Geometry x:Key="Icon.Checkmark">M 0,5 L 3,8 L 8,0</Geometry>
@@ -560,7 +559,7 @@
     <!-- ═══════════════════════════════════════════════════════════════
          Dark-themed MenuItem (handles all roles)
          ═══════════════════════════════════════════════════════════════ -->
-    <Style TargetType="{x:Type MenuItem}">
+    <Style x:Key="ThemedMenuItemStyle" TargetType="{x:Type MenuItem}">
         <Setter Property="Foreground"
                 Value="{DynamicResource Theme.TextMainBrush}" />
         <Setter Property="Background"
@@ -732,6 +731,7 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource ThemedMenuItemStyle}" />
 
     <!-- Menu separator -->
     <Style x:Key="MenuSeparatorStyle"
@@ -763,7 +763,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="ModernExpanderToggleButton" TargetType="{x:Type ToggleButton}">
+    <Style x:Key="ExpanderHeaderStyle" TargetType="{x:Type ToggleButton}">
         <Setter Property="FocusVisualStyle" Value="{StaticResource ExpanderHeaderFocusVisual}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
@@ -812,7 +812,7 @@
                 <ControlTemplate TargetType="{x:Type Expander}">
                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                         <DockPanel>
-                            <ToggleButton x:Name="HeaderSite" DockPanel.Dock="Top" ContentTemplate="{TemplateBinding HeaderTemplate}" ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}" Content="{TemplateBinding Header}" Style="{StaticResource ModernExpanderToggleButton}" IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <ToggleButton x:Name="HeaderSite" DockPanel.Dock="Top" ContentTemplate="{TemplateBinding HeaderTemplate}" ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}" Content="{TemplateBinding Header}" Style="{StaticResource ExpanderHeaderStyle}" IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
                             <ContentPresenter x:Name="ExpandSite" DockPanel.Dock="Bottom" Focusable="false" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" Visibility="Collapsed" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </DockPanel>
                     </Border>
