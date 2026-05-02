@@ -313,19 +313,32 @@ namespace Hexel
             }
             else if (_selection.IsSelecting && !_selection.HasActiveSelection)
             {
-                if (_selection.LassoPoints.Count < 3)
+                // While the user is still drawing, just show the lasso polyline —
+                // computing a full pixel mask on every mouse move is far too expensive.
+                if (_selection.LassoPoints.Count < 2)
                 {
                     ClearSelectionOverlays();
                     return;
                 }
-                baseX = _selection.MinX;
-                baseY = _selection.MinY;
-                maskW = _selection.MaxX - _selection.MinX + 1;
-                maskH = _selection.MaxY - _selection.MinY + 1;
-                mask = new bool[maskW, maskH];
-                for (int fy = 0; fy < maskH; fy++)
-                    for (int fx = 0; fx < maskW; fx++)
-                        mask[fx, fy] = _selection.IsPointInLasso(baseX + fx, baseY + fy);
+
+                var polyGeom = new StreamGeometry();
+                using (var ctx = polyGeom.Open())
+                {
+                    var pts = _selection.LassoPoints;
+                    ctx.BeginFigure(
+                        new Point((pts[0].X + 0.5) * cw, (pts[0].Y + 0.5) * ch),
+                        isFilled: true, isClosed: true);
+                    for (int i = 1; i < pts.Count; i++)
+                        ctx.LineTo(
+                            new Point((pts[i].X + 0.5) * cw, (pts[i].Y + 0.5) * ch),
+                            isStroked: true, isSmoothJoin: false);
+                }
+                polyGeom.Freeze();
+
+                LassoOverlay.Data = polyGeom;
+                LassoOverlay.Visibility = Visibility.Visible;
+                if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
+                return;
             }
             else if (_selection.Mask != null)
             {
@@ -341,42 +354,71 @@ namespace Hexel
                 return;
             }
 
-            var rects = new System.Collections.Generic.List<Geometry>();
+            var edgesByStart = new System.Collections.Generic.Dictionary<(int, int), System.Collections.Generic.List<(int, int)>>();
+
+            System.Action<int, int, int, int> addEdge = (x1, y1, x2, y2) =>
+            {
+                var start = (x1, y1);
+                if (!edgesByStart.TryGetValue(start, out var list))
+                {
+                    list = new System.Collections.Generic.List<(int, int)>();
+                    edgesByStart[start] = list;
+                }
+                list.Add((x2, y2));
+            };
+
             for (int fy = 0; fy < maskH; fy++)
             {
-                int startX = -1;
-                for (int fx = 0; fx <= maskW; fx++)
+                for (int fx = 0; fx < maskW; fx++)
                 {
-                    bool isSet = fx < maskW && mask[fx, fy];
-                    if (isSet && startX == -1) startX = fx;
-                    else if (!isSet && startX != -1)
+                    if (mask[fx, fy])
                     {
-                        rects.Add(new RectangleGeometry(
-                            new Rect((baseX + startX) * cw, (baseY + fy) * ch, (fx - startX) * cw, ch)));
-                        startX = -1;
+                        if (fy == 0 || !mask[fx, fy - 1]) addEdge(fx, fy, fx + 1, fy);
+                        if (fx == maskW - 1 || !mask[fx + 1, fy]) addEdge(fx + 1, fy, fx + 1, fy + 1);
+                        if (fy == maskH - 1 || !mask[fx, fy + 1]) addEdge(fx + 1, fy + 1, fx, fy + 1);
+                        if (fx == 0 || !mask[fx - 1, fy]) addEdge(fx, fy + 1, fx, fy);
                     }
                 }
             }
 
-            Geometry finalGeom;
-            if (rects.Count == 0)
-                finalGeom = Geometry.Empty;
-            else
+            var geom = new StreamGeometry { FillRule = FillRule.EvenOdd };
+            using (var ctx = geom.Open())
             {
-                while (rects.Count > 1)
+                while (edgesByStart.Count > 0)
                 {
-                    var nextLevel = new System.Collections.Generic.List<Geometry>();
-                    for (int i = 0; i < rects.Count; i += 2)
+                    var startPointEnum = edgesByStart.Keys.GetEnumerator();
+                    startPointEnum.MoveNext();
+                    var currentPoint = startPointEnum.Current;
+
+                    var startPt = new Point((baseX + currentPoint.Item1) * cw, (baseY + currentPoint.Item2) * ch);
+                    bool first = true;
+
+                    while (true)
                     {
-                        if (i + 1 < rects.Count)
-                            nextLevel.Add(Geometry.Combine(rects[i], rects[i + 1], GeometryCombineMode.Union, null));
-                        else
-                            nextLevel.Add(rects[i]);
+                        if (!edgesByStart.TryGetValue(currentPoint, out var outEdges) || outEdges.Count == 0)
+                        {
+                            if (outEdges != null && outEdges.Count == 0) edgesByStart.Remove(currentPoint);
+                            break;
+                        }
+
+                        var target = outEdges[outEdges.Count - 1];
+                        outEdges.RemoveAt(outEdges.Count - 1);
+                        if (outEdges.Count == 0) edgesByStart.Remove(currentPoint);
+
+                        currentPoint = target;
+                        var pt = new Point((baseX + currentPoint.Item1) * cw, (baseY + currentPoint.Item2) * ch);
+
+                        if (first)
+                        {
+                            ctx.BeginFigure(startPt, isFilled: true, isClosed: true);
+                            first = false;
+                        }
+                        ctx.LineTo(pt, isStroked: true, isSmoothJoin: false);
                     }
-                    rects = nextLevel;
                 }
-                finalGeom = rects[0];
             }
+            geom.Freeze();
+            Geometry finalGeom = geom;
 
             LassoOverlay.Data = finalGeom;
             LassoOverlay.Visibility = finalGeom != Geometry.Empty ? Visibility.Visible : Visibility.Hidden;
