@@ -406,9 +406,7 @@ namespace Hexel
         {
             // Hold Ctrl to pan/scroll normally; without Ctrl, scroll-wheel zooms
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-                return; // let the ScrollViewer handle normal scrolling
-
-            e.Handled = true;
+                return; // let the ScrollViewer handle normal 
 
             var sv = (ScrollViewer)sender;
             double factor = e.Delta > 0 ? ZoomFactor : 1.0 / ZoomFactor;
@@ -416,6 +414,7 @@ namespace Hexel
             double newZoom = SnapToTick(Math.Clamp(oldZoom * factor, ZoomSlider.Minimum, ZoomSlider.Maximum), factor > 1.0 ? 1 : -1);
 
             if (Math.Abs(newZoom - oldZoom) < 0.001) return;
+            e.Handled = true;
 
             // Compute the mouse position relative to the scroll viewport
             var mouseInSv = e.GetPosition(sv);
