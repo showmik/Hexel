@@ -35,6 +35,37 @@ namespace Hexel.Services
             }
         }
 
+        // ── Brush stamp ───────────────────────────────────────────────────
+
+        public void DrawBrushStamp(SpriteState state, int cx, int cy, int brushSize, bool newState)
+        {
+            if (brushSize <= 1)
+            {
+                if (cx >= 0 && cx < state.Width && cy >= 0 && cy < state.Height)
+                    state.Pixels[(cy * state.Width) + cx] = newState;
+                return;
+            }
+
+            int w = state.Width, h = state.Height;
+            // For even sizes, the center shifts by -0.5, so we use integer math:
+            // radius = brushSize / 2, offset = (brushSize - 1) / 2
+            int offset = (brushSize - 1) / 2;
+            int rSq = brushSize * brushSize / 4; // radius squared threshold
+
+            for (int dy = -offset; dy < brushSize - offset; dy++)
+            {
+                for (int dx = -offset; dx < brushSize - offset; dx++)
+                {
+                    // Use distance from center to create a circular stamp
+                    if (dx * dx + dy * dy > rSq) continue;
+
+                    int px = cx + dx, py = cy + dy;
+                    if (px >= 0 && px < w && py >= 0 && py < h)
+                        state.Pixels[(py * w) + px] = newState;
+                }
+            }
+        }
+
         // ── Line ──────────────────────────────────────────────────────────
 
         public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
@@ -47,6 +78,29 @@ namespace Hexel.Services
             {
                 if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height)
                     state.Pixels[(y0 * state.Width) + x0] = newState;
+                if (x0 == x1 && y0 == y1) break;
+
+                int e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+        }
+
+        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState, int brushSize)
+        {
+            if (brushSize <= 1)
+            {
+                DrawLine(state, x0, y0, x1, y1, newState);
+                return;
+            }
+
+            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+
+            while (true)
+            {
+                DrawBrushStamp(state, x0, y0, brushSize, newState);
                 if (x0 == x1 && y0 == y1) break;
 
                 int e2 = 2 * err;

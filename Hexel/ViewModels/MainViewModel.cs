@@ -71,6 +71,13 @@ namespace Hexel.ViewModels
             set => SetProperty(ref _currentTool, value);
         }
 
+        private int _brushSize = 1;
+        public int BrushSize
+        {
+            get => _brushSize;
+            set => SetProperty(ref _brushSize, Math.Clamp(value, 1, 16));
+        }
+
         // Flags read by the View to know whether a shape preview is in progress
         public bool IsDrawingLine { get; private set; }
         public bool IsDrawingRectangle { get; private set; }
@@ -552,7 +559,7 @@ namespace Hexel.ViewModels
                     if (isShiftDown && _lastClickedX != NoPosition)
                     {
                         _historyService.SaveState(SpriteState);
-                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState);
+                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize);
                         _lastClickedX = x;
                         _lastClickedY = y;
                         RedrawGridFromMemory();
@@ -561,9 +568,10 @@ namespace Hexel.ViewModels
                     else
                     {
                         _historyService.SaveState(SpriteState);
-                        SetPixel(x, y, newState);
+                        _drawingService.DrawBrushStamp(SpriteState, x, y, BrushSize, newState);
                         _lastClickedX = x;
                         _lastClickedY = y;
+                        RedrawGridFromMemory();
                         UpdateTextOutputs();
                     }
                     break;
@@ -608,7 +616,7 @@ namespace Hexel.ViewModels
                     {
                         // Continuous pencil drag: draw line segment but don't push undo
                         // (the undo entry was already pushed on Down)
-                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState);
+                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize);
                         _lastClickedX = x;
                         _lastClickedY = y;
                         _pendingTextUpdateDuringDrag = true;

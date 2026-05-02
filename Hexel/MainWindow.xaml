@@ -60,6 +60,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -218,9 +219,65 @@
                         </RadioButton>
                     </StackPanel>
 
+                    <!-- Brush size (visible only for Pencil) -->
+                    <StackPanel Orientation="Horizontal"
+                                Grid.Column="5"
+                                Margin="12,0,0,0">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Pencil">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <Rectangle Width="2"
+                                   Fill="{DynamicResource Theme.PanelBorderBrush}"
+                                   Margin="0,4,12,4"
+                                   RadiusX="1"
+                                   RadiusY="1" />
+
+                        <TextBlock Text="BRUSH"
+                                   Style="{StaticResource HeaderStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"
+                                   FontSize="11" />
+                        <Button Content="-"
+                                Width="24"
+                                Height="24"
+                                Margin="0,0,4,0"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="0"
+                                Click="BtnBrushDown_Click" />
+                        <Slider x:Name="BrushSizeSlider"
+                                Width="80"
+                                Minimum="1"
+                                Maximum="16"
+                                Value="{Binding BrushSize}"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                VerticalAlignment="Center"
+                                ToolTip="Pencil brush size ([ / ])" />
+                        <Button Content="+"
+                                Width="24"
+                                Height="24"
+                                Margin="4,0,6,0"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="0"
+                                Click="BtnBrushUp_Click" />
+                        <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}"
+                                   Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Width="30" />
+                    </StackPanel>
+
                     <!-- Zoom -->
                     <StackPanel Orientation="Horizontal"
-                                Grid.Column="6">
+                                Grid.Column="7">
                         <TextBlock Text="ZOOM"
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"

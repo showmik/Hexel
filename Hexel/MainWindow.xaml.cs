@@ -168,6 +168,15 @@ namespace Hexel
                     case Key.F: if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; break;
                     case Key.M: if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; break;
                     case Key.S: if (RbLasso != null) RbLasso.IsChecked = true; e.Handled = true; break;
+
+                    case Key.OemOpenBrackets:  // '['
+                        ViewModel.BrushSize--;
+                        e.Handled = true;
+                        break;
+                    case Key.OemCloseBrackets: // ']'
+                        ViewModel.BrushSize++;
+                        e.Handled = true;
+                        break;
                 }
             }
         }
@@ -443,6 +452,14 @@ namespace Hexel
 
         private void BtnZoomReset_Click(object sender, RoutedEventArgs e)
             => ZoomSlider.Value = 1.0;
+
+        // ── Brush size buttons ───────────────────────────────────────────
+
+        private void BtnBrushDown_Click(object sender, RoutedEventArgs e)
+            => ViewModel.BrushSize--;
+
+        private void BtnBrushUp_Click(object sender, RoutedEventArgs e)
+            => ViewModel.BrushSize++;
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
