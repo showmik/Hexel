@@ -514,7 +514,8 @@ namespace Hexel
         private double SnapToTick(double value, double direction)
         {
             double tick = ZoomSlider.TickFrequency;
-            double snapped = Math.Round(value / tick) * tick;
+            long ticks = (long)Math.Round(value / tick);
+            double snapped = ticks * tick;
 
             // If rounding collapsed the step, force one tick in the intended direction
             double current = ZoomSlider.Value;
