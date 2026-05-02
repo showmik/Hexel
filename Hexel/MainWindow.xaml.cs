@@ -79,68 +79,11 @@ namespace Hexel
             }
         }
 
-        // ── Canvas mouse interaction ──────────────────────────────────────
-
-        private void CanvasImage_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            var image = (Image)sender;
-            int index = GetPixelIndex(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
-
-            if (ViewModel.CurrentTool == ToolMode.Marquee ||
-                ViewModel.CurrentTool == ToolMode.Lasso)
-            {
-                HandleSelectionDown(e, index);
-                return;
-            }
-
-            var mode = e.LeftButton == MouseButtonState.Pressed ? DrawMode.Draw
-                     : e.RightButton == MouseButtonState.Pressed ? DrawMode.Erase
-                     : DrawMode.None;
-
-            if (ViewModel.CurrentTool == ToolMode.Line)
-                Mouse.Capture(image); // keep capture during line drag
-
-            _lastHoveredIndex = index;
-            ViewModel.ProcessToolInput(index, ToolAction.Down, mode,
-                Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
-        }
-
-        private void CanvasImage_MouseMove(object sender, MouseEventArgs e)
-        {
-            var image = (Image)sender;
-            int index = GetPixelIndex(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
-            if (index == _lastHoveredIndex) return;
-            _lastHoveredIndex = index;
-
-            if ((ViewModel.CurrentTool == ToolMode.Marquee ||
-                 ViewModel.CurrentTool == ToolMode.Lasso)
-                && e.LeftButton == MouseButtonState.Pressed)
-            {
-                HandleSelectionMove(index);
-                return;
-            }
-
-            var mode = e.LeftButton == MouseButtonState.Pressed ? DrawMode.Draw
-                     : e.RightButton == MouseButtonState.Pressed ? DrawMode.Erase
-                     : DrawMode.None;
-
-            if (mode != DrawMode.None)
-                ViewModel.ProcessToolInput(index, ToolAction.Move, mode, false);
-        }
-
         // ── Global overrides: mouse up, mouse move, key down ─────────────
 
         protected override void OnPreviewMouseMove(MouseEventArgs e)
         {
             base.OnPreviewMouseMove(e);
-
-            // Forward hover to shape previews (line/rect/ellipse extend outside CanvasImage)
-            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
-            {
-                int idx = GetPixelIndex(
-                    e.GetPosition(CanvasImage), CanvasImage.ActualWidth, CanvasImage.ActualHeight);
-                ViewModel.ProcessToolInput(idx, ToolAction.Move, DrawMode.None, false);
-            }
 
             // Update floating layer position during drag
             if (_selection.IsDragging && e.LeftButton == MouseButtonState.Pressed)
@@ -154,7 +97,6 @@ namespace Hexel
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
                 ViewModel.ProcessToolInput(-1, ToolAction.Up, DrawMode.None, false);
-                Mouse.Capture(null);
             }
             else if (ViewModel.CurrentTool == ToolMode.Pencil)
             {
@@ -170,6 +112,10 @@ namespace Hexel
                 ReleaseDragCapture();
                 _selection.EndDrag();
             }
+
+            // Always release mouse capture from the canvas if we had it
+            if (Mouse.Captured == CanvasImage)
+                Mouse.Capture(null);
         }
 
         protected override void OnPreviewKeyDown(KeyEventArgs e)
@@ -463,37 +409,105 @@ namespace Hexel
         {
             bool isPanGesture = e.ChangedButton == MouseButton.Middle ||
                                (e.ChangedButton == MouseButton.Left && Keyboard.IsKeyDown(Key.Space));
-            
-            if (!isPanGesture)
+
+            var sv = (ScrollViewer)sender;
+
+            if (isPanGesture)
             {
-                if (e.ChangedButton == MouseButton.Left && e.OriginalSource is not Image)
-                {
-                    // Clicked outside the canvas in the empty viewer space
-                    if (_selection.HasActiveSelection)
-                    {
-                        CommitCurrentSelection();
-                    }
-                }
+                _isPanning = true;
+                _panStartMouse = e.GetPosition(this);
+                _panStartScroll = new Point(sv.HorizontalOffset, sv.VerticalOffset);
+                sv.CaptureMouse();
+                sv.Cursor = Cursors.SizeAll;
+                e.Handled = true;
                 return;
             }
 
-            var sv = (ScrollViewer)sender;
-            _isPanning = true;
-            _panStartMouse = e.GetPosition(this);
-            _panStartScroll = new Point(sv.HorizontalOffset, sv.VerticalOffset);
-            sv.CaptureMouse();
-            sv.Cursor = Cursors.SizeAll;
-            e.Handled = true;
+            // Ignore scrollbar clicks
+            if (e.OriginalSource is DependencyObject dep)
+            {
+                var parent = VisualTreeHelper.GetParent(dep);
+                while (parent != null)
+                {
+                    if (parent is System.Windows.Controls.Primitives.ScrollBar)
+                        return;
+                    parent = VisualTreeHelper.GetParent(parent);
+                }
+            }
+
+            if (e.ChangedButton == MouseButton.Left && e.OriginalSource is not Image)
+            {
+                // Clicked outside the canvas in the empty viewer space
+                if (_selection.HasActiveSelection)
+                {
+                    CommitCurrentSelection();
+                }
+            }
+
+            // Start drawing or selecting!
+            var image = CanvasImage;
+            if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right)
+            {
+                image.CaptureMouse();
+
+                int index = GetPixelIndex(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
+
+                if (ViewModel.CurrentTool == ToolMode.Marquee ||
+                    ViewModel.CurrentTool == ToolMode.Lasso)
+                {
+                    HandleSelectionDown(e, index);
+                    return;
+                }
+
+                var mode = e.LeftButton == MouseButtonState.Pressed ? DrawMode.Draw
+                         : e.RightButton == MouseButtonState.Pressed ? DrawMode.Erase
+                         : DrawMode.None;
+
+                if (mode != DrawMode.None)
+                {
+                    _lastHoveredIndex = index;
+                    ViewModel.ProcessToolInput(index, ToolAction.Down, mode,
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+                }
+            }
         }
 
         private void ScrollViewer_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (!_isPanning) return;
-            var sv = (ScrollViewer)sender;
-            var delta = e.GetPosition(this) - _panStartMouse;
-            sv.ScrollToHorizontalOffset(_panStartScroll.X - delta.X);
-            sv.ScrollToVerticalOffset(_panStartScroll.Y - delta.Y);
-            e.Handled = true;
+            if (_isPanning)
+            {
+                var sv = (ScrollViewer)sender;
+                var delta = e.GetPosition(this) - _panStartMouse;
+                sv.ScrollToHorizontalOffset(_panStartScroll.X - delta.X);
+                sv.ScrollToVerticalOffset(_panStartScroll.Y - delta.Y);
+                e.Handled = true;
+                return;
+            }
+
+            var image = CanvasImage;
+            int index = GetPixelIndex(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
+
+            if (index != _lastHoveredIndex)
+            {
+                _lastHoveredIndex = index;
+
+                if ((ViewModel.CurrentTool == ToolMode.Marquee ||
+                     ViewModel.CurrentTool == ToolMode.Lasso)
+                    && e.LeftButton == MouseButtonState.Pressed)
+                {
+                    HandleSelectionMove(index);
+                    return;
+                }
+
+                var mode = e.LeftButton == MouseButtonState.Pressed ? DrawMode.Draw
+                         : e.RightButton == MouseButtonState.Pressed ? DrawMode.Erase
+                         : DrawMode.None;
+
+                if (mode != DrawMode.None || ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
+                {
+                    ViewModel.ProcessToolInput(index, ToolAction.Move, mode, false);
+                }
+            }
         }
 
         private void ScrollViewer_PreviewMouseUp(object sender, MouseButtonEventArgs e)
