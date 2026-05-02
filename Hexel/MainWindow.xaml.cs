@@ -447,7 +447,7 @@ namespace Hexel
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             // Hold Ctrl to pan/scroll normally; without Ctrl, scroll-wheel zooms
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            if (Keyboard.Modifiers == ModifierKeys.Control)
                 return; // let the ScrollViewer handle normal 
 
             var sv = (ScrollViewer)sender;
