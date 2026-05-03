@@ -108,667 +108,695 @@
                                   MaxWidth="600" />
             </Grid.ColumnDefinitions>
 
-        <!-- ═══════════════════════════════════════════════════════════════
+            <!-- ═══════════════════════════════════════════════════════════════
              TOOL SIDEBAR
              ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Column="0"
-                Background="{DynamicResource Theme.ToolSidebarBackgroundBrush}"
-                Padding="6,12"
-                Margin="0,0,0,0"
-                CornerRadius="0">
-            <StackPanel Orientation="Vertical"
-                        HorizontalAlignment="Center">
-                <RadioButton x:Name="RbPencil"
-                             Style="{StaticResource VerticalToolButtonStyle}"
-                             GroupName="Tools"
-                             IsChecked="True"
-                             Checked="Tool_Checked"
-                             Tag="Pencil"
-                             Margin="0,0,0,4"
-                             ToolTip="Pencil (P)">
-                    <Path Style="{StaticResource StrokedToolIconStyle}"
-                          Data="M3.40979 23.0017V12.4402l5.0521 2.7261 3.53861 -2.5275 3.5386 2.5275 5.0511 -2.7261v10.5615 M3.41949 12.4388 11.1783 1.42699c0.4028 -0.571599 1.2503 -0.571599 1.6531 0l7.7588 11.01181 M8.46191 15.1663v7.8354 M15.5391 15.1663v7.8354 M7.55359 6.57275h8.89381" />
-                </RadioButton>
-                <RadioButton x:Name="RbLine"
-                             Style="{StaticResource VerticalToolButtonStyle}"
-                             GroupName="Tools"
-                             Checked="Tool_Checked"
-                             Tag="Line"
-                             Margin="0,0,0,4"
-                             ToolTip="Line (L)">
-                    <Path Style="{StaticResource StrokedToolIconStyle}"
-                          Data="M4 14L14 4" />
-                </RadioButton>
-                <RadioButton x:Name="RbRectangle"
-                             Style="{StaticResource VerticalToolButtonStyle}"
-                             GroupName="Tools"
-                             Checked="Tool_Checked"
-                             Tag="Rectangle"
-                             Margin="0,0,0,4"
-                             ToolTip="Rectangle (R)">
-                    <Path Style="{StaticResource StrokedToolIconStyle}"
-                          Data="M 5,5 H 19 V 19 H 5 Z" />
-                </RadioButton>
-                <RadioButton x:Name="RbEllipse"
-                             Style="{StaticResource VerticalToolButtonStyle}"
-                             GroupName="Tools"
-                             Checked="Tool_Checked"
-                             Tag="Ellipse"
-                             Margin="0,0,0,4"
-                             ToolTip="Ellipse (E)">
-                    <Path Style="{StaticResource StrokedToolIconStyle}"
-                          Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
-                </RadioButton>
-                <RadioButton x:Name="RbFill"
-                             Style="{StaticResource VerticalToolButtonStyle}"
-                             GroupName="Tools"
-                             Checked="Tool_Checked"
-                             Tag="Fill"
-                             Margin="0,0,0,4"
-                             ToolTip="Fill (F)">
-                    <Path Style="{StaticResource StrokedToolIconStyle}"
-                          Data="M45 39.3999c0 3.0928 -2.2386 5.6 -5 5.6s-5 -2.5072 -5 -5.6c0 -2.8526 2.3065 -5.7051 3.7864 -7.2418 0.6738 -0.6997 1.7534 -0.6997 2.4272 0C42.6935 33.6948 45 36.5473 45 39.3999Z M4.61826 9.7989c0.54387 -0.77989 1.54378 -0.98039 2.45947 -0.72608C9.9592 9.87308 16.6614 11.789 23.008 14.0004c1.436 0.5003 2.3292 1.9896 1.9345 3.4582 -0.3947 1.4687 -1.9151 2.3131 -3.4095 2.0306 -6.6053 -1.2489 -13.37034 -2.931 -16.26708 -3.6744 -0.92053 -0.2363 -1.68594 -0.9084 -1.76585 -1.855 -0.05162 -0.6113 -0.03039 -1.3674 0.18788 -2.1796 0.21827 -0.8122 0.57907 -1.4776 0.93031 -1.9813Z M9.49611 16.867c-1.69888 2.1041 -3.50226 4.3976 -5.33812 6.8245 -1.51733 2.0058 -1.56961 4.7519 0.00334 6.7144 1.16214 1.45 2.68002 3.2177 4.44771 4.9854 1.76766 1.7677 3.53536 3.2856 4.98536 4.4477 1.9625 1.573 4.7085 1.5207 6.7143 0.0034 8.3622 -6.3258 15.1404 -12.2659 18.0434 -14.8746 0.8424 -0.757 0.8624 -2.0546 0.0616 -2.8555L21.8879 5.58631c-0.8009 -0.80084 -2.0985 -0.78085 -2.8555 0.06155 -1.0907 1.21386 -2.7639 3.10521 -4.8042 5.50654" />
-                </RadioButton>
+            <Border Grid.Column="0"
+                    Background="{DynamicResource Theme.ToolSidebarBackgroundBrush}"
+                    Padding="8,16"
+                    Margin="20,20,0,0"
+                    CornerRadius="12"
+                    VerticalAlignment="Top">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black"
+                                      BlurRadius="10"
+                                      Opacity="0.15"
+                                      Direction="270"
+                                      ShadowDepth="3" />
+                </Border.Effect>
+                <StackPanel Orientation="Vertical"
+                            HorizontalAlignment="Center">
+                    <RadioButton x:Name="RbPencil"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 IsChecked="True"
+                                 Checked="Tool_Checked"
+                                 Tag="Pencil"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Pencil (P)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              Data="M3.40979 23.0017V12.4402l5.0521 2.7261 3.53861 -2.5275 3.5386 2.5275 5.0511 -2.7261v10.5615 M3.41949 12.4388 11.1783 1.42699c0.4028 -0.571599 1.2503 -0.571599 1.6531 0l7.7588 11.01181 M8.46191 15.1663v7.8354 M15.5391 15.1663v7.8354 M7.55359 6.57275h8.89381" />
+                    </RadioButton>
+                    <RadioButton x:Name="RbLine"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="Line"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Line (L)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              Data="M4 14L14 4" />
+                    </RadioButton>
+                    <RadioButton x:Name="RbRectangle"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="Rectangle"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Rectangle (R)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              Data="M 5,5 H 19 V 19 H 5 Z" />
+                    </RadioButton>
+                    <RadioButton x:Name="RbEllipse"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="Ellipse"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Ellipse (E)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
+                    </RadioButton>
+                    <RadioButton x:Name="RbFill"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="Fill"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Fill (F)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              Data="M45 39.3999c0 3.0928 -2.2386 5.6 -5 5.6s-5 -2.5072 -5 -5.6c0 -2.8526 2.3065 -5.7051 3.7864 -7.2418 0.6738 -0.6997 1.7534 -0.6997 2.4272 0C42.6935 33.6948 45 36.5473 45 39.3999Z M4.61826 9.7989c0.54387 -0.77989 1.54378 -0.98039 2.45947 -0.72608C9.9592 9.87308 16.6614 11.789 23.008 14.0004c1.436 0.5003 2.3292 1.9896 1.9345 3.4582 -0.3947 1.4687 -1.9151 2.3131 -3.4095 2.0306 -6.6053 -1.2489 -13.37034 -2.931 -16.26708 -3.6744 -0.92053 -0.2363 -1.68594 -0.9084 -1.76585 -1.855 -0.05162 -0.6113 -0.03039 -1.3674 0.18788 -2.1796 0.21827 -0.8122 0.57907 -1.4776 0.93031 -1.9813Z M9.49611 16.867c-1.69888 2.1041 -3.50226 4.3976 -5.33812 6.8245 -1.51733 2.0058 -1.56961 4.7519 0.00334 6.7144 1.16214 1.45 2.68002 3.2177 4.44771 4.9854 1.76766 1.7677 3.53536 3.2856 4.98536 4.4477 1.9625 1.573 4.7085 1.5207 6.7143 0.0034 8.3622 -6.3258 15.1404 -12.2659 18.0434 -14.8746 0.8424 -0.757 0.8624 -2.0546 0.0616 -2.8555L21.8879 5.58631c-0.8009 -0.80084 -2.0985 -0.78085 -2.8555 0.06155 -1.0907 1.21386 -2.7639 3.10521 -4.8042 5.50654" />
+                    </RadioButton>
 
-                <!-- Separator between draw and select tools -->
-                <Rectangle Height="1"
-                           Fill="{DynamicResource Theme.SeparatorBrush}"
-                           Margin="4,6"
-                           RadiusX="1"
-                           RadiusY="1" />
-
-                <RadioButton x:Name="RbMarquee"
-                             Style="{StaticResource VerticalToolButtonStyle}"
-                             GroupName="Tools"
-                             Checked="Tool_Checked"
-                             Tag="Marquee"
-                             Margin="0,0,0,4"
-                             ToolTip="Marquee Select (M)">
-                    <Path Style="{StaticResource StrokedToolIconStyle}"
-                          StrokeDashArray="2,2"
-                          Data="M 2,2 L 16,2 L 16,16 L 2,16 Z" />
-                </RadioButton>
-                <RadioButton x:Name="RbLasso"
-                             Style="{StaticResource VerticalToolButtonStyle}"
-                             GroupName="Tools"
-                             Checked="Tool_Checked"
-                             Tag="Lasso"
-                             ToolTip="Lasso Select (S)">
-                    <Path Style="{StaticResource StrokedToolIconStyle}"
-                          StrokeDashArray="2,2"
-                          Height="22"
-                          Width="22"
-                          Data="{StaticResource Icon.Lasso}" />
-                </RadioButton>
-            </StackPanel>
-        </Border>
-
-        <!-- ═══════════════════════════════════════════════════════════════
-             CENTER COLUMN — toolbar + canvas + action bar
-             ═══════════════════════════════════════════════════════════════ -->
-        <Grid Grid.Column="1"
-              Margin="15,20,20,20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <!-- Context toolbar -->
-            <Border Grid.Row="0"
-                    Style="{StaticResource PanelStyle}"
-                    Margin="0,0,0,10"
-                    Padding="12,6">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Contextual Options (all share Column 0) -->
-
-                    <!-- 1. Brush size (Pencil only) -->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Column="0">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Pencil">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-
-                        <TextBlock Text="BRUSH"
-                                   Style="{StaticResource HeaderStyle}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,10,0"
-                                   FontSize="11" />
-                        <Button Content="-"
-                                Width="24"
-                                Height="24"
-                                Margin="0,0,4,0"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Padding="0"
-                                Click="BtnBrushDown_Click" />
-                        <Slider x:Name="BrushSizeSlider"
-                                Width="80"
-                                Minimum="1"
-                                Maximum="16"
-                                Value="{Binding BrushSize}"
-                                TickFrequency="1"
-                                IsSnapToTickEnabled="True"
-                                VerticalAlignment="Center"
-                                ToolTip="Pencil brush size ([ / ])" />
-                        <Button Content="+"
-                                Width="24"
-                                Height="24"
-                                Margin="4,0,6,0"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Padding="0"
-                                Click="BtnBrushUp_Click" />
-                        <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}"
-                                   Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   Width="30" />
-                    </StackPanel>
-
-                    <!-- 2. Shape hints (Line, Rectangle, Ellipse) -->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Column="0">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Line">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Rectangle">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Ellipse">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="&#xE9A6;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,6,0" />
-                        <TextBlock Text="Shift + Drag to constrain proportions or angle"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   FontStyle="Italic" />
-                    </StackPanel>
-
-                    <!-- 3. Fill hint -->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Column="0">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Fill">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="&#xE946;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,6,0" />
-                        <TextBlock Text="Click to flood fill contiguous pixels"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   FontStyle="Italic" />
-                    </StackPanel>
-
-                    <!-- 4. Selection hints (Marquee, Lasso) -->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Column="0">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Marquee">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Lasso">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="&#xE9A6;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,6,0" />
-                        <TextBlock Text="Del to erase selection • Esc to clear selection • Shift/Alt/Ctrl to combine"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   FontStyle="Italic" />
-                    </StackPanel>
-
-                    <!-- Canvas size (compact) -->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Column="2">
-                        <TextBox Text="{Binding InputWidth}"
-                                 Width="36"
-                                 Style="{StaticResource ModernTextBoxStyle}"
-                                 Margin="0,0,4,0"
-                                 ToolTip="Canvas width"
-                                 GotKeyboardFocus="CanvasInput_GotFocus"
-                                 PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
-                                 LostFocus="CanvasInput_LostFocus"
-                                 PreviewTextInput="NumberValidationTextBox"
-                                 DataObject.Pasting="TextBoxPasting" />
-                        <TextBlock Text="×"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   Margin="0,0,4,0" />
-                        <TextBox Text="{Binding InputHeight}"
-                                 Width="36"
-                                 Style="{StaticResource ModernTextBoxStyle}"
-                                 ToolTip="Canvas height"
-                                 GotKeyboardFocus="CanvasInput_GotFocus"
-                                 PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
-                                 LostFocus="CanvasInput_LostFocus"
-                                 PreviewTextInput="NumberValidationTextBox"
-                                 DataObject.Pasting="TextBoxPasting" />
-                    </StackPanel>
-
-                    <Rectangle Grid.Column="3"
-                               Width="2"
-                               Fill="{DynamicResource Theme.PanelBorderBrush}"
-                               Margin="12,4"
+                    <!-- Separator between draw and select tools -->
+                    <Rectangle Height="1"
+                               Fill="{DynamicResource Theme.SeparatorBrush}"
+                               Margin="4,6"
                                RadiusX="1"
                                RadiusY="1" />
 
-                    <!-- Zoom -->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Column="4">
-                        <TextBlock Text="ZOOM"
-                                   Style="{StaticResource HeaderStyle}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,10,0"
-                                   FontSize="11" />
-                        <Button Content="-"
-                                Width="28"
-                                Height="28"
-                                Margin="0,0,8,0"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Click="BtnZoomOut_Click"
-                                Padding="0" />
-                        <Slider x:Name="ZoomSlider"
-                                Width="100"
-                                Minimum="0.1"
-                                Maximum="20.0"
-                                Value="1.0"
-                                TickFrequency="0.1"
-                                IsSnapToTickEnabled="True"
-                                VerticalAlignment="Center"
-                                ToolTip="Zoom Canvas (Scroll / Ctrl+Plus/Minus)" />
-                        <Button Content="+"
-                                Width="28"
-                                Height="28"
-                                Margin="8,0,8,0"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Click="BtnZoomIn_Click"
-                                Padding="0" />
-                        <Button Content="Reset"
-                                Height="28"
-                                Padding="12,0"
-                                Margin="5,0,0,0"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Click="BtnZoomReset_Click" />
-                        <TextBlock Text="{Binding Value, ElementName=ZoomSlider, StringFormat={}{0:F1}x}"
-                                   Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   Margin="12,0,0,0"
-                                   Width="35" />
-                    </StackPanel>
-                </Grid>
+                    <RadioButton x:Name="RbMarquee"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="Marquee"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Marquee Select (M)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              StrokeDashArray="2,2"
+                              Data="M 2,2 L 16,2 L 16,16 L 2,16 Z" />
+                    </RadioButton>
+                    <RadioButton x:Name="RbLasso"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="Lasso"
+                                 ToolTip="Lasso Select (S)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              StrokeDashArray="2,2"
+                              Height="22"
+                              Width="22"
+                              Data="{StaticResource Icon.Lasso}" />
+                    </RadioButton>
+                </StackPanel>
             </Border>
 
-            <!-- Canvas -->
-            <Border Grid.Row="1"
-                    Style="{StaticResource PanelStyle}"
-                    Padding="0"
-                    ClipToBounds="True">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto"
-                              Background="{DynamicResource Theme.BackgroundBrush}"
-                              PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
-                              PreviewMouseDown="ScrollViewer_PreviewMouseDown"
-                              PreviewMouseMove="ScrollViewer_PreviewMouseMove"
-                              PreviewMouseUp="ScrollViewer_PreviewMouseUp">
-                    <Border Background="{DynamicResource Theme.CanvasBackgroundBrush}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                        <Border.LayoutTransform>
-                            <ScaleTransform ScaleX="{Binding Value, ElementName=ZoomSlider}"
-                                            ScaleY="{Binding Value, ElementName=ZoomSlider}" />
-                        </Border.LayoutTransform>
+            <!-- ═══════════════════════════════════════════════════════════════
+             CENTER COLUMN — toolbar + canvas + action bar
+             ═══════════════════════════════════════════════════════════════ -->
+            <Grid Grid.Column="1"
+                  Margin="15,20,20,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                        <Grid x:Name="PixelGridContainer"
-                              Width="{Binding CanvasDisplayWidth}"
-                              Height="{Binding CanvasDisplayHeight}">
+                <!-- Context toolbar -->
+                <Border Grid.Row="0"
+                        Style="{StaticResource PanelStyle}"
+                        Margin="0,0,0,10"
+                        Padding="12,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                            <!-- Pixel bitmap -->
-                            <Image x:Name="CanvasImage"
-                                   Source="{Binding CanvasBitmap}"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
-                                   Stretch="Fill"
-                                   HorizontalAlignment="Stretch"
-                                   VerticalAlignment="Stretch" />
+                        <!-- Contextual Options (all share Column 0) -->
 
-                            <!-- Grid lines overlay -->
-                            <Rectangle IsHitTestVisible="False">
-                                <Rectangle.Style>
-                                    <Style TargetType="Rectangle">
-                                        <Setter Property="Visibility"
-                                                Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ShowGridLines}"
-                                                         Value="False">
-                                                <Setter Property="Visibility"
-                                                        Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Rectangle.Style>
-                                <Rectangle.Fill>
-                                    <DrawingBrush Viewport="{Binding GridViewport}"
-                                                  ViewportUnits="Absolute"
-                                                  TileMode="Tile">
-                                        <DrawingBrush.Drawing>
-                                            <GeometryDrawing>
-                                                <GeometryDrawing.Geometry>
-                                                    <RectangleGeometry Rect="{Binding GridViewport}" />
-                                                </GeometryDrawing.Geometry>
-                                                <GeometryDrawing.Pen>
-                                                    <Pen Brush="{DynamicResource Theme.BackgroundBrush}"
-                                                         Thickness="{Binding DynamicStrokeThickness}" />
-                                                </GeometryDrawing.Pen>
-                                            </GeometryDrawing>
-                                        </DrawingBrush.Drawing>
-                                    </DrawingBrush>
-                                </Rectangle.Fill>
-                            </Rectangle>
+                        <!-- 1. Brush size (Pencil only) -->
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Column="0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="Pencil">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
 
-                            <!-- Selection overlays -->
-                            <Canvas IsHitTestVisible="False"
-                                    ClipToBounds="True"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch">
+                            <TextBlock Text="BRUSH"
+                                       Style="{StaticResource HeaderStyle}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"
+                                       FontSize="11" />
+                            <Button Content="-"
+                                    Width="24"
+                                    Height="24"
+                                    Margin="0,0,4,0"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Padding="0"
+                                    Click="BtnBrushDown_Click" />
+                            <Slider x:Name="BrushSizeSlider"
+                                    Width="80"
+                                    Minimum="1"
+                                    Maximum="16"
+                                    Value="{Binding BrushSize}"
+                                    TickFrequency="1"
+                                    IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Pencil brush size ([ / ])" />
+                            <Button Content="+"
+                                    Width="24"
+                                    Height="24"
+                                    Margin="4,0,6,0"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Padding="0"
+                                    Click="BtnBrushUp_Click" />
+                            <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}"
+                                       Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Width="30" />
+                        </StackPanel>
 
-                                <Rectangle x:Name="MarqueeOverlay"
-                                           Stroke="{DynamicResource Theme.WarningBrush}"
-                                           StrokeThickness="{Binding DynamicStrokeThickness}"
-                                           StrokeDashArray="4,4"
+                        <!-- 2. Shape hints (Line, Rectangle, Ellipse) -->
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Column="0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="Line">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="Rectangle">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="Ellipse">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="&#xE9A6;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,6,0" />
+                            <TextBlock Text="Shift + Drag to constrain proportions or angle"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       FontStyle="Italic" />
+                        </StackPanel>
+
+                        <!-- 3. Fill hint -->
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Column="0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="Fill">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="&#xE946;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,6,0" />
+                            <TextBlock Text="Click to flood fill contiguous pixels"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       FontStyle="Italic" />
+                        </StackPanel>
+
+                        <!-- 4. Selection hints (Marquee, Lasso) -->
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Column="0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="Marquee">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="Lasso">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="&#xE9A6;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,6,0" />
+                            <TextBlock Text="Del to erase selection • Esc to clear selection • Shift/Alt/Ctrl to combine"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       FontStyle="Italic" />
+                        </StackPanel>
+
+                        <!-- Canvas size (compact) -->
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Column="2">
+                            <TextBox Text="{Binding InputWidth}"
+                                     Width="36"
+                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     Margin="0,0,4,0"
+                                     ToolTip="Canvas width"
+                                     GotKeyboardFocus="CanvasInput_GotFocus"
+                                     PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
+                                     LostFocus="CanvasInput_LostFocus"
+                                     PreviewTextInput="NumberValidationTextBox"
+                                     DataObject.Pasting="TextBoxPasting" />
+                            <TextBlock Text="×"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                       Margin="0,0,4,0" />
+                            <TextBox Text="{Binding InputHeight}"
+                                     Width="36"
+                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     ToolTip="Canvas height"
+                                     GotKeyboardFocus="CanvasInput_GotFocus"
+                                     PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
+                                     LostFocus="CanvasInput_LostFocus"
+                                     PreviewTextInput="NumberValidationTextBox"
+                                     DataObject.Pasting="TextBoxPasting" />
+                        </StackPanel>
+
+                        <Rectangle Grid.Column="3"
+                                   Width="2"
+                                   Fill="{DynamicResource Theme.PanelBorderBrush}"
+                                   Margin="12,4"
+                                   RadiusX="1"
+                                   RadiusY="1" />
+
+                        <!-- Zoom -->
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Column="4">
+                            <TextBlock Text="ZOOM"
+                                       Style="{StaticResource HeaderStyle}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"
+                                       FontSize="11" />
+                            <Button Content="-"
+                                    Width="28"
+                                    Height="28"
+                                    Margin="0,0,8,0"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Click="BtnZoomOut_Click"
+                                    Padding="0" />
+                            <Slider x:Name="ZoomSlider"
+                                    Width="100"
+                                    Minimum="0.1"
+                                    Maximum="20.0"
+                                    Value="1.0"
+                                    TickFrequency="0.1"
+                                    IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Zoom Canvas (Scroll / Ctrl+Plus/Minus)" />
+                            <Button Content="+"
+                                    Width="28"
+                                    Height="28"
+                                    Margin="8,0,8,0"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Click="BtnZoomIn_Click"
+                                    Padding="0" />
+                            <Button Content="Reset"
+                                    Height="28"
+                                    Padding="12,0"
+                                    Margin="5,0,0,0"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Click="BtnZoomReset_Click" />
+                            <TextBlock Text="{Binding Value, ElementName=ZoomSlider, StringFormat={}{0:F1}x}"
+                                       Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,0,0"
+                                       Width="35" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Canvas -->
+                <Border Grid.Row="1"
+                        Style="{StaticResource PanelStyle}"
+                        Padding="0"
+                        ClipToBounds="True">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Background="{DynamicResource Theme.BackgroundBrush}"
+                                  PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
+                                  PreviewMouseDown="ScrollViewer_PreviewMouseDown"
+                                  PreviewMouseMove="ScrollViewer_PreviewMouseMove"
+                                  PreviewMouseUp="ScrollViewer_PreviewMouseUp">
+                        <Border Background="{DynamicResource Theme.CanvasBackgroundBrush}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                            <Border.LayoutTransform>
+                                <ScaleTransform ScaleX="{Binding Value, ElementName=ZoomSlider}"
+                                                ScaleY="{Binding Value, ElementName=ZoomSlider}" />
+                            </Border.LayoutTransform>
+
+                            <Grid x:Name="PixelGridContainer"
+                                  Width="{Binding CanvasDisplayWidth}"
+                                  Height="{Binding CanvasDisplayHeight}">
+
+                                <!-- Pixel bitmap -->
+                                <Image x:Name="CanvasImage"
+                                       Source="{Binding CanvasBitmap}"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                       Stretch="Fill"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"
+                                       MouseLeave="CanvasImage_MouseLeave" />
+
+                                <!-- Grid lines overlay -->
+                                <Rectangle IsHitTestVisible="False">
+                                    <Rectangle.Style>
+                                        <Style TargetType="Rectangle">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ShowGridLines}"
+                                                             Value="False">
+                                                    <Setter Property="Visibility"
+                                                            Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Rectangle.Style>
+                                    <Rectangle.Fill>
+                                        <DrawingBrush Viewport="{Binding GridViewport}"
+                                                      ViewportUnits="Absolute"
+                                                      TileMode="Tile">
+                                            <DrawingBrush.Drawing>
+                                                <GeometryDrawing>
+                                                    <GeometryDrawing.Geometry>
+                                                        <RectangleGeometry Rect="{Binding GridViewport}" />
+                                                    </GeometryDrawing.Geometry>
+                                                    <GeometryDrawing.Pen>
+                                                        <Pen Brush="{DynamicResource Theme.BackgroundBrush}"
+                                                             Thickness="{Binding DynamicStrokeThickness}" />
+                                                    </GeometryDrawing.Pen>
+                                                </GeometryDrawing>
+                                            </DrawingBrush.Drawing>
+                                        </DrawingBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+
+                                <!-- Selection overlays -->
+                                <Canvas IsHitTestVisible="False"
+                                        ClipToBounds="True"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch">
+
+                                    <Rectangle x:Name="MarqueeOverlay"
+                                               Stroke="{DynamicResource Theme.WarningBrush}"
+                                               StrokeThickness="{Binding DynamicStrokeThickness}"
+                                               StrokeDashArray="4,4"
+                                               Visibility="Hidden"
+                                               IsHitTestVisible="False" />
+
+                                    <!-- Light transparent yellow fill shows the lasso interior -->
+                                    <Path x:Name="LassoOverlay"
+                                          Stroke="{DynamicResource Theme.WarningBrush}"
+                                          StrokeThickness="{Binding DynamicStrokeThickness}"
+                                          StrokeDashArray="4,4"
+                                          Fill="#40F2E94E"
+                                          Visibility="Hidden"
+                                          IsHitTestVisible="False" />
+
+                                    <!-- Brush cursor overlay (pixel-accurate bitmap) -->
+                                    <Image x:Name="BrushCursorOverlay"
+                                           RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                           Stretch="Fill"
                                            Visibility="Hidden"
                                            IsHitTestVisible="False" />
 
-                                <!-- Light transparent yellow fill shows the lasso interior -->
-                                <Path x:Name="LassoOverlay"
-                                      Stroke="{DynamicResource Theme.WarningBrush}"
-                                      StrokeThickness="{Binding DynamicStrokeThickness}"
-                                      StrokeDashArray="4,4"
-                                      Fill="#40F2E94E"
-                                      Visibility="Hidden"
-                                      IsHitTestVisible="False" />
+                                    <!-- Crosshair lines (follow mouse smoothly) -->
+                                    <Line x:Name="CrosshairH"
+                                          Stroke="#CCFFFFFF"
+                                          StrokeThickness="1"
+                                          Visibility="Hidden"
+                                          IsHitTestVisible="False"
+                                          SnapsToDevicePixels="True" />
+                                    <Line x:Name="CrosshairV"
+                                          Stroke="#CCFFFFFF"
+                                          StrokeThickness="1"
+                                          Visibility="Hidden"
+                                          IsHitTestVisible="False"
+                                          SnapsToDevicePixels="True" />
+                                </Canvas>
+                            </Grid>
+                        </Border>
+                    </ScrollViewer>
+                </Border>
 
-                                <!-- Brush cursor overlay (pixel-accurate bitmap) -->
-                                <Image x:Name="BrushCursorOverlay"
-                                       RenderOptions.BitmapScalingMode="NearestNeighbor"
-                                       Stretch="Fill"
-                                       Visibility="Hidden"
-                                       IsHitTestVisible="False" />
+                <!-- Bottom action bar -->
+                <Border Grid.Row="2"
+                        Style="{StaticResource PanelStyle}"
+                        Margin="0,15,0,0"
+                        Padding="8,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                                <!-- Crosshair lines (follow mouse smoothly) -->
-                                <Line x:Name="CrosshairH"
-                                      Stroke="#CCFFFFFF"
-                                      StrokeThickness="1"
-                                      Visibility="Hidden"
-                                      IsHitTestVisible="False"
-                                      SnapsToDevicePixels="True" />
-                                <Line x:Name="CrosshairV"
-                                      Stroke="#CCFFFFFF"
-                                      StrokeThickness="1"
-                                      Visibility="Hidden"
-                                      IsHitTestVisible="False"
-                                      SnapsToDevicePixels="True" />
-                            </Canvas>
-                        </Grid>
-                    </Border>
-                </ScrollViewer>
-            </Border>
+                        <!-- Undo / Redo -->
+                        <StackPanel Grid.Column="0"
+                                    Orientation="Horizontal">
+                            <Button Command="{Binding UndoCommand}"
+                                    ToolTip="Undo (Ctrl+Z)"
+                                    Width="34"
+                                    Height="34"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Padding="0"
+                                    Margin="0,0,4,0">
+                                <TextBlock Text="&#xE10E;"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="14" />
+                            </Button>
+                            <Button Command="{Binding RedoCommand}"
+                                    ToolTip="Redo (Ctrl+Y)"
+                                    Width="34"
+                                    Height="34"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Padding="0">
+                                <TextBlock Text="&#xE10D;"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="14" />
+                            </Button>
+                        </StackPanel>
 
-            <!-- Bottom action bar -->
-            <Border Grid.Row="2"
-                    Style="{StaticResource PanelStyle}"
-                    Margin="0,15,0,0"
-                    Padding="8,6">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                        <!-- Empty space where StatusLabel used to be -->
+                    </Grid>
+                </Border>
+            </Grid>
 
-                    <!-- Undo / Redo -->
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal">
-                        <Button Command="{Binding UndoCommand}"
-                                ToolTip="Undo (Ctrl+Z)"
-                                Width="34"
-                                Height="34"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Padding="0"
-                                Margin="0,0,4,0">
-                            <TextBlock Text="&#xE10E;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="14" />
-                        </Button>
-                        <Button Command="{Binding RedoCommand}"
-                                ToolTip="Redo (Ctrl+Y)"
-                                Width="34"
-                                Height="34"
-                                Style="{StaticResource ModernButtonStyle}"
-                                Padding="0">
-                            <TextBlock Text="&#xE10D;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="14" />
-                        </Button>
-                    </StackPanel>
+            <GridSplitter Grid.Column="2"
+                          Width="2"
+                          HorizontalAlignment="Stretch"
+                          Background="{DynamicResource Theme.PanelBackgroundBrush}"
+                          Cursor="SizeWE" />
 
-                    <!-- Empty space where StatusLabel used to be -->
-                </Grid>
-            </Border>
-        </Grid>
-
-        <GridSplitter Grid.Column="2"
-                      Width="2"
-                      HorizontalAlignment="Stretch"
-                      Background="{DynamicResource Theme.PanelBackgroundBrush}"
-                      Cursor="SizeWE" />
-
-
-        <!-- ═══════════════════════════════════════════════════════════════
+            <!-- ═══════════════════════════════════════════════════════════════
              RIGHT COLUMN — preview + code output panels
              ═══════════════════════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Column="3"
-                      Margin="15,20,20,20"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Style="{StaticResource {x:Type ScrollViewer}}">
-            <StackPanel>
-                <!-- OLED Preview -->
-                <Border Style="{StaticResource PanelStyle}"
-                        Padding="16,4,16,16"
-                        Margin="0,0,0,15">
-                    <Expander Style="{StaticResource ModernExpanderStyle}"
-                              IsExpanded="True">
-                        <Expander.Header>
-                            <TextBlock Text="OLED PREVIEW (128×64)"
-                                       Style="{StaticResource HeaderStyle}"
-                                       VerticalAlignment="Center" />
-                        </Expander.Header>
-                        <StackPanel Margin="0,12,0,0">
-                            <Border x:Name="OledBorder"
-                                    BorderBrush="{DynamicResource Theme.BackgroundBrush}"
-                                    BorderThickness="4"
-                                    Width="256"
-                                    Height="128"
-                                    HorizontalAlignment="Left"
-                                    CornerRadius="6">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Background"
-                                                Value="{DynamicResource Theme.CanvasBackgroundBrush}" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsDisplayInverted}"
-                                                         Value="True">
-                                                <Setter Property="Background"
-                                                        Value="{DynamicResource Theme.PrimaryAccentBrush}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                                <Grid x:Name="PreviewGridContainer">
-                                    <Grid.Style>
-                                        <Style TargetType="Grid">
+            <ScrollViewer Grid.Column="3"
+                          Margin="15,20,20,20"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Style="{StaticResource {x:Type ScrollViewer}}">
+                <StackPanel>
+                    <!-- OLED Preview -->
+                    <Border Style="{StaticResource PanelStyle}"
+                            Padding="16,4,16,16"
+                            Margin="0,0,0,15">
+                        <Expander Style="{StaticResource ModernExpanderStyle}"
+                                  IsExpanded="True">
+                            <Expander.Header>
+                                <TextBlock Text="OLED PREVIEW (128×64)"
+                                           Style="{StaticResource HeaderStyle}"
+                                           VerticalAlignment="Center" />
+                            </Expander.Header>
+                            <StackPanel Margin="0,12,0,0">
+                                <Border x:Name="OledBorder"
+                                        BorderBrush="{DynamicResource Theme.BackgroundBrush}"
+                                        BorderThickness="4"
+                                        Width="256"
+                                        Height="128"
+                                        HorizontalAlignment="Left"
+                                        CornerRadius="6">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
                                             <Setter Property="Background"
-                                                    Value="{DynamicResource Theme.OledOffBrush}" />
+                                                    Value="{DynamicResource Theme.CanvasBackgroundBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsDisplayInverted}"
                                                              Value="True">
                                                     <Setter Property="Background"
-                                                            Value="{DynamicResource Theme.OledOnBrush}" />
+                                                            Value="{DynamicResource Theme.PrimaryAccentBrush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
-                                    </Grid.Style>
-                                    <Image Source="{Binding PreviewBitmap}"
-                                           RenderOptions.BitmapScalingMode="NearestNeighbor"
-                                           Stretch="Fill"
-                                           Width="{Binding PreviewWidth}"
-                                           Height="{Binding PreviewHeight}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                                    </Border.Style>
+                                    <Grid x:Name="PreviewGridContainer">
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource Theme.OledOffBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsDisplayInverted}"
+                                                                 Value="True">
+                                                        <Setter Property="Background"
+                                                                Value="{DynamicResource Theme.OledOnBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Image Source="{Binding PreviewBitmap}"
+                                               RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                               Stretch="Fill"
+                                               Width="{Binding PreviewWidth}"
+                                               Height="{Binding PreviewHeight}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="* Sprite shown relative to total 128×64 screen area"
+                                           Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                           FontSize="11"
+                                           Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Expander>
+                    </Border>
+
+                    <!-- Binary output -->
+                    <Border Style="{StaticResource PanelStyle}"
+                            Padding="16,4,16,16"
+                            Margin="0,0,0,15">
+                        <Expander Style="{StaticResource ModernExpanderStyle}"
+                                  IsExpanded="True">
+                            <Expander.Header>
+                                <Grid HorizontalAlignment="Stretch"
+                                      Margin="0,0,16,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="BINARY REPRESENTATION"
+                                               Style="{StaticResource HeaderStyle}"
+                                               VerticalAlignment="Center" />
+                                    <CheckBox Grid.Column="1"
+                                              Content="Add commas"
+                                              IsChecked="{Binding BinaryUseComma}"
+                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Right" />
                                 </Grid>
+                            </Expander.Header>
+                            <Border Background="{DynamicResource Theme.BackgroundBrush}"
+                                    CornerRadius="6"
+                                    BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                    BorderThickness="1"
+                                    Padding="2"
+                                    Margin="0,12,0,0">
+                                <TextBox x:Name="TxtBinary"
+                                         Text="{Binding TxtBinary, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         FontFamily="{DynamicResource Theme.CodeFont}"
+                                         FontSize="13"
+                                         Background="Transparent"
+                                         Foreground="{DynamicResource Theme.CodeTxtBrush}"
+                                         BorderThickness="0"
+                                         Padding="10"
+                                         VerticalScrollBarVisibility="Auto" />
                             </Border>
-                            <TextBlock Text="* Sprite shown relative to total 128×64 screen area"
-                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                       FontSize="11"
-                                       Margin="0,8,0,0" />
-                        </StackPanel>
-                    </Expander>
-                </Border>
+                        </Expander>
+                    </Border>
 
-                <!-- Binary output -->
-                <Border Style="{StaticResource PanelStyle}"
-                        Padding="16,4,16,16"
-                        Margin="0,0,0,15">
-                    <Expander Style="{StaticResource ModernExpanderStyle}"
-                              IsExpanded="True">
-                        <Expander.Header>
-                            <Grid HorizontalAlignment="Stretch" Margin="0,0,16,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="200" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="BINARY REPRESENTATION"
-                                           Style="{StaticResource HeaderStyle}"
-                                           VerticalAlignment="Center" />
-                                <CheckBox Grid.Column="1"
-                                          Content="Add commas"
-                                          IsChecked="{Binding BinaryUseComma}"
-                                          Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Right" />
-                            </Grid>
-                        </Expander.Header>
-                        <Border Background="{DynamicResource Theme.BackgroundBrush}"
-                                CornerRadius="6"
-                                BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
-                                BorderThickness="1"
-                                Padding="2"
-                                Margin="0,12,0,0">
-                            <TextBox x:Name="TxtBinary"
-                                     Text="{Binding TxtBinary, UpdateSourceTrigger=PropertyChanged, Delay=400}"
-                                     TextWrapping="Wrap"
-                                     AcceptsReturn="True"
-                                     FontFamily="{DynamicResource Theme.CodeFont}"
-                                     FontSize="13"
-                                     Background="Transparent"
-                                     Foreground="{DynamicResource Theme.CodeTxtBrush}"
-                                     BorderThickness="0"
-                                     Padding="10"
-                                     VerticalScrollBarVisibility="Auto" />
-                        </Border>
-                    </Expander>
-                </Border>
-
-                <!-- HEX output -->
-                <Border Style="{StaticResource PanelStyle}"
-                        Padding="16,4,16,16">
-                    <Expander Style="{StaticResource ModernExpanderStyle}"
-                              IsExpanded="True">
-                        <Expander.Header>
-                            <Grid HorizontalAlignment="Stretch" Margin="0,0,16,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="200" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="HEX REPRESENTATION"
-                                           Style="{StaticResource HeaderStyle}"
-                                           VerticalAlignment="Center" />
-                                <CheckBox Grid.Column="1"
-                                          Content="Add commas"
-                                          IsChecked="{Binding HexUseComma}"
-                                          Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Right" />
-                            </Grid>
-                        </Expander.Header>
-                        <Border Background="{DynamicResource Theme.BackgroundBrush}"
-                                CornerRadius="6"
-                                BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
-                                BorderThickness="1"
-                                Padding="2"
-                                Margin="0,12,0,0">
-                            <TextBox x:Name="TxtHex"
-                                     Text="{Binding TxtHex, UpdateSourceTrigger=PropertyChanged, Delay=400}"
-                                     TextWrapping="Wrap"
-                                     AcceptsReturn="True"
-                                     FontFamily="{DynamicResource Theme.CodeFont}"
-                                     FontSize="13"
-                                     Background="Transparent"
-                                     Foreground="{DynamicResource Theme.CodeTxtBrush}"
-                                     BorderThickness="0"
-                                     Padding="10"
-                                     VerticalScrollBarVisibility="Auto" />
-                        </Border>
-                    </Expander>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
-
-        </Grid><!-- /Main content -->
+                    <!-- HEX output -->
+                    <Border Style="{StaticResource PanelStyle}"
+                            Padding="16,4,16,16">
+                        <Expander Style="{StaticResource ModernExpanderStyle}"
+                                  IsExpanded="True">
+                            <Expander.Header>
+                                <Grid HorizontalAlignment="Stretch"
+                                      Margin="0,0,16,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="HEX REPRESENTATION"
+                                               Style="{StaticResource HeaderStyle}"
+                                               VerticalAlignment="Center" />
+                                    <CheckBox Grid.Column="1"
+                                              Content="Add commas"
+                                              IsChecked="{Binding HexUseComma}"
+                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Right" />
+                                </Grid>
+                            </Expander.Header>
+                            <Border Background="{DynamicResource Theme.BackgroundBrush}"
+                                    CornerRadius="6"
+                                    BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                    BorderThickness="1"
+                                    Padding="2"
+                                    Margin="0,12,0,0">
+                                <TextBox x:Name="TxtHex"
+                                         Text="{Binding TxtHex, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         FontFamily="{DynamicResource Theme.CodeFont}"
+                                         FontSize="13"
+                                         Background="Transparent"
+                                         Foreground="{DynamicResource Theme.CodeTxtBrush}"
+                                         BorderThickness="0"
+                                         Padding="10"
+                                         VerticalScrollBarVisibility="Auto" />
+                            </Border>
+                        </Expander>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+        <!-- /Main content -->
 
         <!-- ═══════════════════════════════════════════════════════════════
              STATUS BAR

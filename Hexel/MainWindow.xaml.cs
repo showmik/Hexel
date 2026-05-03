@@ -30,6 +30,9 @@ namespace Hexel
         private int _lastHoveredX = -1;
         private int _lastHoveredY = -1;
 
+        // ── Draw mode locked for the duration of a stroke ─────────────────
+        private DrawMode _activeDrawMode = DrawMode.None;
+
         // ── Status label fade timer ───────────────────────────────────────
         private System.Windows.Threading.DispatcherTimer? _statusTimer;
 
@@ -123,10 +126,12 @@ namespace Hexel
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
                 ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false);
+                _activeDrawMode = DrawMode.None;
             }
             else if (ViewModel.CurrentTool == ToolMode.Pencil)
             {
                 ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false);
+                _activeDrawMode = DrawMode.None;
             }
 
             if (e.ChangedButton == MouseButton.Left)
@@ -634,15 +639,15 @@ namespace Hexel
                     return;
                 }
 
-                var mode = e.LeftButton == MouseButtonState.Pressed ? DrawMode.Draw
-                         : e.RightButton == MouseButtonState.Pressed ? DrawMode.Erase
-                         : DrawMode.None;
+                _activeDrawMode = e.ChangedButton == MouseButton.Left ? DrawMode.Draw
+                               : e.ChangedButton == MouseButton.Right ? DrawMode.Erase
+                               : DrawMode.None;
 
-                if (mode != DrawMode.None)
+                if (_activeDrawMode != DrawMode.None)
                 {
                     _lastHoveredX = x;
                     _lastHoveredY = y;
-                    ViewModel.ProcessToolInput(x, y, ToolAction.Down, mode,
+                    ViewModel.ProcessToolInput(x, y, ToolAction.Down, _activeDrawMode,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
                 }
             }
@@ -692,9 +697,9 @@ namespace Hexel
                     return;
                 }
 
-                var mode = e.LeftButton == MouseButtonState.Pressed ? DrawMode.Draw
-                         : e.RightButton == MouseButtonState.Pressed ? DrawMode.Erase
-                         : DrawMode.None;
+                // Use the draw mode captured on mouse-down so that pressing
+                // the other button mid-stroke cannot flip between draw/erase.
+                var mode = _activeDrawMode;
 
                 if (mode != DrawMode.None || ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
                 {
