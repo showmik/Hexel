@@ -76,6 +76,17 @@ namespace Hexel
             Canvas.MainScrollViewer.PreviewMouseUp += ScrollViewer_PreviewMouseUp;
             Canvas.CanvasImage.MouseLeave += CanvasImage_MouseLeave;
 
+            // Wire up tool selection
+            ToolSidebar.RbPencil.Checked += Tool_Checked;
+            ToolSidebar.RbLine.Checked += Tool_Checked;
+            ToolSidebar.RbRectangle.Checked += Tool_Checked;
+            ToolSidebar.RbEllipse.Checked += Tool_Checked;
+            ToolSidebar.RbFilledRectangle.Checked += Tool_Checked;
+            ToolSidebar.RbFilledEllipse.Checked += Tool_Checked;
+            ToolSidebar.RbFill.Checked += Tool_Checked;
+            ToolSidebar.RbMarquee.Checked += Tool_Checked;
+            ToolSidebar.RbLasso.Checked += Tool_Checked;
+            ToolSidebar.RbMagicWand.Checked += Tool_Checked;
 
             OnActiveTabChanged();
         }
@@ -104,6 +115,8 @@ namespace Hexel
 
             _selectionOverlay.Clear();
             _brushCursor.Hide();
+            SyncBrushShapeRadioButtons();
+            
             CenterScrollViewer();
         }
 
@@ -125,6 +138,16 @@ namespace Hexel
             }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
+        private void SyncBrushShapeRadioButtons()
+        {
+            if (ViewModel == null) return;
+            switch (ViewModel.BrushShape)
+            {
+                case Core.BrushShape.Circle: if (Canvas.RbBrushCircle != null) Canvas.RbBrushCircle.IsChecked = true; break;
+                case Core.BrushShape.Square: if (Canvas.RbBrushSquare != null) Canvas.RbBrushSquare.IsChecked = true; break;
+                case Core.BrushShape.Line: if (Canvas.RbBrushLine != null) Canvas.RbBrushLine.IsChecked = true; break;
+            }
+        }
 
         private void OnHistoryRestored(object? s, EventArgs e)
         {
@@ -139,27 +162,6 @@ namespace Hexel
                 e.PropertyName == nameof(ViewModels.MainViewModel.BrushShape) ||
                 e.PropertyName == nameof(ViewModels.MainViewModel.BrushAngle))
                 _brushCursor.Refresh();
-
-            if (e.PropertyName == nameof(ViewModels.MainViewModel.CurrentTool))
-                OnCurrentToolChanged();
-        }
-
-        /// <summary>
-        /// Reacts to tool changes originating from any source (keyboard shortcut, data binding,
-        /// or programmatic). Handles view-side side-effects: draw mode reset, selection commit,
-        /// and brush cursor visibility. CancelInProgressDrawing() is already called by the VM.
-        /// </summary>
-        private void OnCurrentToolChanged()
-        {
-            if (ViewModel == null) return;
-            _activeDrawMode = DrawMode.None;
-
-            var tool = ViewModel.CurrentTool;
-            if (tool != ToolMode.Marquee && tool != ToolMode.Lasso)
-                CommitCurrentSelection();
-
-            if (tool != ToolMode.Pencil)
-                _brushCursor.Hide();
         }
 
         // ── Tab bar event handlers ────────────────────────────────────────
@@ -178,6 +180,34 @@ namespace Hexel
 
         // ── Tool selection ────────────────────────────────────────────────
 
+        private void Tool_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not RadioButton rb || rb.Tag is null || ViewModel is null) return;
+
+            ViewModel.CurrentTool = rb.Tag.ToString() switch
+            {
+                "Fill" => ToolMode.Fill,
+                "Marquee" => ToolMode.Marquee,
+                "Lasso" => ToolMode.Lasso,
+                "Rectangle" => ToolMode.Rectangle,
+                "Ellipse" => ToolMode.Ellipse,
+                "FilledRectangle" => ToolMode.FilledRectangle,
+                "FilledEllipse" => ToolMode.FilledEllipse,
+                "Line" => ToolMode.Line,
+                "MagicWand" => ToolMode.MagicWand,
+                _ => ToolMode.Pencil
+            };
+
+            _activeDrawMode = DrawMode.None;
+            ViewModel.CancelInProgressDrawing();
+
+            if (ViewModel.CurrentTool != ToolMode.Marquee &&
+                ViewModel.CurrentTool != ToolMode.Lasso)
+                CommitCurrentSelection();
+
+            if (ViewModel.CurrentTool != ToolMode.Pencil)
+                _brushCursor.Hide();
+        }
 
         // ── Global overrides ──────────────────────────────────────────────
 
@@ -257,14 +287,14 @@ namespace Hexel
                         }
                         break;
                     case Key.Escape: CommitCurrentSelection(); e.Handled = true; break;
-                    case Key.P: ViewModel.CurrentTool = ToolMode.Pencil; e.Handled = true; break;
-                    case Key.L: ViewModel.CurrentTool = ToolMode.Line; e.Handled = true; break;
-                    case Key.R: ViewModel.CurrentTool = ToolMode.Rectangle; e.Handled = true; break;
-                    case Key.E: ViewModel.CurrentTool = ToolMode.Ellipse; e.Handled = true; break;
-                    case Key.F: ViewModel.CurrentTool = ToolMode.Fill; e.Handled = true; break;
-                    case Key.M: ViewModel.CurrentTool = ToolMode.Marquee; e.Handled = true; break;
-                    case Key.S: ViewModel.CurrentTool = ToolMode.Lasso; e.Handled = true; break;
-                    case Key.W: ViewModel.CurrentTool = ToolMode.MagicWand; e.Handled = true; break;
+                    case Key.P: if (ToolSidebar.RbPencil != null) ToolSidebar.RbPencil.IsChecked = true; e.Handled = true; break;
+                    case Key.L: if (ToolSidebar.RbLine != null) ToolSidebar.RbLine.IsChecked = true; e.Handled = true; break;
+                    case Key.R: if (ToolSidebar.RbRectangle != null) ToolSidebar.RbRectangle.IsChecked = true; e.Handled = true; break;
+                    case Key.E: if (ToolSidebar.RbEllipse != null) ToolSidebar.RbEllipse.IsChecked = true; e.Handled = true; break;
+                    case Key.F: if (ToolSidebar.RbFill != null) ToolSidebar.RbFill.IsChecked = true; e.Handled = true; break;
+                    case Key.M: if (ToolSidebar.RbMarquee != null) ToolSidebar.RbMarquee.IsChecked = true; e.Handled = true; break;
+                    case Key.S: if (ToolSidebar.RbLasso != null) ToolSidebar.RbLasso.IsChecked = true; e.Handled = true; break;
+                    case Key.W: if (ToolSidebar.RbMagicWand != null) ToolSidebar.RbMagicWand.IsChecked = true; e.Handled = true; break;
                     case Key.OemOpenBrackets: ViewModel.BrushSize--; e.Handled = true; break;
                     case Key.OemCloseBrackets: ViewModel.BrushSize++; e.Handled = true; break;
                 }
@@ -274,8 +304,8 @@ namespace Hexel
                 if (Keyboard.FocusedElement is TextBox) return;
                 switch (e.Key)
                 {
-                    case Key.R: ViewModel.CurrentTool = ToolMode.FilledRectangle; e.Handled = true; break;
-                    case Key.E: ViewModel.CurrentTool = ToolMode.FilledEllipse; e.Handled = true; break;
+                    case Key.R: if (ToolSidebar.RbFilledRectangle != null) ToolSidebar.RbFilledRectangle.IsChecked = true; e.Handled = true; break;
+                    case Key.E: if (ToolSidebar.RbFilledEllipse != null) ToolSidebar.RbFilledEllipse.IsChecked = true; e.Handled = true; break;
                 }
             }
         }
@@ -577,28 +607,5 @@ namespace Hexel
         // ── Brush cursor (delegated) ──────────────────────────────────────
 
         private void CanvasImage_MouseLeave(object sender, MouseEventArgs e) => _brushCursor.OnMouseLeave();
-
-        // ── Help Menu ─────────────────────────────────────────────────────
-
-        private void MenuHelp_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/") { UseShellExecute = true });
-            }
-            catch
-            {
-                MessageBox.Show("Could not open the documentation link.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void MenuAbout_Click(object sender, RoutedEventArgs e)
-        {
-            var aboutDialog = new Views.AboutDialog
-            {
-                Owner = this
-            };
-            aboutDialog.ShowDialog();
-        }
     }
 }

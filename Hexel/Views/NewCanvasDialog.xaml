@@ -15,7 +15,6 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -33,11 +32,12 @@
                        Foreground="{DynamicResource Theme.TextMainBrush}"
                        VerticalAlignment="Center"
                        Width="60" />
-            <ComboBox Width="220"
+            <ComboBox x:Name="PresetComboBox"
+                      Width="220"
                       Height="28"
                       Style="{StaticResource ModernComboBoxStyle}"
                       ItemsSource="{x:Static vm:MainViewModel.DisplayPresets}"
-                      SelectedItem="{Binding SelectedPreset}" />
+                      SelectionChanged="Preset_SelectionChanged" />
         </StackPanel>
 
         <!-- Width x Height -->
@@ -46,58 +46,40 @@
                        Foreground="{DynamicResource Theme.TextMainBrush}"
                        VerticalAlignment="Center"
                        Width="60" />
-            <TextBox Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
+            <TextBox x:Name="TxtWidth"
+                     Text="16"
                      Width="80" Height="28"
                      Style="{StaticResource ModernTextBoxStyle}"
+                     PreviewTextInput="NumberOnly"
                      Margin="0,0,8,0" />
             <TextBlock Text="×"
                        Foreground="{DynamicResource Theme.TextMutedBrush}"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0" />
-            <TextBox Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
+            <TextBox x:Name="TxtHeight"
+                     Text="16"
                      Width="80" Height="28"
-                     Style="{StaticResource ModernTextBoxStyle}" />
+                     Style="{StaticResource ModernTextBoxStyle}"
+                     PreviewTextInput="NumberOnly" />
             <TextBlock Text="px"
                        Foreground="{DynamicResource Theme.TextMutedBrush}"
                        VerticalAlignment="Center"
                        Margin="6,0,0,0" />
         </StackPanel>
 
-        <!-- Validation error -->
-        <TextBlock Grid.Row="3"
-                   Text="{Binding ErrorMessage}"
-                   Foreground="{DynamicResource Theme.DangerBrush}"
-                   FontSize="11"
-                   Margin="0,0,0,6"
-                   TextWrapping="Wrap">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding ErrorMessage}" Value="">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding HasError}" Value="True">
-                            <Setter Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
-
         <!-- OK / Cancel -->
-        <StackPanel Grid.Row="5"
+        <StackPanel Grid.Row="4"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button Content="Cancel"
                     Width="80" Height="30"
                     Style="{StaticResource ModernButtonStyle}"
                     Margin="0,0,8,0"
-                    Command="{Binding CancelCommand}" />
+                    Click="Cancel_Click" />
             <Button Content="Create"
                     Width="80" Height="30"
                     Style="{StaticResource ModernButtonStyle}"
-                    Command="{Binding CreateCommand}"
+                    Click="Create_Click"
                     IsDefault="True" />
         </StackPanel>
     </Grid>

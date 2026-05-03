@@ -1,3 +1,5 @@
+using System;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -6,54 +8,76 @@ namespace Hexel.Views
 {
     public partial class CanvasPanel : UserControl
     {
-        public CanvasPanel() { InitializeComponent(); }
+        public CanvasPanel()
+        {
+            InitializeComponent();
+        }
 
         private ViewModels.MainViewModel? ViewModel => DataContext as ViewModels.MainViewModel;
 
-        // ── Zoom RoutedEvents (kept as View plumbing — ZoomPanController needs UI refs) ──
+        // ── Zoom Events for MainWindow ────────────────────────────────────
 
         public event RoutedEventHandler ZoomInClicked
         {
             add { AddHandler(ZoomInClickedEvent, value); }
             remove { RemoveHandler(ZoomInClickedEvent, value); }
         }
-        public static readonly RoutedEvent ZoomInClickedEvent =
-            EventManager.RegisterRoutedEvent("ZoomInClicked", RoutingStrategy.Bubble,
-                typeof(RoutedEventHandler), typeof(CanvasPanel));
+        public static readonly RoutedEvent ZoomInClickedEvent = EventManager.RegisterRoutedEvent("ZoomInClicked", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(CanvasPanel));
 
         public event RoutedEventHandler ZoomOutClicked
         {
             add { AddHandler(ZoomOutClickedEvent, value); }
             remove { RemoveHandler(ZoomOutClickedEvent, value); }
         }
-        public static readonly RoutedEvent ZoomOutClickedEvent =
-            EventManager.RegisterRoutedEvent("ZoomOutClicked", RoutingStrategy.Bubble,
-                typeof(RoutedEventHandler), typeof(CanvasPanel));
+        public static readonly RoutedEvent ZoomOutClickedEvent = EventManager.RegisterRoutedEvent("ZoomOutClicked", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(CanvasPanel));
 
         public event RoutedEventHandler ZoomResetClicked
         {
             add { AddHandler(ZoomResetClickedEvent, value); }
             remove { RemoveHandler(ZoomResetClickedEvent, value); }
         }
-        public static readonly RoutedEvent ZoomResetClickedEvent =
-            EventManager.RegisterRoutedEvent("ZoomResetClicked", RoutingStrategy.Bubble,
-                typeof(RoutedEventHandler), typeof(CanvasPanel));
+        public static readonly RoutedEvent ZoomResetClickedEvent = EventManager.RegisterRoutedEvent("ZoomResetClicked", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(CanvasPanel));
 
-        private void BtnZoomIn_Click(object sender, RoutedEventArgs e)    => RaiseEvent(new RoutedEventArgs(ZoomInClickedEvent, sender));
-        private void BtnZoomOut_Click(object sender, RoutedEventArgs e)   => RaiseEvent(new RoutedEventArgs(ZoomOutClickedEvent, sender));
+        private void BtnZoomIn_Click(object sender, RoutedEventArgs e) => RaiseEvent(new RoutedEventArgs(ZoomInClickedEvent, sender));
+        private void BtnZoomOut_Click(object sender, RoutedEventArgs e) => RaiseEvent(new RoutedEventArgs(ZoomOutClickedEvent, sender));
         private void BtnZoomReset_Click(object sender, RoutedEventArgs e) => RaiseEvent(new RoutedEventArgs(ZoomResetClickedEvent, sender));
 
-        // ── View-level text normalization (pure display concern) ──────────
+        // ── Brush Options ─────────────────────────────────────────────────
+
+        private void BrushShape_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not RadioButton rb || rb.Tag is null || ViewModel is null) return;
+            ViewModel.BrushShape = rb.Tag.ToString() switch
+            {
+                "Square" => Core.BrushShape.Square,
+                "Line" => Core.BrushShape.Line,
+                _ => Core.BrushShape.Circle
+            };
+        }
+
+        private void BtnBrushDown_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel != null) ViewModel.BrushSize--;
+        }
+
+        private void BtnBrushUp_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel != null) ViewModel.BrushSize++;
+        }
+
+        // ── Text Validation ───────────────────────────────────────────────
 
         private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-            => e.Handled = !System.Text.RegularExpressions.Regex.IsMatch(e.Text, @"^[0-9]+$");
+        {
+            e.Handled = !Regex.IsMatch(e.Text, @"^[0-9]+$");
+        }
 
         private void BrushSizeTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox tb && ViewModel != null)
             {
                 if (int.TryParse(tb.Text, out int val))
-                    ViewModel.BrushSize = System.Math.Clamp(val, 1, 64);
+                    ViewModel.BrushSize = Math.Clamp(val, 1, 64);
                 tb.Text = ViewModel.BrushSize.ToString();
             }
         }
