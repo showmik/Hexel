@@ -97,6 +97,29 @@ namespace Hexel
 
             ClearSelectionOverlays();
             HideBrushCursor();
+            SyncBrushShapeRadioButtons();
+        }
+
+        /// <summary>
+        /// Syncs the brush shape radio buttons to match the active document's BrushShape.
+        /// Prevents desync when switching tabs or opening new documents.
+        /// </summary>
+        private void SyncBrushShapeRadioButtons()
+        {
+            if (ViewModel == null) return;
+
+            switch (ViewModel.BrushShape)
+            {
+                case Core.BrushShape.Circle:
+                    if (RbBrushCircle != null) RbBrushCircle.IsChecked = true;
+                    break;
+                case Core.BrushShape.Square:
+                    if (RbBrushSquare != null) RbBrushSquare.IsChecked = true;
+                    break;
+                case Core.BrushShape.Line:
+                    if (RbBrushLine != null) RbBrushLine.IsChecked = true;
+                    break;
+            }
         }
 
         private void OnHistoryRestored(object? s, EventArgs e)
