@@ -160,6 +160,8 @@ namespace Hexel.ViewModels
         public bool IsDrawingLine { get; private set; }
         public bool IsDrawingRectangle { get; private set; }
         public bool IsDrawingEllipse { get; private set; }
+        public bool IsDrawingFilledRectangle { get; private set; }
+        public bool IsDrawingFilledEllipse { get; private set; }
 
         // ── Export format options ─────────────────────────────────────────
         private bool _binaryUseComma = false;
@@ -676,6 +678,22 @@ namespace Hexel.ViewModels
             FlushBitmaps();
         }
 
+        public void PreviewFilledRectangle(int x0, int y0, int x1, int y1, bool newState)
+        {
+            RedrawGridFromMemory();
+            PlotFilledRectangle(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
+                                                  newState ? _previewOnUint : _previewOffUint);
+            FlushBitmaps();
+        }
+
+        public void PreviewFilledEllipse(int x0, int y0, int x1, int y1, bool newState)
+        {
+            RedrawGridFromMemory();
+            PlotFilledEllipse(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
+                                                 newState ? _previewOnUint : _previewOffUint);
+            FlushBitmaps();
+        }
+
         // ── Text output ───────────────────────────────────────────────────
 
         public void UpdateTextOutputs() => _ = UpdateTextOutputsAsync();
@@ -765,6 +783,26 @@ namespace Hexel.ViewModels
                     _lineCurrentY = y;
                     _lineDrawState = newState;
                     PreviewEllipse(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                    break;
+
+                case ToolMode.FilledRectangle:
+                    IsDrawingFilledRectangle = true;
+                    _lineStartX = x;
+                    _lineStartY = y;
+                    _lineCurrentX = x;
+                    _lineCurrentY = y;
+                    _lineDrawState = newState;
+                    PreviewFilledRectangle(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                    break;
+
+                case ToolMode.FilledEllipse:
+                    IsDrawingFilledEllipse = true;
+                    _lineStartX = x;
+                    _lineStartY = y;
+                    _lineCurrentX = x;
+                    _lineCurrentY = y;
+                    _lineDrawState = newState;
+                    PreviewFilledEllipse(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
                     break;
 
                 case ToolMode.Pencil:
@@ -879,6 +917,30 @@ namespace Hexel.ViewModels
                     }
                     break;
 
+                case ToolMode.FilledRectangle when IsDrawingFilledRectangle:
+                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
+                    {
+                        _lineCurrentX = x;
+                        _lineCurrentY = y;
+                        _lastShiftDown = isShiftDown;
+                        _lastAltDown = isAltDown;
+                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledRectangle, isShiftDown, isAltDown);
+                        PreviewFilledRectangle(x0, y0, x1, y1, _lineDrawState);
+                    }
+                    break;
+
+                case ToolMode.FilledEllipse when IsDrawingFilledEllipse:
+                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
+                    {
+                        _lineCurrentX = x;
+                        _lineCurrentY = y;
+                        _lastShiftDown = isShiftDown;
+                        _lastAltDown = isAltDown;
+                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledEllipse, isShiftDown, isAltDown);
+                        PreviewFilledEllipse(x0, y0, x1, y1, _lineDrawState);
+                    }
+                    break;
+
                 case ToolMode.Pencil when mode != DrawMode.None:
                     if (_lastClickedX != NoPosition && (_lastClickedX != x || _lastClickedY != y))
                     {
@@ -944,6 +1006,38 @@ namespace Hexel.ViewModels
                 UpdateTextOutputs();
             }
 
+            if (IsDrawingFilledRectangle)
+            {
+                IsDrawingFilledRectangle = false;
+                if (_lineStartX != NoPosition)
+                {
+                    _historyService.SaveState(SpriteState);
+                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledRectangle, isShiftDown, isAltDown);
+                    _drawingService.DrawFilledRectangle(SpriteState, x0, y0, x1, y1, _lineDrawState);
+                    _lastClickedX = x1;
+                    _lastClickedY = y1;
+                    RedrawGridFromMemory();
+                }
+                ResetLineTracking();
+                UpdateTextOutputs();
+            }
+
+            if (IsDrawingFilledEllipse)
+            {
+                IsDrawingFilledEllipse = false;
+                if (_lineStartX != NoPosition)
+                {
+                    _historyService.SaveState(SpriteState);
+                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledEllipse, isShiftDown, isAltDown);
+                    _drawingService.DrawFilledEllipse(SpriteState, x0, y0, x1, y1, _lineDrawState);
+                    _lastClickedX = x1;
+                    _lastClickedY = y1;
+                    RedrawGridFromMemory();
+                }
+                ResetLineTracking();
+                UpdateTextOutputs();
+            }
+
             if (CurrentTool == ToolMode.Pencil && _pendingTextUpdateDuringDrag)
             {
                 _pendingTextUpdateDuringDrag = false;
@@ -957,11 +1051,14 @@ namespace Hexel.ViewModels
         /// </summary>
         public void CancelInProgressDrawing()
         {
-            if (IsDrawingLine || IsDrawingRectangle || IsDrawingEllipse)
+            if (IsDrawingLine || IsDrawingRectangle || IsDrawingEllipse ||
+                IsDrawingFilledRectangle || IsDrawingFilledEllipse)
             {
                 IsDrawingLine = false;
                 IsDrawingRectangle = false;
                 IsDrawingEllipse = false;
+                IsDrawingFilledRectangle = false;
+                IsDrawingFilledEllipse = false;
                 ResetLineTracking();
                 RedrawGridFromMemory();  // remove any shape preview
             }
@@ -1049,6 +1146,44 @@ namespace Hexel.ViewModels
             {
                 PlotPixel(x0 - 1, y0, cc, pc); PlotPixel(x1 + 1, y0, cc, pc);
                 PlotPixel(x0 - 1, y1, cc, pc); PlotPixel(x1 + 1, y1, cc, pc);
+                y0++; y1--;
+            }
+        }
+
+        private void PlotFilledRectangle(int x0, int y0, int x1, int y1, uint cc, uint pc)
+        {
+            int minX = Math.Min(x0, x1), maxX = Math.Max(x0, x1);
+            int minY = Math.Min(y0, y1), maxY = Math.Max(y0, y1);
+            for (int y = minY; y <= maxY; y++)
+                for (int x = minX; x <= maxX; x++)
+                    PlotPixel(x, y, cc, pc);
+        }
+
+        private void PlotFilledEllipse(int x0, int y0, int x1, int y1, uint cc, uint pc)
+        {
+            int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
+            long dx = 4L * (1 - a) * b * b, dy = 4L * (b1 + 1) * a * a;
+            long err = dx + dy + (long)b1 * a * a, e2;
+
+            if (x0 > x1) { x0 = x1; x1 += a; }
+            if (y0 > y1) y0 = y1;
+            y0 += (b + 1) / 2;
+            y1 = y0 - b1;
+            a *= 8 * a;
+            b1 = 8 * b * b;
+
+            do
+            {
+                for (int px = x0; px <= x1; px++) { PlotPixel(px, y0, cc, pc); PlotPixel(px, y1, cc, pc); }
+                e2 = 2 * err;
+                if (e2 <= dy) { y0++; y1--; err += dy += a; }
+                if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += b1; }
+            }
+            while (x0 <= x1);
+
+            while (y0 - y1 < b)
+            {
+                for (int px = x0 - 1; px <= x1 + 1; px++) { PlotPixel(px, y0, cc, pc); PlotPixel(px, y1, cc, pc); }
                 y0++; y1--;
             }
         }

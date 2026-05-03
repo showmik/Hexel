@@ -170,6 +170,26 @@
                         <Path Style="{StaticResource StrokedToolIconStyle}"
                               Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
                     </RadioButton>
+                    <RadioButton x:Name="RbFilledRectangle"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="FilledRectangle"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Filled Rectangle (Shift+R)">
+                        <Path Style="{StaticResource FilledToolIconStyle}"
+                              Data="M 5,5 H 19 V 19 H 5 Z" />
+                    </RadioButton>
+                    <RadioButton x:Name="RbFilledEllipse"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="FilledEllipse"
+                                 Margin="0,0,0,4"
+                                 ToolTip="Filled Ellipse (Shift+E)">
+                        <Path Style="{StaticResource FilledToolIconStyle}"
+                              Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
+                    </RadioButton>
                     <RadioButton x:Name="RbFill"
                                  Style="{StaticResource VerticalToolButtonStyle}"
                                  GroupName="Tools"
@@ -324,6 +344,16 @@
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding CurrentTool}"
                                                      Value="Ellipse">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="FilledRectangle">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CurrentTool}"
+                                                     Value="FilledEllipse">
                                             <Setter Property="Visibility"
                                                     Value="Visible" />
                                         </DataTrigger>

@@ -6,6 +6,8 @@ namespace Hexel.Core
         Line,
         Rectangle,
         Ellipse,
+        FilledRectangle,
+        FilledEllipse,
         Fill,
         Marquee,
         Lasso,

@@ -92,6 +92,8 @@ namespace Hexel
                 "Lasso" => ToolMode.Lasso,
                 "Rectangle" => ToolMode.Rectangle,
                 "Ellipse" => ToolMode.Ellipse,
+                "FilledRectangle" => ToolMode.FilledRectangle,
+                "FilledEllipse" => ToolMode.FilledEllipse,
                 "Line" => ToolMode.Line,
                 "MagicWand" => ToolMode.MagicWand,
                 _ => ToolMode.Pencil
@@ -129,7 +131,8 @@ namespace Hexel
         {
             base.OnPreviewMouseUp(e);
 
-            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
+            if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
+                ViewModel.IsDrawingFilledRectangle || ViewModel.IsDrawingFilledEllipse)
             {
                 ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
             }
@@ -164,7 +167,8 @@ namespace Hexel
 
             if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
             {
-                if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
+                if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
+                    ViewModel.IsDrawingFilledRectangle || ViewModel.IsDrawingFilledEllipse)
                 {
                     ViewModel.ProcessToolInput(ViewModel.CursorX, ViewModel.CursorY, ToolAction.Move, _activeDrawMode,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
@@ -220,6 +224,16 @@ namespace Hexel
                         break;
                 }
             }
+            else if (Keyboard.Modifiers == ModifierKeys.Shift)
+            {
+                if (Keyboard.FocusedElement is TextBox) return;
+
+                switch (e.Key)
+                {
+                    case Key.R: if (RbFilledRectangle != null) RbFilledRectangle.IsChecked = true; e.Handled = true; break;
+                    case Key.E: if (RbFilledEllipse != null) RbFilledEllipse.IsChecked = true; e.Handled = true; break;
+                }
+            }
         }
 
         protected override void OnPreviewKeyUp(KeyEventArgs e)
@@ -228,7 +242,8 @@ namespace Hexel
 
             if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
             {
-                if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
+                if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
+                    ViewModel.IsDrawingFilledRectangle || ViewModel.IsDrawingFilledEllipse)
                 {
                     ViewModel.ProcessToolInput(ViewModel.CursorX, ViewModel.CursorY, ToolAction.Move, _activeDrawMode,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
@@ -758,7 +773,8 @@ namespace Hexel
                 // the other button mid-stroke cannot flip between draw/erase.
                 var mode = _activeDrawMode;
 
-                if (mode != DrawMode.None || ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
+                if (mode != DrawMode.None || ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
+                    ViewModel.IsDrawingFilledRectangle || ViewModel.IsDrawingFilledEllipse)
                 {
                     ViewModel.ProcessToolInput(x, y, ToolAction.Move, mode,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));

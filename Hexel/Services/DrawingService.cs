@@ -227,6 +227,23 @@ namespace Hexel.Services
             }
         }
 
+        // ── Filled Rectangle ──────────────────────────────────────────────
+
+        public void DrawFilledRectangle(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
+        {
+            int width = state.Width;
+            int height = state.Height;
+
+            int minX = Math.Clamp(Math.Min(x0, x1), 0, width - 1);
+            int maxX = Math.Clamp(Math.Max(x0, x1), 0, width - 1);
+            int minY = Math.Clamp(Math.Min(y0, y1), 0, height - 1);
+            int maxY = Math.Clamp(Math.Max(y0, y1), 0, height - 1);
+
+            for (int y = minY; y <= maxY; y++)
+                for (int x = minX; x <= maxX; x++)
+                    state.Pixels[(y * width) + x] = newState;
+        }
+
         // ── Ellipse ───────────────────────────────────────────────────────
 
         public void DrawEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
@@ -272,6 +289,58 @@ namespace Hexel.Services
             {
                 SetPixel(x0 - 1, y0); SetPixel(x1 + 1, y0);
                 SetPixel(x0 - 1, y1); SetPixel(x1 + 1, y1);
+                y0++; y1--;
+            }
+        }
+
+        // ── Filled Ellipse ────────────────────────────────────────────────
+
+        public void DrawFilledEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
+        {
+            int width = state.Width;
+            int height = state.Height;
+
+            if (x0 == x1 && y0 == y1)
+            {
+                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+                    state.Pixels[(y0 * width) + x0] = newState;
+                return;
+            }
+
+            int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
+            long dx = 4L * (1 - a) * b * b, dy = 4L * (b1 + 1) * a * a;
+            long err = dx + dy + (long)b1 * a * a, e2;
+
+            if (x0 > x1) { x0 = x1; x1 += a; }
+            if (y0 > y1) y0 = y1;
+            y0 += (b + 1) / 2;
+            y1 = y0 - b1;
+            a *= 8 * a;
+            b1 = 8 * b * b;
+
+            void FillRow(int lx, int rx, int py)
+            {
+                if (py < 0 || py >= height) return;
+                int clampL = Math.Clamp(lx, 0, width - 1);
+                int clampR = Math.Clamp(rx, 0, width - 1);
+                for (int px = clampL; px <= clampR; px++)
+                    state.Pixels[(py * width) + px] = newState;
+            }
+
+            do
+            {
+                FillRow(x0, x1, y0);
+                FillRow(x0, x1, y1);
+                e2 = 2 * err;
+                if (e2 <= dy) { y0++; y1--; err += dy += a; }
+                if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += b1; }
+            }
+            while (x0 <= x1);
+
+            while (y0 - y1 < b)
+            {
+                FillRow(x0 - 1, x1 + 1, y0);
+                FillRow(x0 - 1, x1 + 1, y1);
                 y0++; y1--;
             }
         }

@@ -74,6 +74,44 @@
         </Style.Triggers>
     </Style>
 
+    <Style TargetType="Path"
+           x:Key="FilledToolIconStyle">
+        <Setter Property="Stroke"
+                Value="{DynamicResource Theme.TextMutedBrush}" />
+        <Setter Property="Fill"
+                Value="{DynamicResource Theme.TextMutedBrush}" />
+        <Setter Property="Width"
+                Value="18" />
+        <Setter Property="Height"
+                Value="18" />
+        <Setter Property="Stretch"
+                Value="Uniform" />
+        <Setter Property="StrokeThickness"
+                Value="2" />
+        <Setter Property="StrokeStartLineCap"
+                Value="Round" />
+        <Setter Property="StrokeEndLineCap"
+                Value="Round" />
+        <Setter Property="StrokeLineJoin"
+                Value="Round" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                         Value="True">
+                <Setter Property="Stroke"
+                        Value="White" />
+                <Setter Property="Fill"
+                        Value="White" />
+            </DataTrigger>
+            <Trigger Property="IsMouseOver"
+                     Value="True">
+                <Setter Property="Stroke"
+                        Value="{DynamicResource Theme.TextMainBrush}" />
+                <Setter Property="Fill"
+                        Value="{DynamicResource Theme.TextMainBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="IconToolButtonStyle"
            TargetType="RadioButton">
         <Setter Property="Background"
