@@ -1,4 +1,5 @@
 using Hexel.Core;
+using Hexel.Services;
 using System.Windows.Media.Imaging;
 
 namespace Hexel.Rendering
@@ -19,6 +20,7 @@ namespace Hexel.Rendering
         uint PreviewOffUint { get; }
         WriteableBitmap CanvasBitmap { get; }
         WriteableBitmap PreviewBitmap { get; }
+        ISelectionService SelectionService { get; }
         void RedrawGridFromMemory();
     }
 }

@@ -307,6 +307,7 @@ namespace Hexel.ViewModels
         uint IBitmapBufferContext.ColorOffUint => _colorOffUint;
         uint IBitmapBufferContext.PreviewOnUint => _previewOnUint;
         uint IBitmapBufferContext.PreviewOffUint => _previewOffUint;
+        ISelectionService IBitmapBufferContext.SelectionService => _selectionService;
 
         // ── Extracted subsystems ──────────────────────────────────────────
         private ToolInputController _toolInput = null!;

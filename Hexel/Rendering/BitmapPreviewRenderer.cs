@@ -57,6 +57,12 @@ namespace Hexel.Rendering
             int w = _ctx.SpriteState.Width;
             int h = _ctx.SpriteState.Height;
             if (x < 0 || x >= w || y < 0 || y >= h) return;
+
+            // Clip preview to the active selection (if any)
+            var sel = _ctx.SelectionService;
+            if (sel.HasActiveSelection && !sel.IsFloating && !sel.IsPixelInSelection(x, y))
+                return;
+
             int i = (y * w) + x;
             _ctx.CanvasBuffer[i] = canvasColor;
             _ctx.PreviewBuffer[i] = previewColor;
