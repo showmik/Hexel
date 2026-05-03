@@ -116,6 +116,26 @@ namespace Hexel
             _selectionOverlay.Clear();
             _brushCursor.Hide();
             SyncBrushShapeRadioButtons();
+            
+            CenterScrollViewer();
+        }
+
+        private void CenterScrollViewer()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                Canvas.MainScrollViewer.UpdateLayout();
+                // If we are at the very top-left (initial state), center it
+                if (Canvas.MainScrollViewer.HorizontalOffset < 10 && Canvas.MainScrollViewer.VerticalOffset < 10)
+                {
+                    double cx = Canvas.MainScrollViewer.ExtentWidth / 2;
+                    double cy = Canvas.MainScrollViewer.ExtentHeight / 2;
+                    double vx = Canvas.MainScrollViewer.ViewportWidth / 2;
+                    double vy = Canvas.MainScrollViewer.ViewportHeight / 2;
+                    Canvas.MainScrollViewer.ScrollToHorizontalOffset(cx - vx);
+                    Canvas.MainScrollViewer.ScrollToVerticalOffset(cy - vy);
+                }
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private void SyncBrushShapeRadioButtons()

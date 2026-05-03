@@ -55,18 +55,33 @@ namespace Hexel.Controllers
             double oldZoom = _zoomSlider.Value;
             double newZoom = SnapToTick(Math.Clamp(oldZoom * factor, _zoomSlider.Minimum, _zoomSlider.Maximum), factor > 1.0 ? 1 : -1);
 
-            if (Math.Abs(newZoom - oldZoom) < 0.001) return;
             e.Handled = true;
+            if (Math.Abs(newZoom - oldZoom) < 0.001) return;
+
+            var image = _getCanvasImage();
+            if (image == null) return;
 
             var mouseInSv = e.GetPosition(sv);
-            double contentX = (sv.HorizontalOffset + mouseInSv.X) / oldZoom;
-            double contentY = (sv.VerticalOffset + mouseInSv.Y) / oldZoom;
+            var mouseInImage = e.GetPosition(image);
 
             _zoomSlider.Value = newZoom;
+
+            var border = FindParent<Border>(image);
+            if (border != null && border.LayoutTransform is ScaleTransform scale)
+            {
+                scale.SetCurrentValue(ScaleTransform.ScaleXProperty, newZoom);
+                scale.SetCurrentValue(ScaleTransform.ScaleYProperty, newZoom);
+            }
+
             sv.UpdateLayout();
 
-            sv.ScrollToHorizontalOffset(contentX * newZoom - mouseInSv.X);
-            sv.ScrollToVerticalOffset(contentY * newZoom - mouseInSv.Y);
+            var grid = sv.Content as UIElement;
+            if (grid == null) return;
+
+            var targetPointInGrid = image.TranslatePoint(mouseInImage, grid);
+
+            sv.ScrollToHorizontalOffset(targetPointInGrid.X - mouseInSv.X);
+            sv.ScrollToVerticalOffset(targetPointInGrid.Y - mouseInSv.Y);
         }
 
         // ── Pan start / move / end ────────────────────────────────────────
@@ -123,14 +138,29 @@ namespace Hexel.Controllers
 
             double cx = sv.ViewportWidth / 2.0;
             double cy = sv.ViewportHeight / 2.0;
-            double contentX = (sv.HorizontalOffset + cx) / oldZoom;
-            double contentY = (sv.VerticalOffset + cy) / oldZoom;
+
+            var image = _getCanvasImage();
+            var grid = sv.Content as UIElement;
+            if (grid == null || image == null) return;
+
+            Point centerInGrid = new Point(sv.HorizontalOffset + cx, sv.VerticalOffset + cy);
+            Point centerInImage = grid.TranslatePoint(centerInGrid, image);
 
             _zoomSlider.Value = newZoom;
+
+            var border = FindParent<Border>(image);
+            if (border != null && border.LayoutTransform is ScaleTransform scale)
+            {
+                scale.SetCurrentValue(ScaleTransform.ScaleXProperty, newZoom);
+                scale.SetCurrentValue(ScaleTransform.ScaleYProperty, newZoom);
+            }
+
             sv.UpdateLayout();
 
-            sv.ScrollToHorizontalOffset(contentX * newZoom - cx);
-            sv.ScrollToVerticalOffset(contentY * newZoom - cy);
+            Point targetPointInGrid = image.TranslatePoint(centerInImage, grid);
+
+            sv.ScrollToHorizontalOffset(targetPointInGrid.X - cx);
+            sv.ScrollToVerticalOffset(targetPointInGrid.Y - cy);
         }
 
         // ── Helpers ───────────────────────────────────────────────────────

@@ -385,17 +385,30 @@
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Background="{DynamicResource Theme.BackgroundBrush}">
-                <Border Background="{DynamicResource Theme.CanvasBackgroundBrush}"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
-                    <Border.LayoutTransform>
-                        <ScaleTransform ScaleX="{Binding ZoomLevel}"
-                                        ScaleY="{Binding ZoomLevel}" />
-                    </Border.LayoutTransform>
+                <Grid Background="Transparent">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2000" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="2000" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2000" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="2000" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <Border Grid.Row="1" Grid.Column="1"
+                            Background="{DynamicResource Theme.CanvasBackgroundBrush}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                        <Border.LayoutTransform>
+                            <ScaleTransform ScaleX="{Binding ZoomLevel}"
+                                            ScaleY="{Binding ZoomLevel}" />
+                        </Border.LayoutTransform>
 
-                    <Grid x:Name="PixelGridContainer" x:FieldModifier="public"
-                          Width="{Binding CanvasDisplayWidth}"
-                          Height="{Binding CanvasDisplayHeight}">
+                        <Grid x:Name="PixelGridContainer" x:FieldModifier="public"
+                              Width="{Binding CanvasDisplayWidth}"
+                              Height="{Binding CanvasDisplayHeight}">
 
                         <!-- Pixel bitmap -->
                         <Image x:Name="CanvasImage" x:FieldModifier="public"
@@ -483,7 +496,8 @@
                                   SnapsToDevicePixels="True" />
                         </Canvas>
                     </Grid>
-                </Border>
+                    </Border>
+                </Grid>
             </ScrollViewer>
         </Border>
 
