@@ -279,6 +279,8 @@ namespace Hexel.ViewModels
         private int _lastClickedX = NoPosition;
         private int _lastClickedY = NoPosition;
         private bool _pendingTextUpdateDuringDrag;
+        private bool _lastShiftDown;
+        private bool _lastAltDown;
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>
@@ -616,7 +618,7 @@ namespace Hexel.ViewModels
         /// Main entry point for all non-selection tool input from the View.
         /// Uses typed enums instead of the previous magic strings and bool? tri-state.
         /// </summary>
-        public void ProcessToolInput(int x, int y, ToolAction action, DrawMode mode, bool isShiftDown)
+        public void ProcessToolInput(int x, int y, ToolAction action, DrawMode mode, bool isShiftDown, bool isAltDown = false)
         {
             // Marquee and Lasso are handled entirely in the View via SelectionService
             if (CurrentTool == ToolMode.Marquee || CurrentTool == ToolMode.Lasso) return;
@@ -628,11 +630,11 @@ namespace Hexel.ViewModels
                     break;
 
                 case ToolAction.Move:
-                    HandleToolMove(x, y, mode);
+                    HandleToolMove(x, y, mode, isShiftDown, isAltDown);
                     break;
 
                 case ToolAction.Up:
-                    HandleToolUp();
+                    HandleToolUp(isShiftDown, isAltDown);
                     break;
             }
         }
@@ -787,36 +789,92 @@ namespace Hexel.ViewModels
             }
         }
 
-        private void HandleToolMove(int x, int y, DrawMode mode)
+        private (int x0, int y0, int x1, int y1) GetConstrainedShapeBounds(int startX, int startY, int currentX, int currentY, ToolMode tool, bool isShift, bool isAlt)
+        {
+            int targetX = currentX;
+            int targetY = currentY;
+
+            if (tool == ToolMode.Line)
+            {
+                if (isShift)
+                {
+                    double angle = Math.Atan2(targetY - startY, targetX - startX);
+                    angle = Math.Round(angle / (Math.PI / 12.0)) * (Math.PI / 12.0);
+                    double dist = Math.Sqrt(Math.Pow(targetX - startX, 2) + Math.Pow(targetY - startY, 2));
+                    targetX = startX + (int)Math.Round(Math.Cos(angle) * dist);
+                    targetY = startY + (int)Math.Round(Math.Sin(angle) * dist);
+                }
+
+                int x0 = startX;
+                int y0 = startY;
+                if (isAlt)
+                {
+                    x0 = 2 * startX - targetX;
+                    y0 = 2 * startY - targetY;
+                }
+                return (x0, y0, targetX, targetY);
+            }
+            else
+            {
+                if (isShift)
+                {
+                    int dx = currentX - startX;
+                    int dy = currentY - startY;
+                    int side = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                    targetX = startX + (dx >= 0 ? side : -side);
+                    targetY = startY + (dy >= 0 ? side : -side);
+                }
+
+                int x0 = startX;
+                int y0 = startY;
+                if (isAlt)
+                {
+                    x0 = 2 * startX - targetX;
+                    y0 = 2 * startY - targetY;
+                }
+                return (x0, y0, targetX, targetY);
+            }
+        }
+
+        private void HandleToolMove(int x, int y, DrawMode mode, bool isShiftDown, bool isAltDown)
         {
             bool newState = mode == DrawMode.Draw;
 
             switch (CurrentTool)
             {
                 case ToolMode.Line when IsDrawingLine:
-                    if (_lineCurrentX != x || _lineCurrentY != y)
+                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
                     {
                         _lineCurrentX = x;
                         _lineCurrentY = y;
-                        PreviewLine(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                        _lastShiftDown = isShiftDown;
+                        _lastAltDown = isAltDown;
+                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Line, isShiftDown, isAltDown);
+                        PreviewLine(x0, y0, x1, y1, _lineDrawState);
                     }
                     break;
 
                 case ToolMode.Rectangle when IsDrawingRectangle:
-                    if (_lineCurrentX != x || _lineCurrentY != y)
+                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
                     {
                         _lineCurrentX = x;
                         _lineCurrentY = y;
-                        PreviewRectangle(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                        _lastShiftDown = isShiftDown;
+                        _lastAltDown = isAltDown;
+                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Rectangle, isShiftDown, isAltDown);
+                        PreviewRectangle(x0, y0, x1, y1, _lineDrawState);
                     }
                     break;
 
                 case ToolMode.Ellipse when IsDrawingEllipse:
-                    if (_lineCurrentX != x || _lineCurrentY != y)
+                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
                     {
                         _lineCurrentX = x;
                         _lineCurrentY = y;
-                        PreviewEllipse(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
+                        _lastShiftDown = isShiftDown;
+                        _lastAltDown = isAltDown;
+                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Ellipse, isShiftDown, isAltDown);
+                        PreviewEllipse(x0, y0, x1, y1, _lineDrawState);
                     }
                     break;
 
@@ -835,7 +893,7 @@ namespace Hexel.ViewModels
             }
         }
 
-        private void HandleToolUp()
+        private void HandleToolUp(bool isShiftDown, bool isAltDown)
         {
             if (IsDrawingLine)
             {
@@ -843,9 +901,10 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
-                    _drawingService.DrawLine(SpriteState, _lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    _lastClickedX = _lineCurrentX;
-                    _lastClickedY = _lineCurrentY;
+                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Line, isShiftDown, isAltDown);
+                    _drawingService.DrawLine(SpriteState, x0, y0, x1, y1, _lineDrawState);
+                    _lastClickedX = x1;
+                    _lastClickedY = y1;
                     RedrawGridFromMemory();
                 }
                 ResetLineTracking();
@@ -858,9 +917,10 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
-                    _drawingService.DrawRectangle(SpriteState, _lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    _lastClickedX = _lineCurrentX;
-                    _lastClickedY = _lineCurrentY;
+                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Rectangle, isShiftDown, isAltDown);
+                    _drawingService.DrawRectangle(SpriteState, x0, y0, x1, y1, _lineDrawState);
+                    _lastClickedX = x1;
+                    _lastClickedY = y1;
                     RedrawGridFromMemory();
                 }
                 ResetLineTracking();
@@ -873,9 +933,10 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
-                    _drawingService.DrawEllipse(SpriteState, _lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    _lastClickedX = _lineCurrentX;
-                    _lastClickedY = _lineCurrentY;
+                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Ellipse, isShiftDown, isAltDown);
+                    _drawingService.DrawEllipse(SpriteState, x0, y0, x1, y1, _lineDrawState);
+                    _lastClickedX = x1;
+                    _lastClickedY = y1;
                     RedrawGridFromMemory();
                 }
                 ResetLineTracking();

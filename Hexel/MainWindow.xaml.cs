@@ -125,12 +125,12 @@ namespace Hexel
 
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
-                ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false);
+                ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                 _activeDrawMode = DrawMode.None;
             }
             else if (ViewModel.CurrentTool == ToolMode.Pencil)
             {
-                ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false);
+                ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false, false);
                 _activeDrawMode = DrawMode.None;
             }
 
@@ -152,6 +152,15 @@ namespace Hexel
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
+
+            if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
+            {
+                if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
+                {
+                    ViewModel.ProcessToolInput(ViewModel.CursorX, ViewModel.CursorY, ToolAction.Move, _activeDrawMode,
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
+                }
+            }
 
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
@@ -202,6 +211,21 @@ namespace Hexel
                 }
             }
         }
+
+        protected override void OnPreviewKeyUp(KeyEventArgs e)
+        {
+            base.OnPreviewKeyUp(e);
+
+            if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
+            {
+                if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
+                {
+                    ViewModel.ProcessToolInput(ViewModel.CursorX, ViewModel.CursorY, ToolAction.Move, _activeDrawMode,
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
+                }
+            }
+        }
+
 
         // ── Selection tool handling ───────────────────────────────────────
 
@@ -648,7 +672,7 @@ namespace Hexel
                     _lastHoveredX = x;
                     _lastHoveredY = y;
                     ViewModel.ProcessToolInput(x, y, ToolAction.Down, _activeDrawMode,
-                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                 }
             }
         }
@@ -703,7 +727,8 @@ namespace Hexel
 
                 if (mode != DrawMode.None || ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
                 {
-                    ViewModel.ProcessToolInput(x, y, ToolAction.Move, mode, false);
+                    ViewModel.ProcessToolInput(x, y, ToolAction.Move, mode,
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                 }
             }
         }
