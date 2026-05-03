@@ -16,6 +16,7 @@ namespace Hexel.ViewModels
         // ── Services ──────────────────────────────────────────────────────
         private readonly ICodeGeneratorService _codeGen;
         private readonly IDrawingService _drawingService;
+        public IDrawingService DrawingService => _drawingService;
         private readonly IHistoryService _historyService;
         private readonly ISelectionService _selectionService;
         private readonly IClipboardService _clipboardService;

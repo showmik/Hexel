@@ -1,4 +1,4 @@
-﻿namespace Hexel.Core
+namespace Hexel.Core
 {
     public enum ToolMode
     {
@@ -8,6 +8,7 @@
         Ellipse,
         Fill,
         Marquee,
-        Lasso
+        Lasso,
+        MagicWand
     }
 }

@@ -38,39 +38,90 @@ namespace Hexel.Services
         public event EventHandler? SelectionChanged;
         private void Notify() => SelectionChanged?.Invoke(this, EventArgs.Empty);
 
+        // ── State for Boolean Operations ──────────────────────────────────
+        private SelectionMode _currentMode = SelectionMode.Replace;
+        private bool[,]? _baseMask;
+        private int _baseMinX = -1, _baseMaxX = -1, _baseMinY = -1, _baseMaxY = -1;
+        private int _dragMinX = -1, _dragMaxX = -1, _dragMinY = -1, _dragMaxY = -1;
+
         // ── Building a selection ──────────────────────────────────────────
 
-        public void BeginRectangleSelection(int x, int y)
+        private void SnapshotBaseSelection()
+        {
+            if (!HasActiveSelection)
+            {
+                _baseMask = null;
+                _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
+                return;
+            }
+
+            _baseMinX = MinX;
+            _baseMaxX = MaxX;
+            _baseMinY = MinY;
+            _baseMaxY = MaxY;
+
+            if (Mask == null)
+            {
+                int w = MaxX - MinX + 1;
+                int h = MaxY - MinY + 1;
+                _baseMask = new bool[w, h];
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                        _baseMask[x, y] = true;
+            }
+            else
+            {
+                int w = Mask.GetLength(0);
+                int h = Mask.GetLength(1);
+                _baseMask = new bool[w, h];
+                Array.Copy(Mask, _baseMask, Mask.Length);
+            }
+        }
+
+        public void BeginRectangleSelection(int x, int y, SelectionMode mode = SelectionMode.Replace)
         {
             _anchorX = x;
             _anchorY = y;
-            MinX = MaxX = x;
-            MinY = MaxY = y;
-            Mask = null;
+            _currentMode = mode;
+            SnapshotBaseSelection();
+            
+            _dragMinX = _dragMaxX = x;
+            _dragMinY = _dragMaxY = y;
             _lassoPoints.Clear();
+            
             IsSelecting = true;
-            HasActiveSelection = false;
+            HasActiveSelection = mode != SelectionMode.Replace && _baseMask != null;
+            
+            RecomputeCombinedSelection();
             Notify();
         }
 
         public void UpdateRectangleSelection(int currentX, int currentY)
         {
-            MinX = Math.Min(_anchorX, currentX);
-            MaxX = Math.Max(_anchorX, currentX);
-            MinY = Math.Min(_anchorY, currentY);
-            MaxY = Math.Max(_anchorY, currentY);
+            _dragMinX = Math.Min(_anchorX, currentX);
+            _dragMaxX = Math.Max(_anchorX, currentX);
+            _dragMinY = Math.Min(_anchorY, currentY);
+            _dragMaxY = Math.Max(_anchorY, currentY);
+            
+            RecomputeCombinedSelection();
             Notify();
         }
 
-        public void BeginLassoSelection(int x, int y)
+        public void BeginLassoSelection(int x, int y, SelectionMode mode = SelectionMode.Replace)
         {
+            _currentMode = mode;
+            SnapshotBaseSelection();
+
             _lassoPoints.Clear();
             _lassoPoints.Add(new PixelPoint(x, y));
-            MinX = MaxX = x;
-            MinY = MaxY = y;
-            Mask = null;
+            
+            _dragMinX = _dragMaxX = x;
+            _dragMinY = _dragMaxY = y;
+            
             IsSelecting = true;
-            HasActiveSelection = false; // not active until FinalizeSelection
+            HasActiveSelection = mode != SelectionMode.Replace && _baseMask != null;
+            
+            RecomputeCombinedSelection();
             Notify();
         }
 
@@ -83,53 +134,161 @@ namespace Hexel.Services
             }
 
             _lassoPoints.Add(new PixelPoint(x, y));
-            MinX = Math.Min(MinX, x);
-            MaxX = Math.Max(MaxX, x);
-            MinY = Math.Min(MinY, y);
-            MaxY = Math.Max(MaxY, y);
+            _dragMinX = Math.Min(_dragMinX, x);
+            _dragMaxX = Math.Max(_dragMaxX, x);
+            _dragMinY = Math.Min(_dragMinY, y);
+            _dragMaxY = Math.Max(_dragMaxY, y);
+            
+            RecomputeCombinedSelection();
             Notify();
         }
 
-        /// <summary>
-        /// Called on mouse-up. Computes the per-pixel mask from the accumulated
-        /// lasso points and activates the selection.
-        /// </summary>
-        public void FinalizeSelection()
+        private void RecomputeCombinedSelection()
         {
-            // Marquee selection
-            if (_lassoPoints.Count == 0)
+            bool[,]? dragMask = null;
+
+            if (_lassoPoints.Count > 0)
             {
-                if (MinX == MaxX && MinY == MaxY)
+                if (_lassoPoints.Count >= 3)
+                {
+                    int w = _dragMaxX - _dragMinX + 1;
+                    int h = _dragMaxY - _dragMinY + 1;
+                    dragMask = new bool[w, h];
+                    for (int y = _dragMinY; y <= _dragMaxY; y++)
+                        for (int x = _dragMinX; x <= _dragMaxX; x++)
+                            dragMask[x - _dragMinX, y - _dragMinY] = IsPointInPolygon(x, y);
+                }
+                else
+                {
+                    dragMask = new bool[_dragMaxX - _dragMinX + 1, _dragMaxY - _dragMinY + 1];
+                }
+            }
+            else
+            {
+                int w = _dragMaxX - _dragMinX + 1;
+                int h = _dragMaxY - _dragMinY + 1;
+                dragMask = new bool[w, h];
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                        dragMask[x, y] = true;
+            }
+
+            if (_currentMode == SelectionMode.Replace)
+            {
+                MinX = _dragMinX; MaxX = _dragMaxX;
+                MinY = _dragMinY; MaxY = _dragMaxY;
+                if (_lassoPoints.Count == 0)
+                    Mask = null;
+                else
+                    Mask = dragMask;
+                return;
+            }
+
+            CombineWithBase(dragMask, _dragMinX, _dragMinY, _dragMaxX, _dragMaxY, _currentMode);
+        }
+
+        private void CombineWithBase(bool[,] newMask, int nMinX, int nMinY, int nMaxX, int nMaxY, SelectionMode mode)
+        {
+            if (_baseMask == null && mode != SelectionMode.Replace)
+            {
+                if (mode == SelectionMode.Add)
+                {
+                    MinX = nMinX; MaxX = nMaxX;
+                    MinY = nMinY; MaxY = nMaxY;
+                    Mask = newMask;
+                }
+                else
+                {
+                    MinX = MaxX = MinY = MaxY = -1;
+                    Mask = null;
+                }
+                return;
+            }
+
+            int minX = mode == SelectionMode.Intersect ? Math.Max(_baseMinX, nMinX) : Math.Min(_baseMinX, nMinX);
+            int maxX = mode == SelectionMode.Intersect ? Math.Min(_baseMaxX, nMaxX) : Math.Max(_baseMaxX, nMaxX);
+            int minY = mode == SelectionMode.Intersect ? Math.Max(_baseMinY, nMinY) : Math.Min(_baseMinY, nMinY);
+            int maxY = mode == SelectionMode.Intersect ? Math.Min(_baseMaxY, nMaxY) : Math.Max(_baseMaxY, nMaxY);
+
+            if (minX > maxX || minY > maxY)
+            {
+                MinX = MaxX = MinY = MaxY = -1;
+                Mask = null;
+                return;
+            }
+
+            int w = maxX - minX + 1;
+            int h = maxY - minY + 1;
+            bool[,] combined = new bool[w, h];
+            bool anyTrue = false;
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    bool inBase = false;
+                    if (x >= _baseMinX && x <= _baseMaxX && y >= _baseMinY && y <= _baseMaxY)
+                        inBase = _baseMask[x - _baseMinX, y - _baseMinY];
+
+                    bool inNew = false;
+                    if (x >= nMinX && x <= nMaxX && y >= nMinY && y <= nMaxY)
+                        inNew = newMask[x - nMinX, y - nMinY];
+
+                    bool result = false;
+                    switch (mode)
+                    {
+                        case SelectionMode.Add: result = inBase || inNew; break;
+                        case SelectionMode.Subtract: result = inBase && !inNew; break;
+                        case SelectionMode.Intersect: result = inBase && inNew; break;
+                    }
+
+                    combined[x - minX, y - minY] = result;
+                    if (result) anyTrue = true;
+                }
+            }
+
+            if (!anyTrue)
+            {
+                MinX = MaxX = MinY = MaxY = -1;
+                Mask = null;
+                return;
+            }
+
+            MinX = minX;
+            MaxX = maxX;
+            MinY = minY;
+            MaxY = maxY;
+            Mask = combined;
+            HasActiveSelection = true;
+        }
+
+        public void ApplyMask(bool[,] mask, int minX, int minY, int maxX, int maxY, SelectionMode mode)
+        {
+            if (mode == SelectionMode.Replace || (!HasActiveSelection && mode != SelectionMode.Add))
+            {
+                if (mode == SelectionMode.Intersect || mode == SelectionMode.Subtract)
                 {
                     Cancel();
                     return;
                 }
-                IsSelecting = false;
+                MinX = minX; MaxX = maxX;
+                MinY = minY; MaxY = maxY;
+                Mask = mask;
                 HasActiveSelection = true;
+                IsSelecting = false;
                 Notify();
                 return;
             }
 
-            // Lasso selection
-            if (_lassoPoints.Count < 3)
-            {
-                Cancel();
-                return;
-            }
+            SnapshotBaseSelection();
+            CombineWithBase(mask, minX, minY, maxX, maxY, mode);
+            IsSelecting = false;
+            Notify();
+        }
 
-            int w = MaxX - MinX + 1;
-            int h = MaxY - MinY + 1;
-            Mask = new bool[w, h];
-            bool anyTrue = false;
-
-            for (int y = MinY; y <= MaxY; y++)
-                for (int x = MinX; x <= MaxX; x++)
-                {
-                    Mask[x - MinX, y - MinY] = IsPointInPolygon(x, y);
-                    if (Mask[x - MinX, y - MinY]) anyTrue = true;
-                }
-
-            if (!anyTrue)
+        public void FinalizeSelection()
+        {
+            if (MinX == -1 || MaxX == -1 || MinY == -1 || MaxY == -1)
             {
                 Cancel();
                 return;
@@ -283,6 +442,11 @@ namespace Hexel.Services
             FloatingPixels = null;
             FloatingX = FloatingY = FloatingWidth = FloatingHeight = 0;
             _lassoPoints.Clear();
+
+            _baseMask = null;
+            _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
+            _dragMinX = _dragMaxX = _dragMinY = _dragMaxY = -1;
+
             Notify();
         }
 

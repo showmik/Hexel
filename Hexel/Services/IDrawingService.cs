@@ -12,5 +12,6 @@ namespace Hexel.Services
         void DrawEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState);
         void ShiftGrid(SpriteState state, int offsetX, int offsetY);
         void InvertGrid(SpriteState state);
+        bool[,] GetFloodFillMask(SpriteState state, int startX, int startY, out int minX, out int minY, out int maxX, out int maxY);
     }
 }

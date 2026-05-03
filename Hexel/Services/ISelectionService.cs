@@ -49,10 +49,10 @@ namespace Hexel.Services
         event EventHandler SelectionChanged;
 
         // ── Building a selection ──────────────────────────────────────────
-        void BeginRectangleSelection(int x, int y);
+        void BeginRectangleSelection(int x, int y, SelectionMode mode = SelectionMode.Replace);
         void UpdateRectangleSelection(int currentX, int currentY);
 
-        void BeginLassoSelection(int x, int y);
+        void BeginLassoSelection(int x, int y, SelectionMode mode = SelectionMode.Replace);
         void AddLassoPoint(int x, int y);
 
         /// <summary>
@@ -60,6 +60,8 @@ namespace Hexel.Services
         /// LassoPoints and marks the selection as active.
         /// </summary>
         void FinalizeSelection();
+        
+        void ApplyMask(bool[,] mask, int minX, int minY, int maxX, int maxY, SelectionMode mode);
 
         // ── Querying ──────────────────────────────────────────────────────
         /// <summary>Returns true if the pixel at (x, y) falls inside the active selection.</summary>

@@ -93,6 +93,7 @@ namespace Hexel
                 "Rectangle" => ToolMode.Rectangle,
                 "Ellipse" => ToolMode.Ellipse,
                 "Line" => ToolMode.Line,
+                "MagicWand" => ToolMode.MagicWand,
                 _ => ToolMode.Pencil
             };
 
@@ -137,7 +138,7 @@ namespace Hexel
             if (e.ChangedButton == MouseButton.Left)
             {
                 // Finalise a selection on mouse-up
-                if ((ViewModel.CurrentTool == ToolMode.Lasso || ViewModel.CurrentTool == ToolMode.Marquee) && _selection.IsSelecting)
+                if ((ViewModel.CurrentTool == ToolMode.Lasso || ViewModel.CurrentTool == ToolMode.Marquee || ViewModel.CurrentTool == ToolMode.MagicWand) && _selection.IsSelecting)
                     _selection.FinalizeSelection();
 
                 ReleaseDragCapture();
@@ -199,6 +200,7 @@ namespace Hexel
                     case Key.F: if (RbFill != null) RbFill.IsChecked = true; e.Handled = true; break;
                     case Key.M: if (RbMarquee != null) RbMarquee.IsChecked = true; e.Handled = true; break;
                     case Key.S: if (RbLasso != null) RbLasso.IsChecked = true; e.Handled = true; break;
+                    case Key.W: if (RbMagicWand != null) RbMagicWand.IsChecked = true; e.Handled = true; break;
 
                     case Key.OemOpenBrackets:  // '['
                         ViewModel.BrushSize--;
@@ -229,10 +231,20 @@ namespace Hexel
 
         // ── Selection tool handling ───────────────────────────────────────
 
+        private int _selectionAnchorX = -1;
+        private int _selectionAnchorY = -1;
+
         private void HandleSelectionDown(MouseButtonEventArgs e, int x, int y)
         {
+            Hexel.Core.SelectionMode mode = Hexel.Core.SelectionMode.Replace;
+            bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            bool alt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
 
-            if (_selection.HasActiveSelection && _selection.IsPixelInSelection(x, y))
+            if (shift && alt) mode = Hexel.Core.SelectionMode.Intersect;
+            else if (shift) mode = Hexel.Core.SelectionMode.Add;
+            else if (alt) mode = Hexel.Core.SelectionMode.Subtract;
+
+            if (_selection.HasActiveSelection && _selection.IsPixelInSelection(x, y) && mode == Hexel.Core.SelectionMode.Replace)
             {
                 // Click inside an existing selection → lift it into a floating layer and begin drag
                 ViewModel.SaveStateForUndo();
@@ -245,16 +257,43 @@ namespace Hexel
 
                 Mouse.Capture(PixelGridContainer);
                 ViewModel.RedrawGridFromMemory();
+                return;
+            }
+
+            // We are starting a new selection or adding/subtracting from an existing one
+            if (mode == Hexel.Core.SelectionMode.Replace)
+            {
+                CommitCurrentSelection();
+            }
+            else if (_selection.IsFloating)
+            {
+                // If adding/subtracting while floating, commit pixels but retain mask
+                var oldMask = _selection.Mask;
+                var oldMinX = _selection.MinX;
+                var oldMinY = _selection.MinY;
+                var oldMaxX = _selection.MaxX;
+                var oldMaxY = _selection.MaxY;
+                CommitCurrentSelection();
+                if (oldMinX != -1)
+                    _selection.ApplyMask(oldMask, oldMinX, oldMinY, oldMaxX, oldMaxY, Hexel.Core.SelectionMode.Replace);
+            }
+
+            if (ViewModel.CurrentTool == ToolMode.MagicWand)
+            {
+                ViewModel.SaveStateForUndo();
+                var fillMask = ViewModel.DrawingService.GetFloodFillMask(ViewModel.SpriteState, x, y, out int minX, out int minY, out int maxX, out int maxY);
+                _selection.ApplyMask(fillMask, minX, minY, maxX, maxY, mode);
+                ViewModel.RedrawGridFromMemory();
             }
             else
             {
-                // Click outside → commit any existing selection and start a new one
-                CommitCurrentSelection();
+                _selectionAnchorX = x;
+                _selectionAnchorY = y;
 
                 if (ViewModel.CurrentTool == ToolMode.Lasso)
-                    _selection.BeginLassoSelection(x, y);
+                    _selection.BeginLassoSelection(x, y, mode);
                 else
-                    _selection.BeginRectangleSelection(x, y);
+                    _selection.BeginRectangleSelection(x, y, mode);
             }
         }
 
@@ -263,9 +302,21 @@ namespace Hexel
             if (!_selection.IsSelecting) return;
 
             if (ViewModel.CurrentTool == ToolMode.Lasso)
+            {
                 _selection.AddLassoPoint(x, y);
+            }
             else
+            {
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && _selectionAnchorX != -1 && _selectionAnchorY != -1)
+                {
+                    int dx = x - _selectionAnchorX;
+                    int dy = y - _selectionAnchorY;
+                    int maxDist = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                    x = _selectionAnchorX + Math.Sign(dx) * maxDist;
+                    y = _selectionAnchorY + Math.Sign(dy) * maxDist;
+                }
                 _selection.UpdateRectangleSelection(x, y);
+            }
         }
 
         private void CommitCurrentSelection()
@@ -314,7 +365,7 @@ namespace Hexel
                 return;
             }
 
-            if (ViewModel.CurrentTool == ToolMode.Lasso)
+            if (_selection.Mask != null || ViewModel.CurrentTool == ToolMode.Lasso || ViewModel.CurrentTool == ToolMode.MagicWand)
                 UpdateLassoOverlay();
             else
                 UpdateMarqueeOverlay();
@@ -366,16 +417,23 @@ namespace Hexel
                 maskW = _selection.FloatingWidth;
                 maskH = _selection.FloatingHeight;
             }
-            else if (_selection.IsSelecting && !_selection.HasActiveSelection)
+            else if (_selection.HasActiveSelection || _selection.IsSelecting)
             {
-                // While the user is still drawing, just show the lasso polyline —
-                // computing a full pixel mask on every mouse move is far too expensive.
-                if (_selection.LassoPoints.Count < 2)
-                {
-                    ClearSelectionOverlays();
-                    return;
-                }
+                mask = _selection.Mask;
+                baseX = _selection.MinX;
+                baseY = _selection.MinY;
+                maskW = _selection.MaxX - _selection.MinX + 1;
+                maskH = _selection.MaxY - _selection.MinY + 1;
+            }
+            else
+            {
+                mask = null;
+                baseX = 0; baseY = 0; maskW = 0; maskH = 0;
+            }
+            var groupGeom = new GeometryGroup();
 
+            if (_selection.IsSelecting && _selection.LassoPoints.Count >= 2 && !_selection.HasActiveSelection)
+            {
                 var polyGeom = new StreamGeometry();
                 using (var ctx = polyGeom.Open())
                 {
@@ -389,94 +447,77 @@ namespace Hexel
                             isStroked: true, isSmoothJoin: false);
                 }
                 polyGeom.Freeze();
+                groupGeom.Children.Add(polyGeom);
+            }
 
-                LassoOverlay.Data = polyGeom;
-                LassoOverlay.Visibility = Visibility.Visible;
-                if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
-                return;
-            }
-            else if (_selection.Mask != null)
+            if (mask != null)
             {
-                mask = _selection.Mask;
-                baseX = _selection.MinX;
-                baseY = _selection.MinY;
-                maskW = _selection.MaxX - _selection.MinX + 1;
-                maskH = _selection.MaxY - _selection.MinY + 1;
+                var edgesByStart = new System.Collections.Generic.Dictionary<(int, int), System.Collections.Generic.List<(int, int)>>();
+
+                System.Action<int, int, int, int> addEdge = (x1, y1, x2, y2) =>
+                {
+                    if (!edgesByStart.TryGetValue((x1, y1), out var list))
+                    {
+                        list = new System.Collections.Generic.List<(int, int)>();
+                        edgesByStart[(x1, y1)] = list;
+                    }
+                    list.Add((x2, y2));
+                };
+
+                for (int y = 0; y < maskH; y++)
+                {
+                    for (int x = 0; x < maskW; x++)
+                    {
+                        if (mask[x, y])
+                        {
+                            if (y == 0 || !mask[x, y - 1]) addEdge(x, y, x + 1, y);
+                            if (y == maskH - 1 || !mask[x, y + 1]) addEdge(x + 1, y + 1, x, y + 1);
+                            if (x == 0 || !mask[x - 1, y]) addEdge(x, y + 1, x, y);
+                            if (x == maskW - 1 || !mask[x + 1, y]) addEdge(x + 1, y, x + 1, y + 1);
+                        }
+                    }
+                }
+
+                var maskGeom = new StreamGeometry();
+                using (var ctx = maskGeom.Open())
+                {
+                    while (edgesByStart.Count > 0)
+                    {
+                        var e = edgesByStart.GetEnumerator();
+                        e.MoveNext();
+                        var startNode = e.Current.Key;
+                        e.Dispose();
+
+                        ctx.BeginFigure(new Point((baseX + startNode.Item1) * cw, (baseY + startNode.Item2) * ch), isFilled: false, isClosed: true);
+
+                        var curr = startNode;
+                        while (true)
+                        {
+                            if (!edgesByStart.TryGetValue(curr, out var list) || list.Count == 0)
+                                break;
+
+                            var next = list[list.Count - 1];
+                            list.RemoveAt(list.Count - 1);
+                            if (list.Count == 0) edgesByStart.Remove(curr);
+
+                            ctx.LineTo(new Point((baseX + next.Item1) * cw, (baseY + next.Item2) * ch), isStroked: true, isSmoothJoin: false);
+                            curr = next;
+                            if (curr == startNode) break;
+                        }
+                    }
+                }
+                maskGeom.Freeze();
+                groupGeom.Children.Add(maskGeom);
             }
-            else
+
+            if (groupGeom.Children.Count == 0)
             {
                 ClearSelectionOverlays();
                 return;
             }
 
-            var edgesByStart = new System.Collections.Generic.Dictionary<(int, int), System.Collections.Generic.List<(int, int)>>();
-
-            System.Action<int, int, int, int> addEdge = (x1, y1, x2, y2) =>
-            {
-                var start = (x1, y1);
-                if (!edgesByStart.TryGetValue(start, out var list))
-                {
-                    list = new System.Collections.Generic.List<(int, int)>();
-                    edgesByStart[start] = list;
-                }
-                list.Add((x2, y2));
-            };
-
-            for (int fy = 0; fy < maskH; fy++)
-            {
-                for (int fx = 0; fx < maskW; fx++)
-                {
-                    if (mask[fx, fy])
-                    {
-                        if (fy == 0 || !mask[fx, fy - 1]) addEdge(fx, fy, fx + 1, fy);
-                        if (fx == maskW - 1 || !mask[fx + 1, fy]) addEdge(fx + 1, fy, fx + 1, fy + 1);
-                        if (fy == maskH - 1 || !mask[fx, fy + 1]) addEdge(fx + 1, fy + 1, fx, fy + 1);
-                        if (fx == 0 || !mask[fx - 1, fy]) addEdge(fx, fy + 1, fx, fy);
-                    }
-                }
-            }
-
-            var geom = new StreamGeometry { FillRule = FillRule.EvenOdd };
-            using (var ctx = geom.Open())
-            {
-                while (edgesByStart.Count > 0)
-                {
-                    var startPointEnum = edgesByStart.Keys.GetEnumerator();
-                    startPointEnum.MoveNext();
-                    var currentPoint = startPointEnum.Current;
-
-                    var startPt = new Point((baseX + currentPoint.Item1) * cw, (baseY + currentPoint.Item2) * ch);
-                    bool first = true;
-
-                    while (true)
-                    {
-                        if (!edgesByStart.TryGetValue(currentPoint, out var outEdges) || outEdges.Count == 0)
-                        {
-                            if (outEdges != null && outEdges.Count == 0) edgesByStart.Remove(currentPoint);
-                            break;
-                        }
-
-                        var target = outEdges[outEdges.Count - 1];
-                        outEdges.RemoveAt(outEdges.Count - 1);
-                        if (outEdges.Count == 0) edgesByStart.Remove(currentPoint);
-
-                        currentPoint = target;
-                        var pt = new Point((baseX + currentPoint.Item1) * cw, (baseY + currentPoint.Item2) * ch);
-
-                        if (first)
-                        {
-                            ctx.BeginFigure(startPt, isFilled: true, isClosed: true);
-                            first = false;
-                        }
-                        ctx.LineTo(pt, isStroked: true, isSmoothJoin: false);
-                    }
-                }
-            }
-            geom.Freeze();
-            Geometry finalGeom = geom;
-
-            LassoOverlay.Data = finalGeom;
-            LassoOverlay.Visibility = finalGeom != Geometry.Empty ? Visibility.Visible : Visibility.Hidden;
+            LassoOverlay.Data = groupGeom;
+            LassoOverlay.Visibility = Visibility.Visible;
             if (MarqueeOverlay != null) MarqueeOverlay.Visibility = Visibility.Hidden;
         }
 
@@ -654,7 +695,8 @@ namespace Hexel
                 var (x, y) = GetPixelCoordinates(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
 
                 if (ViewModel.CurrentTool == ToolMode.Marquee ||
-                    ViewModel.CurrentTool == ToolMode.Lasso)
+                    ViewModel.CurrentTool == ToolMode.Lasso ||
+                    ViewModel.CurrentTool == ToolMode.MagicWand)
                 {
                     // Clamp for selection tools which require in-bounds coordinates
                     int cx = Math.Clamp(x, 0, ViewModel.SpriteState.Width - 1);
@@ -711,7 +753,8 @@ namespace Hexel
                 _lastHoveredY = y;
 
                 if ((ViewModel.CurrentTool == ToolMode.Marquee ||
-                     ViewModel.CurrentTool == ToolMode.Lasso)
+                     ViewModel.CurrentTool == ToolMode.Lasso ||
+                     ViewModel.CurrentTool == ToolMode.MagicWand)
                     && e.LeftButton == MouseButtonState.Pressed)
                 {
                     // Clamp for selection tools which require in-bounds coordinates

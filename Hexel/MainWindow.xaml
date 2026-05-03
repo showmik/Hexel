@@ -211,6 +211,17 @@
                               Width="22"
                               Data="{StaticResource Icon.Lasso}" />
                     </RadioButton>
+                    <RadioButton x:Name="RbMagicWand"
+                                 Style="{StaticResource VerticalToolButtonStyle}"
+                                 GroupName="Tools"
+                                 Checked="Tool_Checked"
+                                 Tag="MagicWand"
+                                 ToolTip="Magic Wand (W)">
+                        <Path Style="{StaticResource StrokedToolIconStyle}"
+                              Height="22"
+                              Width="22"
+                              Data="{StaticResource Icon.MagicWand}" />
+                    </RadioButton>
                 </StackPanel>
             </Border>
 

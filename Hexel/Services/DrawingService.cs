@@ -35,6 +35,88 @@ namespace Hexel.Services
             }
         }
 
+        public bool[,] GetFloodFillMask(SpriteState state, int startX, int startY, out int minX, out int minY, out int maxX, out int maxY)
+        {
+            minX = startX;
+            minY = startY;
+            maxX = startX;
+            maxY = startY;
+
+            var mask = new bool[state.Width, state.Height];
+
+            if (startX < 0 || startX >= state.Width || startY < 0 || startY >= state.Height)
+                return mask;
+
+            int startIndex = (startY * state.Width) + startX;
+            bool targetState = state.Pixels[startIndex];
+
+            var queue = new Queue<int>();
+            queue.Enqueue(startIndex);
+            mask[startX, startY] = true;
+
+            while (queue.Count > 0)
+            {
+                int current = queue.Dequeue();
+                int x = current % state.Width;
+                int y = current / state.Width;
+
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+
+                if (x > 0)
+                {
+                    int idx = current - 1;
+                    if (state.Pixels[idx] == targetState && !mask[x - 1, y])
+                    {
+                        mask[x - 1, y] = true;
+                        queue.Enqueue(idx);
+                    }
+                }
+                if (x < state.Width - 1)
+                {
+                    int idx = current + 1;
+                    if (state.Pixels[idx] == targetState && !mask[x + 1, y])
+                    {
+                        mask[x + 1, y] = true;
+                        queue.Enqueue(idx);
+                    }
+                }
+                if (y > 0)
+                {
+                    int idx = current - state.Width;
+                    if (state.Pixels[idx] == targetState && !mask[x, y - 1])
+                    {
+                        mask[x, y - 1] = true;
+                        queue.Enqueue(idx);
+                    }
+                }
+                if (y < state.Height - 1)
+                {
+                    int idx = current + state.Width;
+                    if (state.Pixels[idx] == targetState && !mask[x, y + 1])
+                    {
+                        mask[x, y + 1] = true;
+                        queue.Enqueue(idx);
+                    }
+                }
+            }
+
+            int w = maxX - minX + 1;
+            int h = maxY - minY + 1;
+            var croppedMask = new bool[w, h];
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    croppedMask[x - minX, y - minY] = mask[x, y];
+                }
+            }
+
+            return croppedMask;
+        }
+
         // ── Brush stamp ───────────────────────────────────────────────────
 
         public void DrawBrushStamp(SpriteState state, int cx, int cy, int brushSize, bool newState)
