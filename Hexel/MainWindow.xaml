@@ -404,6 +404,7 @@
                             <!-- Preset dropdown -->
                             <ComboBox x:Name="PresetComboBox"
                                       Width="155"
+                                      Height="28"
                                       Style="{StaticResource ModernComboBoxStyle}"
                                       ItemsSource="{x:Static vm:MainViewModel.DisplayPresets}"
                                       SelectedItem="{Binding SelectedPreset}"
@@ -413,6 +414,7 @@
                             <!-- Width × Height inputs -->
                             <TextBox Text="{Binding InputWidth, UpdateSourceTrigger=PropertyChanged}"
                                      Width="40"
+                                     Height="28"
                                      Style="{StaticResource ModernTextBoxStyle}"
                                      Margin="0,0,4,0"
                                      ToolTip="Canvas width (Enter to resize)"
@@ -428,6 +430,7 @@
                                        Margin="0,0,4,0" />
                             <TextBox Text="{Binding InputHeight, UpdateSourceTrigger=PropertyChanged}"
                                      Width="40"
+                                     Height="28"
                                      Style="{StaticResource ModernTextBoxStyle}"
                                      Margin="0,0,10,0"
                                      ToolTip="Canvas height (Enter to resize)"
