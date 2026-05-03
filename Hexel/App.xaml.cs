@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Hexel.Services;
@@ -23,20 +23,18 @@ namespace Hexel
 
         private static void ConfigureServices(IServiceCollection services)
         {
-            // All singletons so state is shared across the app lifetime
+            // Shared services (stateless or app-wide)
             services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
             services.AddSingleton<IDrawingService, DrawingService>();
-            services.AddSingleton<IHistoryService, HistoryService>();
-            services.AddSingleton<ISelectionService, SelectionService>();
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IDialogService, DialogService>();
-            services.AddSingleton<IFileService, FileService>();
-            services.AddSingleton<MainViewModel>();
 
-            // MainWindow is transient (created once on startup, not pooled)
+            // ShellViewModel is the app-level VM that manages tabs
+            services.AddSingleton<ShellViewModel>();
+
+            // MainWindow is transient (created once on startup)
             services.AddTransient<MainWindow>(sp => new MainWindow(
-                sp.GetRequiredService<MainViewModel>(),
-                sp.GetRequiredService<ISelectionService>()));
+                sp.GetRequiredService<ShellViewModel>()));
         }
     }
 }

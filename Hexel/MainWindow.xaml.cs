@@ -13,8 +13,9 @@ namespace Hexel
     public partial class MainWindow : Window
     {
         // ── Dependencies ──────────────────────────────────────────────────
-        private ViewModels.MainViewModel ViewModel => (ViewModels.MainViewModel)DataContext;
-        private readonly ISelectionService _selection;
+        private readonly ViewModels.ShellViewModel _shell;
+        private ViewModels.MainViewModel? ViewModel => _shell.ActiveDocument;
+        private ISelectionService? _selection => ViewModel?.SelectionService;
 
         // ── Drag tracking (screen-space, belongs in the View) ─────────────
         private Point _dragStartMousePos;
@@ -42,26 +43,19 @@ namespace Hexel
         private Point _lastCanvasMousePos;
         private bool _isMouseOverCanvas;
 
+        // ── Currently-subscribed document (for event unwiring) ─────────────
+        private ViewModels.MainViewModel? _subscribedDoc;
+
         // ── Constructor ───────────────────────────────────────────────────
 
-        public MainWindow(ViewModels.MainViewModel vm, ISelectionService selection)
+        public MainWindow(ViewModels.ShellViewModel shell)
         {
             InitializeComponent();
-            DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
-            _selection = selection ?? throw new ArgumentNullException(nameof(selection));
+            _shell = shell ?? throw new ArgumentNullException(nameof(shell));
+            DataContext = _shell;
 
-            // When SelectionService state changes, redraw the overlays
-            _selection.SelectionChanged += (_, _) => UpdateSelectionOverlays();
-
-            // When Undo/Redo fires, cancel any in-progress overlays
-            vm.HistoryRestored += (_, _) =>
-            {
-                ClearSelectionOverlays();
-                ReleaseDragCapture();
-            };
-
-            // Replace the old blocking MessageBox "Copied!" with a status label
-            vm.CopyHexExecuted += (_, _) => ShowStatus("Copied to clipboard");
+            // Wire up tab change
+            _shell.ActiveTabChanged += (_, _) => OnActiveTabChanged();
 
             // Zoom keyboard shortcuts: Ctrl+Plus, Ctrl+Minus, Ctrl+0
             CommandBindings.Add(new CommandBinding(NavigationCommands.IncreaseZoom,
@@ -71,12 +65,67 @@ namespace Hexel
             CommandBindings.Add(new CommandBinding(NavigationCommands.Zoom,
                 (_, _) => ZoomSlider.Value = 1.0));
 
-            // Refresh brush cursor immediately when BrushSize changes (keyboard, slider, etc.)
-            vm.PropertyChanged += (_, args) =>
+            // Wire the initial document
+            OnActiveTabChanged();
+        }
+
+        private void OnActiveTabChanged()
+        {
+            // Unwire previous document
+            if (_subscribedDoc != null)
             {
-                if (args.PropertyName == nameof(vm.BrushSize))
-                    RefreshBrushCursor();
-            };
+                _subscribedDoc.HistoryRestored -= OnHistoryRestored;
+                _subscribedDoc.CopyHexExecuted -= OnCopyHexExecuted;
+                _subscribedDoc.PropertyChanged -= OnDocPropertyChanged;
+                if (_subscribedDoc.SelectionService != null)
+                    _subscribedDoc.SelectionService.SelectionChanged -= OnSelectionChanged;
+            }
+
+            _subscribedDoc = ViewModel;
+
+            // Wire new document
+            if (_subscribedDoc != null)
+            {
+                _subscribedDoc.HistoryRestored += OnHistoryRestored;
+                _subscribedDoc.CopyHexExecuted += OnCopyHexExecuted;
+                _subscribedDoc.PropertyChanged += OnDocPropertyChanged;
+                if (_subscribedDoc.SelectionService != null)
+                    _subscribedDoc.SelectionService.SelectionChanged += OnSelectionChanged;
+            }
+
+            ClearSelectionOverlays();
+            HideBrushCursor();
+        }
+
+        private void OnHistoryRestored(object? s, EventArgs e)
+        {
+            ClearSelectionOverlays();
+            ReleaseDragCapture();
+        }
+        private void OnCopyHexExecuted(object? s, EventArgs e) => ShowStatus("Copied to clipboard");
+        private void OnSelectionChanged(object? s, EventArgs e) => UpdateSelectionOverlays();
+        private void OnDocPropertyChanged(object? s, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModels.MainViewModel.BrushSize))
+                RefreshBrushCursor();
+        }
+
+        // ── Tab bar event handlers ────────────────────────────────────────
+
+        private void Tab_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is ViewModels.MainViewModel doc)
+            {
+                _shell.ActiveDocument = doc;
+            }
+        }
+
+        private void TabClose_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is ViewModels.MainViewModel doc)
+            {
+                _shell.CloseTabCommand.Execute(doc);
+            }
         }
 
         // ── Tool selection ────────────────────────────────────────────────
@@ -122,6 +171,8 @@ namespace Hexel
         {
             base.OnPreviewMouseMove(e);
 
+            if (ViewModel == null || _selection == null) return;
+
             // Update floating layer position during drag
             if (_selection.IsDragging && e.LeftButton == MouseButtonState.Pressed)
                 UpdateDragPosition(e.GetPosition(PixelGridContainer));
@@ -130,6 +181,8 @@ namespace Hexel
         protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
         {
             base.OnPreviewMouseUp(e);
+
+            if (ViewModel == null || _selection == null) return;
 
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
                 ViewModel.IsDrawingFilledRectangle || ViewModel.IsDrawingFilledEllipse)
@@ -164,6 +217,8 @@ namespace Hexel
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
+
+            if (ViewModel == null || _selection == null) return;
 
             if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
             {
@@ -239,6 +294,8 @@ namespace Hexel
         protected override void OnPreviewKeyUp(KeyEventArgs e)
         {
             base.OnPreviewKeyUp(e);
+
+            if (ViewModel == null || _selection == null) return;
 
             if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
             {
@@ -420,7 +477,7 @@ namespace Hexel
 
         private void UpdateLassoOverlay()
         {
-            if (LassoOverlay == null) return;
+            if (LassoOverlay == null || ViewModel == null) return;
 
             double gw = PixelGridContainer.ActualWidth > 0 ? PixelGridContainer.ActualWidth : 400.0;
             double gh = PixelGridContainer.ActualHeight > 0 ? PixelGridContainer.ActualHeight : 400.0;
@@ -548,10 +605,10 @@ namespace Hexel
         // ── Brush size buttons ───────────────────────────────────────────
 
         private void BtnBrushDown_Click(object sender, RoutedEventArgs e)
-            => ViewModel.BrushSize--;
+        { if (ViewModel != null) ViewModel.BrushSize--; }
 
         private void BtnBrushUp_Click(object sender, RoutedEventArgs e)
-            => ViewModel.BrushSize++;
+        { if (ViewModel != null) ViewModel.BrushSize++; }
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
@@ -682,6 +739,8 @@ namespace Hexel
                 }
             }
 
+            if (ViewModel == null || _selection == null) return;
+
             if (e.ChangedButton == MouseButton.Left && e.OriginalSource is not Image)
             {
                 // Clicked outside the canvas in the empty viewer space
@@ -745,6 +804,8 @@ namespace Hexel
             _lastCanvasMousePos = pos;
             _isMouseOverCanvas = pos.X >= 0 && pos.X <= image.ActualWidth &&
                                  pos.Y >= 0 && pos.Y <= image.ActualHeight;
+
+            if (ViewModel == null || _selection == null) return;
 
             ViewModel.CursorX = x;
             ViewModel.CursorY = y;
@@ -812,76 +873,15 @@ namespace Hexel
             _statusTimer.Start();
         }
 
-        // ── Canvas size input helpers ─────────────────────────────────────
 
-        private void CanvasInput_GotFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            // Highlight existing text rather than deleting it, so a mis-click doesn't
-            // instantly wipe the value.
-            if (sender is TextBox tb) tb.SelectAll();
-        }
 
-        private void CanvasInput_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is TextBox tb && !tb.IsKeyboardFocusWithin)
-            {
-                e.Handled = true;
-                tb.Focus();
-            }
-        }
-
-        private void CanvasInput_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (ViewModel == null) return;
-            if (!int.TryParse(ViewModel.InputWidth, out int w) || w <= 0)
-                ViewModel.InputWidth = (ViewModel.SpriteState?.Width ?? 16).ToString();
-            if (!int.TryParse(ViewModel.InputHeight, out int h) || h <= 0)
-                ViewModel.InputHeight = (ViewModel.SpriteState?.Height ?? 16).ToString();
-        }
-
-        private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
-        }
-
-        private void TextBoxPasting(object sender, DataObjectPastingEventArgs e)
-        {
-            if (e.DataObject.GetDataPresent(typeof(string)) &&
-                Regex.IsMatch((string)e.DataObject.GetData(typeof(string))!, "[^0-9]+"))
-                e.CancelCommand();
-            else if (!e.DataObject.GetDataPresent(typeof(string)))
-                e.CancelCommand();
-        }
-
-        // ── Canvas input: Enter key commits ─────────────────────────────
-
-        private void CanvasInput_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter && e.Key != Key.Return) return;
-
-            // Move focus away so LostFocus validation fires, then execute resize
-            Keyboard.ClearFocus();
-            if (ViewModel?.ResizeCanvasCommand?.CanExecute(null) == true)
-                ViewModel.ResizeCanvasCommand.Execute(null);
-
-            e.Handled = true;
-        }
-
-        // ── Anchor grid handler ──────────────────────────────────────────
-
-        private void AnchorButton_Checked(object sender, RoutedEventArgs e)
-        {
-            if (sender is not System.Windows.Controls.RadioButton rb || rb.Tag is not string tagStr) return;
-            if (ViewModel == null) return;
-
-            if (Enum.TryParse<Hexel.Core.ResizeAnchor>(tagStr, out var anchor))
-                ViewModel.ResizeAnchor = anchor;
-        }
 
         // ── Utility ───────────────────────────────────────────────────────
 
         private (int x, int y) GetPixelCoordinates(Point pos, double actualWidth, double actualHeight)
         {
+            if (ViewModel == null) return (0, 0);
+
             int w = ViewModel.SpriteState.Width;
             int h = ViewModel.SpriteState.Height;
             if (actualWidth == 0 || actualHeight == 0) return (0, 0);

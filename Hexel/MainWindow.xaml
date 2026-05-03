@@ -15,10 +15,25 @@
     <Window.InputBindings>
         <KeyBinding Key="Z"
                     Modifiers="Ctrl"
-                    Command="{Binding UndoCommand}" />
+                    Command="{Binding ActiveDocument.UndoCommand}" />
         <KeyBinding Key="Y"
                     Modifiers="Ctrl"
-                    Command="{Binding RedoCommand}" />
+                    Command="{Binding ActiveDocument.RedoCommand}" />
+        <KeyBinding Key="S"
+                    Modifiers="Ctrl"
+                    Command="{Binding SaveCommand}" />
+        <KeyBinding Key="S"
+                    Modifiers="Ctrl+Shift"
+                    Command="{Binding SaveAsCommand}" />
+        <KeyBinding Key="N"
+                    Modifiers="Ctrl"
+                    Command="{Binding NewCanvasCommand}" />
+        <KeyBinding Key="O"
+                    Modifiers="Ctrl"
+                    Command="{Binding OpenCommand}" />
+        <KeyBinding Key="W"
+                    Modifiers="Ctrl"
+                    Command="{Binding CloseTabCommand}" />
         <KeyBinding Key="OemPlus"
                     Modifiers="Ctrl"
                     Command="{x:Static NavigationCommands.IncreaseZoom}" />
@@ -33,6 +48,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -44,40 +60,53 @@
             <!-- ── File ── -->
             <MenuItem Header="_File">
                 <MenuItem Header="_New Canvas"
-                          Command="{Binding NewCanvasCommand}" />
-                <MenuItem Header="_Resize Canvas"
-                          Command="{Binding ResizeCanvasCommand}" />
+                          Command="{Binding NewCanvasCommand}"
+                          InputGestureText="Ctrl+N" />
+                <MenuItem Header="_Open"
+                          Command="{Binding OpenCommand}"
+                          InputGestureText="Ctrl+O" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Save"
                           Command="{Binding SaveCommand}"
                           InputGestureText="Ctrl+S" />
-                <MenuItem Header="_Load"
-                          Command="{Binding LoadCommand}" />
+                <MenuItem Header="Save _As..."
+                          Command="{Binding SaveAsCommand}"
+                          InputGestureText="Ctrl+Shift+S" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem Header="_Close Tab"
+                          Command="{Binding CloseTabCommand}"
+                          InputGestureText="Ctrl+W" />
             </MenuItem>
 
             <!-- ── Edit ── -->
             <MenuItem Header="_Edit">
                 <MenuItem Header="_Undo"
-                          Command="{Binding UndoCommand}"
+                          Command="{Binding ActiveDocument.UndoCommand}"
                           InputGestureText="Ctrl+Z" />
                 <MenuItem Header="_Redo"
-                          Command="{Binding RedoCommand}"
+                          Command="{Binding ActiveDocument.RedoCommand}"
                           InputGestureText="Ctrl+Y" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Invert"
-                          Command="{Binding InvertCommand}" />
+                          Command="{Binding ActiveDocument.InvertCommand}" />
                 <MenuItem Header="_Clear Canvas"
-                          Command="{Binding ClearCommand}" />
+                          Command="{Binding ActiveDocument.ClearCommand}" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Copy _HEX"
-                          Command="{Binding CopyHexCommand}" />
+                          Command="{Binding ActiveDocument.CopyHexCommand}" />
+            </MenuItem>
+
+            <!-- ── Image ── -->
+            <MenuItem Header="_Image">
+                <MenuItem Header="Canvas _Size..."
+                          Command="{Binding ResizeCanvasCommand}" />
             </MenuItem>
 
             <!-- ── View ── -->
             <MenuItem Header="_View">
                 <MenuItem Header="Show _Grid"
                           IsCheckable="True"
-                          IsChecked="{Binding ShowGridLines}" />
+                          IsChecked="{Binding ActiveDocument.ShowGridLines}" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Zoom _In"
                           Command="{x:Static NavigationCommands.IncreaseZoom}"
@@ -93,15 +122,149 @@
             <!-- ── Selection ── -->
             <MenuItem Header="_Selection">
                 <MenuItem Header="_Delete Selection"
-                          Command="{Binding DeleteSelectionCommand}"
+                          Command="{Binding ActiveDocument.DeleteSelectionCommand}"
                           InputGestureText="Del" />
             </MenuItem>
         </Menu>
 
         <!-- ═══════════════════════════════════════════════════════════════
+             TAB BAR
+             ═══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource Theme.MenuBarBackgroundBrush}"
+                BorderBrush="{DynamicResource Theme.SeparatorBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="4,0">
+            <StackPanel Orientation="Horizontal">
+                <ItemsControl ItemsSource="{Binding OpenDocuments}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="TabBorder"
+                                    Padding="10,6"
+                                    Margin="0,4,2,4"
+                                    CornerRadius="6"
+                                    Cursor="Hand"
+                                    MouseLeftButtonDown="Tab_MouseLeftButtonDown">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource Theme.ToolSidebarActiveBrush}" />
+                                            </DataTrigger>
+                                            <MultiTrigger>
+                                                <MultiTrigger.Conditions>
+                                                    <Condition Property="IsMouseOver" Value="True" />
+                                                </MultiTrigger.Conditions>
+                                                <Setter Property="Background" Value="{DynamicResource Theme.MenuItemHoverBrush}" />
+                                            </MultiTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Title}"
+                                               Foreground="{DynamicResource Theme.TextMainBrush}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Margin="0,0,8,0" />
+                                    <Button Content="✕"
+                                            FontSize="10"
+                                            Padding="2,0"
+                                            MinWidth="16" MinHeight="16"
+                                            VerticalAlignment="Center"
+                                            Cursor="Hand"
+                                            Click="TabClose_Click"
+                                            Tag="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="{DynamicResource Theme.TextMutedBrush}" />
+                                                <Setter Property="BorderThickness" Value="0" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    CornerRadius="3"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource Theme.DangerBrush}" />
+                                                        <Setter Property="Foreground" Value="White" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- New tab button -->
+                <Button Content="+"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Padding="8,4"
+                        Margin="4,4"
+                        VerticalAlignment="Center"
+                        Command="{Binding NewCanvasCommand}"
+                        ToolTip="New canvas (Ctrl+N)">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.TextMutedBrush}" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="6"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource Theme.MenuItemHoverBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource Theme.TextMainBrush}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════════════
              MAIN CONTENT AREA
              ═══════════════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2"
+              DataContext="{Binding ActiveDocument}">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -430,136 +593,8 @@
                                        FontStyle="Italic" />
                         </StackPanel>
 
-                        <!-- Canvas resize panel -->
-                        <StackPanel Orientation="Horizontal"
-                                    Grid.Column="2"
-                                    VerticalAlignment="Center">
 
-                            <!-- CANVAS label -->
-                            <TextBlock Text="CANVAS"
-                                       Style="{StaticResource HeaderStyle}"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,10,0"
-                                       FontSize="11" />
 
-                            <!-- Preset dropdown -->
-                            <ComboBox x:Name="PresetComboBox"
-                                      Width="155"
-                                      Height="28"
-                                      Style="{StaticResource ModernComboBoxStyle}"
-                                      ItemsSource="{x:Static vm:MainViewModel.DisplayPresets}"
-                                      SelectedItem="{Binding SelectedPreset}"
-                                      ToolTip="Display size preset"
-                                      Margin="0,0,10,0" />
-
-                            <!-- Width × Height inputs -->
-                            <TextBox Text="{Binding InputWidth, UpdateSourceTrigger=PropertyChanged}"
-                                     Width="40"
-                                     Height="28"
-                                     Style="{StaticResource ModernTextBoxStyle}"
-                                     Margin="0,0,4,0"
-                                     ToolTip="Canvas width (Enter to resize)"
-                                     GotKeyboardFocus="CanvasInput_GotFocus"
-                                     PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
-                                     LostFocus="CanvasInput_LostFocus"
-                                     KeyDown="CanvasInput_KeyDown"
-                                     PreviewTextInput="NumberValidationTextBox"
-                                     DataObject.Pasting="TextBoxPasting" />
-                            <TextBlock Text="×"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                       Margin="0,0,4,0" />
-                            <TextBox Text="{Binding InputHeight, UpdateSourceTrigger=PropertyChanged}"
-                                     Width="40"
-                                     Height="28"
-                                     Style="{StaticResource ModernTextBoxStyle}"
-                                     Margin="0,0,10,0"
-                                     ToolTip="Canvas height (Enter to resize)"
-                                     GotKeyboardFocus="CanvasInput_GotFocus"
-                                     PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
-                                     LostFocus="CanvasInput_LostFocus"
-                                     KeyDown="CanvasInput_KeyDown"
-                                     PreviewTextInput="NumberValidationTextBox"
-                                     DataObject.Pasting="TextBoxPasting" />
-
-                            <!-- 3×3 Anchor grid -->
-                            <Border Background="{DynamicResource Theme.BackgroundBrush}"
-                                    CornerRadius="4"
-                                    Padding="2"
-                                    Margin="0,0,10,0"
-                                    VerticalAlignment="Center"
-                                    ToolTip="Resize anchor — where existing content is pinned">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Row 0 -->
-                                    <RadioButton Grid.Row="0" Grid.Column="0" GroupName="AnchorGrid"
-                                                 Tag="TopLeft" IsChecked="True"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-                                    <RadioButton Grid.Row="0" Grid.Column="1" GroupName="AnchorGrid"
-                                                 Tag="TopCenter"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-                                    <RadioButton Grid.Row="0" Grid.Column="2" GroupName="AnchorGrid"
-                                                 Tag="TopRight"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-
-                                    <!-- Row 1 -->
-                                    <RadioButton Grid.Row="1" Grid.Column="0" GroupName="AnchorGrid"
-                                                 Tag="CenterLeft"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-                                    <RadioButton Grid.Row="1" Grid.Column="1" GroupName="AnchorGrid"
-                                                 Tag="Center"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-                                    <RadioButton Grid.Row="1" Grid.Column="2" GroupName="AnchorGrid"
-                                                 Tag="CenterRight"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-
-                                    <!-- Row 2 -->
-                                    <RadioButton Grid.Row="2" Grid.Column="0" GroupName="AnchorGrid"
-                                                 Tag="BottomLeft"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-                                    <RadioButton Grid.Row="2" Grid.Column="1" GroupName="AnchorGrid"
-                                                 Tag="BottomCenter"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-                                    <RadioButton Grid.Row="2" Grid.Column="2" GroupName="AnchorGrid"
-                                                 Tag="BottomRight"
-                                                 Style="{StaticResource AnchorDotStyle}"
-                                                 Checked="AnchorButton_Checked" />
-                                </Grid>
-                            </Border>
-
-                            <!-- Action buttons -->
-                            <Button Content="Resize"
-                                    Height="28"
-                                    Padding="10,0"
-                                    Margin="0,0,4,0"
-                                    Style="{StaticResource ModernButtonStyle}"
-                                    Command="{Binding ResizeCanvasCommand}"
-                                    ToolTip="Resize canvas, preserving existing pixel art at the chosen anchor" />
-                            <Button Content="New"
-                                    Height="28"
-                                    Padding="10,0"
-                                    Style="{StaticResource ModernButtonStyle}"
-                                    Command="{Binding NewCanvasCommand}"
-                                    ToolTip="Create a new blank canvas at the specified dimensions" />
-                        </StackPanel>
 
                         <Rectangle Grid.Column="3"
                                    Width="2"
@@ -948,8 +983,18 @@
         <!-- ═══════════════════════════════════════════════════════════════
              STATUS BAR
              ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="2"
-                Style="{StaticResource StatusBarPanel}">
+        <Border Grid.Row="3"
+                DataContext="{Binding ActiveDocument}">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource StatusBarPanel}">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -998,5 +1043,46 @@
                        Padding="0" />
             </Grid>
         </Border>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             EMPTY WORKSPACE STATE
+             ═══════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2" Grid.RowSpan="2">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasOpenDocument}" Value="False">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="&#xE131;" 
+                           FontFamily="Segoe MDL2 Assets" 
+                           FontSize="48" 
+                           Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,0,0,16" />
+                <TextBlock Text="No Document Open" 
+                           FontSize="20" 
+                           FontWeight="Bold" 
+                           Foreground="{DynamicResource Theme.TextMainBrush}" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,0,0,8" />
+                <TextBlock Text="Press Ctrl+N to create a new canvas, or Ctrl+O to open a file." 
+                           Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                           HorizontalAlignment="Center" />
+                <Button Content="New Canvas" 
+                        Command="{Binding NewCanvasCommand}" 
+                        Margin="0,24,0,0" 
+                        HorizontalAlignment="Center" 
+                        Padding="24,10" 
+                        Style="{StaticResource ModernButtonStyle}" />
+            </StackPanel>
+        </Grid>
+
     </Grid>
 </Window>

@@ -4,6 +4,7 @@ using Hexel.Core;
 using Hexel.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -18,65 +19,45 @@ namespace Hexel.ViewModels
         private readonly IDrawingService _drawingService;
         public IDrawingService DrawingService => _drawingService;
         private readonly IHistoryService _historyService;
+        public IHistoryService HistoryService => _historyService;
         private readonly ISelectionService _selectionService;
+        public ISelectionService SelectionService => _selectionService;
         private readonly IClipboardService _clipboardService;
         private readonly IDialogService _dialogService;
         private readonly IFileService _fileService;
         private readonly SynchronizationContext _uiContext;
 
-        // ── Canvas size input ─────────────────────────────────────────────
-        private string _inputWidth = "16";
-        private string _inputHeight = "16";
-        private bool _isApplyingPreset; // prevents circular reset of SelectedPreset
-
-        public string InputWidth
+        // ── Document identity ─────────────────────────────────────────────
+        private string? _filePath;
+        public string? FilePath
         {
-            get => _inputWidth;
-            set
-            {
-                if (!SetProperty(ref _inputWidth, value)) return;
-                // Manual edit → drop preset to Custom
-                if (!_isApplyingPreset && _selectedPreset != "Custom")
-                {
-                    _selectedPreset = "Custom";
-                    OnPropertyChanged(nameof(SelectedPreset));
-                }
-            }
-        }
-        public string InputHeight
-        {
-            get => _inputHeight;
-            set
-            {
-                if (!SetProperty(ref _inputHeight, value)) return;
-                if (!_isApplyingPreset && _selectedPreset != "Custom")
-                {
-                    _selectedPreset = "Custom";
-                    OnPropertyChanged(nameof(SelectedPreset));
-                }
-            }
+            get => _filePath;
+            set { if (SetProperty(ref _filePath, value)) OnPropertyChanged(nameof(Title)); }
         }
 
-        // ── Resize anchor ─────────────────────────────────────────────────
-        private ResizeAnchor _resizeAnchor = ResizeAnchor.TopLeft;
-        public ResizeAnchor ResizeAnchor
+        private bool _isDirty;
+        public bool IsDirty
         {
-            get => _resizeAnchor;
-            set => SetProperty(ref _resizeAnchor, value);
+            get => _isDirty;
+            set { if (SetProperty(ref _isDirty, value)) OnPropertyChanged(nameof(Title)); }
         }
 
-        // ── Display preset ────────────────────────────────────────────────
-        private string _selectedPreset = "Custom";
-        public string SelectedPreset
+        public string Title => IsDirty
+            ? $"*{DisplayName}"
+            : DisplayName;
+
+        private string DisplayName => FilePath != null
+            ? Path.GetFileNameWithoutExtension(FilePath)
+            : "Untitled";
+
+        private bool _isActive;
+        public bool IsActive
         {
-            get => _selectedPreset;
-            set
-            {
-                if (!SetProperty(ref _selectedPreset, value) || value == "Custom") return;
-                if (ApplyPresetCommand == null) return; // not yet initialized during construction
-                ApplyPresetCommand.Execute(value);
-            }
+            get => _isActive;
+            set => SetProperty(ref _isActive, value);
         }
+
+        // ── Display preset (static, shared with dialogs) ──────────────────
 
         /// <summary>
         /// Common OLED/embedded display presets. Each entry is "Label|WxH".
@@ -293,17 +274,12 @@ namespace Hexel.ViewModels
         public event EventHandler? HistoryRestored;
 
         // ── Commands ──────────────────────────────────────────────────────
-        public IRelayCommand NewCanvasCommand { get; }
-        public IRelayCommand ResizeCanvasCommand { get; }
-        public IRelayCommand<string> ApplyPresetCommand { get; }
         public IRelayCommand UndoCommand { get; }
         public IRelayCommand RedoCommand { get; }
         public IRelayCommand ClearCommand { get; }
         public IRelayCommand InvertCommand { get; }
         public IRelayCommand DeleteSelectionCommand { get; }
         public IRelayCommand CopyHexCommand { get; }
-        public IRelayCommand SaveCommand { get; }
-        public IRelayCommand LoadCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
@@ -326,58 +302,6 @@ namespace Hexel.ViewModels
 
             // ── Commands ──────────────────────────────────────────────────
 
-            NewCanvasCommand = new RelayCommand(() =>
-            {
-                if (!int.TryParse(InputWidth, out int w) || w <= 0 ||
-                    !int.TryParse(InputHeight, out int h) || h <= 0)
-                {
-                    InputWidth = (SpriteState?.Width ?? 16).ToString();
-                    InputHeight = (SpriteState?.Height ?? 16).ToString();
-                    return;
-                }
-
-                // Guard against crash-inducing sizes
-                if (w > SpriteState.MaxDimension || h > SpriteState.MaxDimension)
-                {
-                    _dialogService.ShowMessage(
-                        $"Maximum canvas size is {SpriteState.MaxDimension}×{SpriteState.MaxDimension}.");
-                    return;
-                }
-
-                InitializeGrid(w, h);
-            });
-
-            SaveCommand = new RelayCommand(() =>
-            {
-                try { _fileService.SaveSprite(SpriteState); }
-                catch (Exception ex) { _dialogService.ShowMessage($"Error saving: {ex.Message}"); }
-            });
-
-            LoadCommand = new RelayCommand(() =>
-            {
-                try
-                {
-                    var loaded = _fileService.LoadSprite();
-                    if (loaded?.Pixels == null) return;
-
-                    _historyService.SaveState(SpriteState);
-
-                    if (InputWidth != loaded.Width.ToString() ||
-                        InputHeight != loaded.Height.ToString())
-                    {
-                        InputWidth = loaded.Width.ToString();
-                        InputHeight = loaded.Height.ToString();
-                        InitializeGrid(loaded.Width, loaded.Height);
-                    }
-
-                    SpriteState.Pixels = (bool[])loaded.Pixels.Clone();
-                    IsDisplayInverted = loaded.IsDisplayInverted;
-                    RedrawGridFromMemory();
-                    UpdateTextOutputs();
-                }
-                catch (Exception ex) { _dialogService.ShowMessage($"Error loading: {ex.Message}"); }
-            });
-
             // CopyHexCommand no longer shows a blocking MessageBox — the View
             // shows a non-modal status message instead via the CopyHexExecuted event.
             CopyHexCommand = new RelayCommand(() =>
@@ -392,6 +316,7 @@ namespace Hexel.ViewModels
             ClearCommand = new RelayCommand(() =>
             {
                 _historyService.SaveState(SpriteState);
+                IsDirty = true;
                 Array.Clear(SpriteState.Pixels, 0, SpriteState.Pixels.Length);
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
@@ -399,9 +324,10 @@ namespace Hexel.ViewModels
 
             InvertCommand = new RelayCommand(() =>
             {
-                _historyService.SaveState(SpriteState);   // saves IsDisplayInverted = current value
+                _historyService.SaveState(SpriteState);
+                IsDirty = true;
                 _drawingService.InvertGrid(SpriteState);
-                IsDisplayInverted = !IsDisplayInverted;   // setter keeps SpriteState in sync
+                IsDisplayInverted = !IsDisplayInverted;
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
             });
@@ -415,52 +341,8 @@ namespace Hexel.ViewModels
                 UpdateTextOutputs();
             });
 
-            ResizeCanvasCommand = new RelayCommand(() =>
-            {
-                if (!int.TryParse(InputWidth, out int w) || w <= 0 ||
-                    !int.TryParse(InputHeight, out int h) || h <= 0)
-                {
-                    InputWidth = (SpriteState?.Width ?? 16).ToString();
-                    InputHeight = (SpriteState?.Height ?? 16).ToString();
-                    return;
-                }
-
-                if (w > SpriteState.MaxDimension || h > SpriteState.MaxDimension)
-                {
-                    _dialogService.ShowMessage(
-                        $"Maximum canvas size is {SpriteState.MaxDimension}×{SpriteState.MaxDimension}.");
-                    return;
-                }
-
-                // Same dimensions → nothing to do
-                if (w == SpriteState.Width && h == SpriteState.Height) return;
-
-                ResizeCanvas(w, h, ResizeAnchor);
-            });
-
-            ApplyPresetCommand = new RelayCommand<string>(preset =>
-            {
-                if (string.IsNullOrEmpty(preset) || preset == "Custom") return;
-
-                // Parse "WxH" from the front of the preset string (e.g. "128×64 SSD1306")
-                var label = preset.Split(' ')[0]; // "128×64"
-                // Handle both '×' (Unicode multiplication sign) and 'x' (ASCII)
-                var parts = label.Split(new[] { '×', 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 2 &&
-                    int.TryParse(parts[0], out int pw) &&
-                    int.TryParse(parts[1], out int ph))
-                {
-                    _isApplyingPreset = true;
-                    InputWidth = pw.ToString();
-                    InputHeight = ph.ToString();
-                    _isApplyingPreset = false;
-                }
-            });
-
             // ── Initialization ────────────────────────────────────────────
-            InitializeGrid(int.Parse(InputWidth), int.Parse(InputHeight));
             InitializeBrushColors();
-            UpdateTextOutputs();
         }
 
         /// <summary>
@@ -509,6 +391,7 @@ namespace Hexel.ViewModels
 
             // Push current state for undo
             _historyService.SaveState(oldState);
+            IsDirty = true;
 
             // Compute where the old content should be placed in the new canvas
             var (offsetX, offsetY) = ComputeAnchorOffset(oldW, oldH, newW, newH, anchor);
@@ -540,8 +423,7 @@ namespace Hexel.ViewModels
             _canvasBuffer = new uint[newW * newH];
             _previewBuffer = new uint[newW * newH];
 
-            InputWidth = newW.ToString();
-            InputHeight = newH.ToString();
+
 
             RedrawGridFromMemory();
             UpdateTextOutputs();
@@ -642,7 +524,11 @@ namespace Hexel.ViewModels
             }
         }
 
-        public void SaveStateForUndo() => _historyService.SaveState(SpriteState);
+        public void SaveStateForUndo()
+        {
+            _historyService.SaveState(SpriteState);
+            IsDirty = true;
+        }
 
         public void ShiftGrid(int offsetX, int offsetY)
         {
@@ -748,6 +634,7 @@ namespace Hexel.ViewModels
                     // ApplyFloodFill, resulting in two undo entries per fill operation.
                     // History is now saved exactly once, here at the call site.
                     _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                     _drawingService.ApplyFloodFill(SpriteState, x, y, newState);
                     _lastClickedX = x;
                     _lastClickedY = y;
@@ -809,6 +696,7 @@ namespace Hexel.ViewModels
                     if (isShiftDown && _lastClickedX != NoPosition)
                     {
                         _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                         _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize);
                         _lastClickedX = x;
                         _lastClickedY = y;
@@ -818,6 +706,7 @@ namespace Hexel.ViewModels
                     else
                     {
                         _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                         _drawingService.DrawBrushStamp(SpriteState, x, y, BrushSize, newState);
                         _lastClickedX = x;
                         _lastClickedY = y;
@@ -964,6 +853,7 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                     var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Line, isShiftDown, isAltDown);
                     _drawingService.DrawLine(SpriteState, x0, y0, x1, y1, _lineDrawState);
                     _lastClickedX = x1;
@@ -980,6 +870,7 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                     var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Rectangle, isShiftDown, isAltDown);
                     _drawingService.DrawRectangle(SpriteState, x0, y0, x1, y1, _lineDrawState);
                     _lastClickedX = x1;
@@ -996,6 +887,7 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                     var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Ellipse, isShiftDown, isAltDown);
                     _drawingService.DrawEllipse(SpriteState, x0, y0, x1, y1, _lineDrawState);
                     _lastClickedX = x1;
@@ -1012,6 +904,7 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                     var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledRectangle, isShiftDown, isAltDown);
                     _drawingService.DrawFilledRectangle(SpriteState, x0, y0, x1, y1, _lineDrawState);
                     _lastClickedX = x1;
@@ -1028,6 +921,7 @@ namespace Hexel.ViewModels
                 if (_lineStartX != NoPosition)
                 {
                     _historyService.SaveState(SpriteState);
+                    IsDirty = true;
                     var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledEllipse, isShiftDown, isAltDown);
                     _drawingService.DrawFilledEllipse(SpriteState, x0, y0, x1, y1, _lineDrawState);
                     _lastClickedX = x1;
@@ -1204,11 +1098,8 @@ namespace Hexel.ViewModels
             // Cancel any in-progress selection or floating layer
             _selectionService.Cancel();
 
-            if (InputWidth != state.Width.ToString() ||
-                InputHeight != state.Height.ToString())
+            if (SpriteState.Width != state.Width || SpriteState.Height != state.Height)
             {
-                InputWidth = state.Width.ToString();
-                InputHeight = state.Height.ToString();
                 InitializeGrid(state.Width, state.Height);
             }
 
