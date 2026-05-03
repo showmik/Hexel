@@ -167,6 +167,27 @@ namespace Hexel.ViewModels
         public bool IsDrawingFilledRectangle => _toolInput.IsDrawingFilledRectangle;
         public bool IsDrawingFilledEllipse => _toolInput.IsDrawingFilledEllipse;
 
+        // ── Status message (data-bound, replaces direct label manipulation) ──
+        private string _statusMessage = string.Empty;
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            private set => SetProperty(ref _statusMessage, value);
+        }
+
+        /// <summary>
+        /// Shows a temporary status message that auto-clears after a delay.
+        /// Replaces the old CopyHexExecuted event + DispatcherTimer approach.
+        /// </summary>
+        public async void ShowStatus(string message, int delayMs = 2000)
+        {
+            StatusMessage = message;
+            await System.Threading.Tasks.Task.Delay(delayMs);
+            // Only clear if no newer message replaced this one
+            if (StatusMessage == message)
+                StatusMessage = string.Empty;
+        }
+
         // ── Export format options ─────────────────────────────────────────
         private bool _binaryUseComma = false;
         public bool BinaryUseComma
@@ -289,6 +310,7 @@ namespace Hexel.ViewModels
         // ── Extracted subsystems ──────────────────────────────────────────
         private ToolInputController _toolInput = null!;
         private BitmapPreviewRenderer _previewRenderer = null!;
+        private SelectionInputController _selectionInput = null!;
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>
@@ -297,6 +319,12 @@ namespace Hexel.ViewModels
         /// </summary>
         public event EventHandler? HistoryRestored;
 
+        /// <summary>
+        /// Raised after the tool changes so the View can update UI-only concerns
+        /// (brush cursor visibility, cursor shape). Not a domain event.
+        /// </summary>
+        public event EventHandler? ToolChanged;
+
         // ── Commands ──────────────────────────────────────────────────────
         public IRelayCommand UndoCommand { get; }
         public IRelayCommand RedoCommand { get; }
@@ -304,6 +332,7 @@ namespace Hexel.ViewModels
         public IRelayCommand InvertCommand { get; }
         public IRelayCommand DeleteSelectionCommand { get; }
         public IRelayCommand CopyHexCommand { get; }
+        public IRelayCommand<string> SelectToolCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
@@ -326,12 +355,10 @@ namespace Hexel.ViewModels
 
             // ── Commands ──────────────────────────────────────────────────
 
-            // CopyHexCommand no longer shows a blocking MessageBox — the View
-            // shows a non-modal status message instead via the CopyHexExecuted event.
             CopyHexCommand = new RelayCommand(() =>
             {
                 _clipboardService.SetText(TxtHex);
-                CopyHexExecuted?.Invoke(this, EventArgs.Empty);
+                ShowStatus("Copied to clipboard");
             });
 
             UndoCommand = new RelayCommand(() => RestoreState(_historyService.Undo(SpriteState)));
@@ -365,17 +392,14 @@ namespace Hexel.ViewModels
                 UpdateTextOutputs();
             });
 
+            SelectToolCommand = new RelayCommand<string>(ExecuteSelectTool);
+
             // ── Initialization ────────────────────────────────────────────
             InitializeBrushColors();
             _previewRenderer = new BitmapPreviewRenderer(this);
             _toolInput = new ToolInputController(this, _drawingService, _previewRenderer);
+            _selectionInput = new SelectionInputController(this, _selectionService, _drawingService);
         }
-
-        /// <summary>
-        /// Raised when a hex copy succeeds. The View subscribes to show a brief
-        /// non-blocking status indicator instead of a MessageBox.
-        /// </summary>
-        public event EventHandler? CopyHexExecuted;
 
         // ── Public methods called by the View ─────────────────────────────
 
@@ -508,6 +532,24 @@ namespace Hexel.ViewModels
         public void ProcessToolInput(int x, int y, ToolAction action, DrawMode mode, bool isShiftDown, bool isAltDown = false)
             => _toolInput.ProcessToolInput(x, y, action, mode, isShiftDown, isAltDown);
 
+        /// <summary>
+        /// Main entry point for selection tool input from the View.
+        /// Delegates to the extracted SelectionInputController.
+        /// </summary>
+        public void ProcessSelectionInput(int x, int y, ToolAction action, bool isShiftDown, bool isAltDown)
+            => _selectionInput.ProcessInput(x, y, action, isShiftDown, isAltDown);
+
+        /// <summary>
+        /// Commits any active selection. Returns true if there was one to commit.
+        /// </summary>
+        public bool CommitCurrentSelection() => _selectionInput.CommitIfActive();
+
+        /// <summary>
+        /// Tries to begin a floating selection drag. Returns true if successful.
+        /// </summary>
+        public bool TryBeginSelectionDrag(int pixelX, int pixelY)
+            => _selectionInput.TryBeginDrag(pixelX, pixelY);
+
         public void SaveStateForUndo()
         {
             _historyService.SaveState(SpriteState);
@@ -568,6 +610,39 @@ namespace Hexel.ViewModels
         /// Called by the View when switching tools to prevent stale draw flags.
         /// </summary>
         public void CancelInProgressDrawing() => _toolInput.CancelInProgressDrawing();
+
+        // ── Private: tool selection ────────────────────────────────────────
+
+        private void ExecuteSelectTool(string? toolName)
+        {
+            if (toolName == null) return;
+
+            CurrentTool = toolName switch
+            {
+                "Fill" => ToolMode.Fill,
+                "Marquee" => ToolMode.Marquee,
+                "Lasso" => ToolMode.Lasso,
+                "Rectangle" => ToolMode.Rectangle,
+                "Ellipse" => ToolMode.Ellipse,
+                "FilledRectangle" => ToolMode.FilledRectangle,
+                "FilledEllipse" => ToolMode.FilledEllipse,
+                "Line" => ToolMode.Line,
+                "MagicWand" => ToolMode.MagicWand,
+                _ => ToolMode.Pencil
+            };
+
+            _toolInput.CancelInProgressDrawing();
+
+            // Commit any active selection when switching to a non-selection tool
+            if (CurrentTool != ToolMode.Marquee &&
+                CurrentTool != ToolMode.Lasso &&
+                CurrentTool != ToolMode.MagicWand)
+            {
+                _selectionInput.CommitIfActive();
+            }
+
+            ToolChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         // ── Private: history restore ──────────────────────────────────────
 

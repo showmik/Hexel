@@ -275,7 +275,7 @@
                                   MaxWidth="600" />
             </Grid.ColumnDefinitions>
 
-            <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Column="0" />
+            <views:ToolSidebarPanel Grid.Column="0" />
 
             <views:CanvasPanel x:Name="Canvas" Grid.Column="1" 
                                Margin="15,20,20,20"
@@ -293,7 +293,7 @@
         </Grid>
         <!-- /Main content -->
 
-        <views:StatusBarPanel x:Name="StatusBar" Grid.Row="3" DataContext="{Binding ActiveDocument}" />
+        <views:StatusBarPanel Grid.Row="3" DataContext="{Binding ActiveDocument}" />
 
         <!-- ═══════════════════════════════════════════════════════════════
              EMPTY WORKSPACE STATE

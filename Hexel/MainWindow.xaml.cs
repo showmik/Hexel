@@ -35,9 +35,6 @@ namespace Hexel
         // ── Draw mode locked for the duration of a stroke ─────────────────
         private DrawMode _activeDrawMode = DrawMode.None;
 
-        // ── Status label fade timer ───────────────────────────────────────
-        private System.Windows.Threading.DispatcherTimer? _statusTimer;
-
         // ── Currently-subscribed document (for event unwiring) ─────────────
         private ViewModels.MainViewModel? _subscribedDoc;
 
@@ -85,18 +82,6 @@ namespace Hexel
             Canvas.MainScrollViewer.PreviewMouseUp += ScrollViewer_PreviewMouseUp;
             Canvas.CanvasImage.MouseLeave += CanvasImage_MouseLeave;
 
-            // Wire up tool selection
-            ToolSidebar.RbPencil.Checked += Tool_Checked;
-            ToolSidebar.RbLine.Checked += Tool_Checked;
-            ToolSidebar.RbRectangle.Checked += Tool_Checked;
-            ToolSidebar.RbEllipse.Checked += Tool_Checked;
-            ToolSidebar.RbFilledRectangle.Checked += Tool_Checked;
-            ToolSidebar.RbFilledEllipse.Checked += Tool_Checked;
-            ToolSidebar.RbFill.Checked += Tool_Checked;
-            ToolSidebar.RbMarquee.Checked += Tool_Checked;
-            ToolSidebar.RbLasso.Checked += Tool_Checked;
-            ToolSidebar.RbMagicWand.Checked += Tool_Checked;
-
             OnActiveTabChanged();
         }
 
@@ -105,7 +90,7 @@ namespace Hexel
             if (_subscribedDoc != null)
             {
                 _subscribedDoc.HistoryRestored -= OnHistoryRestored;
-                _subscribedDoc.CopyHexExecuted -= OnCopyHexExecuted;
+                _subscribedDoc.ToolChanged -= OnToolChanged;
                 _subscribedDoc.PropertyChanged -= OnDocPropertyChanged;
                 if (_subscribedDoc.SelectionService != null)
                     _subscribedDoc.SelectionService.SelectionChanged -= OnSelectionChanged;
@@ -116,7 +101,7 @@ namespace Hexel
             if (_subscribedDoc != null)
             {
                 _subscribedDoc.HistoryRestored += OnHistoryRestored;
-                _subscribedDoc.CopyHexExecuted += OnCopyHexExecuted;
+                _subscribedDoc.ToolChanged += OnToolChanged;
                 _subscribedDoc.PropertyChanged += OnDocPropertyChanged;
                 if (_subscribedDoc.SelectionService != null)
                     _subscribedDoc.SelectionService.SelectionChanged += OnSelectionChanged;
@@ -163,7 +148,17 @@ namespace Hexel
             _selectionOverlay.Clear();
             ReleaseDragCapture();
         }
-        private void OnCopyHexExecuted(object? s, EventArgs e) => ShowStatus("Copied to clipboard");
+
+        private void OnToolChanged(object? s, EventArgs e)
+        {
+            // Pure View concern: hide brush cursor when tool isn't Pencil
+            if (ViewModel != null && ViewModel.CurrentTool != ToolMode.Pencil)
+                _brushCursor.Hide();
+
+            _activeDrawMode = DrawMode.None;
+            _selectionOverlay.Clear();
+        }
+
         private void OnSelectionChanged(object? s, EventArgs e) => _selectionOverlay.Update();
         private void OnDocPropertyChanged(object? s, System.ComponentModel.PropertyChangedEventArgs e)
         {
@@ -185,37 +180,6 @@ namespace Hexel
         {
             if (sender is FrameworkElement fe && fe.Tag is ViewModels.MainViewModel doc)
                 _shell.CloseTabCommand.Execute(doc);
-        }
-
-        // ── Tool selection ────────────────────────────────────────────────
-
-        private void Tool_Checked(object sender, RoutedEventArgs e)
-        {
-            if (sender is not RadioButton rb || rb.Tag is null || ViewModel is null) return;
-
-            ViewModel.CurrentTool = rb.Tag.ToString() switch
-            {
-                "Fill" => ToolMode.Fill,
-                "Marquee" => ToolMode.Marquee,
-                "Lasso" => ToolMode.Lasso,
-                "Rectangle" => ToolMode.Rectangle,
-                "Ellipse" => ToolMode.Ellipse,
-                "FilledRectangle" => ToolMode.FilledRectangle,
-                "FilledEllipse" => ToolMode.FilledEllipse,
-                "Line" => ToolMode.Line,
-                "MagicWand" => ToolMode.MagicWand,
-                _ => ToolMode.Pencil
-            };
-
-            _activeDrawMode = DrawMode.None;
-            ViewModel.CancelInProgressDrawing();
-
-            if (ViewModel.CurrentTool != ToolMode.Marquee &&
-                ViewModel.CurrentTool != ToolMode.Lasso)
-                CommitCurrentSelection();
-
-            if (ViewModel.CurrentTool != ToolMode.Pencil)
-                _brushCursor.Hide();
         }
 
         // ── Global overrides ──────────────────────────────────────────────
@@ -248,7 +212,7 @@ namespace Hexel
             if (e.ChangedButton == MouseButton.Left)
             {
                 if ((ViewModel.CurrentTool == ToolMode.Lasso || ViewModel.CurrentTool == ToolMode.Marquee || ViewModel.CurrentTool == ToolMode.MagicWand) && _selection.IsSelecting)
-                    _selection.FinalizeSelection();
+                    ViewModel.ProcessSelectionInput(-1, -1, ToolAction.Up, false, false);
                 ReleaseDragCapture();
                 _selection.EndDrag();
             }
@@ -295,15 +259,19 @@ namespace Hexel
                             e.Handled = true;
                         }
                         break;
-                    case Key.Escape: CommitCurrentSelection(); e.Handled = true; break;
-                    case Key.P: if (ToolSidebar.RbPencil != null) ToolSidebar.RbPencil.IsChecked = true; e.Handled = true; break;
-                    case Key.L: if (ToolSidebar.RbLine != null) ToolSidebar.RbLine.IsChecked = true; e.Handled = true; break;
-                    case Key.R: if (ToolSidebar.RbRectangle != null) ToolSidebar.RbRectangle.IsChecked = true; e.Handled = true; break;
-                    case Key.E: if (ToolSidebar.RbEllipse != null) ToolSidebar.RbEllipse.IsChecked = true; e.Handled = true; break;
-                    case Key.F: if (ToolSidebar.RbFill != null) ToolSidebar.RbFill.IsChecked = true; e.Handled = true; break;
-                    case Key.M: if (ToolSidebar.RbMarquee != null) ToolSidebar.RbMarquee.IsChecked = true; e.Handled = true; break;
-                    case Key.S: if (ToolSidebar.RbLasso != null) ToolSidebar.RbLasso.IsChecked = true; e.Handled = true; break;
-                    case Key.W: if (ToolSidebar.RbMagicWand != null) ToolSidebar.RbMagicWand.IsChecked = true; e.Handled = true; break;
+                    case Key.Escape:
+                        ViewModel.CommitCurrentSelection();
+                        _selectionOverlay.Clear();
+                        e.Handled = true;
+                        break;
+                    case Key.P: ViewModel.SelectToolCommand.Execute("Pencil"); e.Handled = true; break;
+                    case Key.L: ViewModel.SelectToolCommand.Execute("Line"); e.Handled = true; break;
+                    case Key.R: ViewModel.SelectToolCommand.Execute("Rectangle"); e.Handled = true; break;
+                    case Key.E: ViewModel.SelectToolCommand.Execute("Ellipse"); e.Handled = true; break;
+                    case Key.F: ViewModel.SelectToolCommand.Execute("Fill"); e.Handled = true; break;
+                    case Key.M: ViewModel.SelectToolCommand.Execute("Marquee"); e.Handled = true; break;
+                    case Key.S: ViewModel.SelectToolCommand.Execute("Lasso"); e.Handled = true; break;
+                    case Key.W: ViewModel.SelectToolCommand.Execute("MagicWand"); e.Handled = true; break;
                     case Key.OemOpenBrackets: ViewModel.BrushSize--; e.Handled = true; break;
                     case Key.OemCloseBrackets: ViewModel.BrushSize++; e.Handled = true; break;
                 }
@@ -313,8 +281,8 @@ namespace Hexel
                 if (Keyboard.FocusedElement is TextBox) return;
                 switch (e.Key)
                 {
-                    case Key.R: if (ToolSidebar.RbFilledRectangle != null) ToolSidebar.RbFilledRectangle.IsChecked = true; e.Handled = true; break;
-                    case Key.E: if (ToolSidebar.RbFilledEllipse != null) ToolSidebar.RbFilledEllipse.IsChecked = true; e.Handled = true; break;
+                    case Key.R: ViewModel.SelectToolCommand.Execute("FilledRectangle"); e.Handled = true; break;
+                    case Key.E: ViewModel.SelectToolCommand.Execute("FilledEllipse"); e.Handled = true; break;
                 }
             }
         }
@@ -335,111 +303,19 @@ namespace Hexel
             }
         }
 
-        // ── Selection tool handling ───────────────────────────────────────
-
-        private int _selectionAnchorX = -1;
-        private int _selectionAnchorY = -1;
-
-        private void HandleSelectionDown(MouseButtonEventArgs e, int x, int y)
-        {
-            Hexel.Core.SelectionMode mode = Hexel.Core.SelectionMode.Replace;
-            bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
-            bool alt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
-
-            if (shift && alt) mode = Hexel.Core.SelectionMode.Intersect;
-            else if (shift) mode = Hexel.Core.SelectionMode.Add;
-            else if (alt) mode = Hexel.Core.SelectionMode.Subtract;
-
-            if (_selection.HasActiveSelection && _selection.IsPixelInSelection(x, y) && mode == Hexel.Core.SelectionMode.Replace)
-            {
-                ViewModel.SaveStateForUndo();
-                _selection.LiftSelection(ViewModel.SpriteState);
-                _selection.BeginDrag();
-                _dragStartMousePos = e.GetPosition(Canvas.PixelGridContainer);
-                _dragStartFloatingX = _selection.FloatingX;
-                _dragStartFloatingY = _selection.FloatingY;
-                Mouse.Capture(Canvas.PixelGridContainer);
-                ViewModel.RedrawGridFromMemory();
-                return;
-            }
-
-            if (mode == Hexel.Core.SelectionMode.Replace)
-            {
-                CommitCurrentSelection();
-            }
-            else if (_selection.IsFloating)
-            {
-                var oldMask = _selection.Mask;
-                var oldMinX = _selection.MinX;
-                var oldMinY = _selection.MinY;
-                var oldMaxX = _selection.MaxX;
-                var oldMaxY = _selection.MaxY;
-                CommitCurrentSelection();
-                if (oldMinX != -1)
-                    _selection.ApplyMask(oldMask, oldMinX, oldMinY, oldMaxX, oldMaxY, Hexel.Core.SelectionMode.Replace);
-            }
-
-            if (ViewModel.CurrentTool == ToolMode.MagicWand)
-            {
-                ViewModel.SaveStateForUndo();
-                var fillMask = ViewModel.DrawingService.GetFloodFillMask(ViewModel.SpriteState, x, y, out int minX, out int minY, out int maxX, out int maxY);
-                _selection.ApplyMask(fillMask, minX, minY, maxX, maxY, mode);
-                ViewModel.RedrawGridFromMemory();
-            }
-            else
-            {
-                _selectionAnchorX = x;
-                _selectionAnchorY = y;
-                if (ViewModel.CurrentTool == ToolMode.Lasso)
-                    _selection.BeginLassoSelection(x, y, mode);
-                else
-                    _selection.BeginRectangleSelection(x, y, mode);
-            }
-        }
-
-        private void HandleSelectionMove(int x, int y)
-        {
-            if (!_selection.IsSelecting) return;
-            if (ViewModel.CurrentTool == ToolMode.Lasso)
-            {
-                _selection.AddLassoPoint(x, y);
-            }
-            else
-            {
-                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && _selectionAnchorX != -1 && _selectionAnchorY != -1)
-                {
-                    int dx = x - _selectionAnchorX;
-                    int dy = y - _selectionAnchorY;
-                    int maxDist = Math.Max(Math.Abs(dx), Math.Abs(dy));
-                    x = _selectionAnchorX + Math.Sign(dx) * maxDist;
-                    y = _selectionAnchorY + Math.Sign(dy) * maxDist;
-                }
-                _selection.UpdateRectangleSelection(x, y);
-            }
-        }
-
-        private void CommitCurrentSelection()
-        {
-            if (_selection == null || !_selection.HasActiveSelection) return;
-            _selection.CommitSelection(ViewModel.SpriteState);
-            ViewModel.RedrawGridFromMemory();
-            ViewModel.UpdateTextOutputs();
-            _selectionOverlay.Clear();
-        }
-
         // ── Drag position update ──────────────────────────────────────────
 
         private void UpdateDragPosition(Point currentPos)
         {
             double gw = Canvas.PixelGridContainer.ActualWidth > 0 ? Canvas.PixelGridContainer.ActualWidth : 400.0;
             double gh = Canvas.PixelGridContainer.ActualHeight > 0 ? Canvas.PixelGridContainer.ActualHeight : 400.0;
-            double cw = gw / ViewModel.SpriteState.Width;
+            double cw = gw / ViewModel!.SpriteState.Width;
             double ch = gh / ViewModel.SpriteState.Height;
 
             int newX = _dragStartFloatingX + (int)Math.Round((currentPos.X - _dragStartMousePos.X) / cw);
             int newY = _dragStartFloatingY + (int)Math.Round((currentPos.Y - _dragStartMousePos.Y) / ch);
 
-            if (newX != _selection.FloatingX || newY != _selection.FloatingY)
+            if (newX != _selection!.FloatingX || newY != _selection.FloatingY)
             {
                 _selection.MoveFloatingTo(newX, newY);
                 ViewModel.RedrawGridFromMemory();
@@ -487,7 +363,10 @@ namespace Hexel
             if (e.ChangedButton == MouseButton.Left && e.OriginalSource is not Image)
             {
                 if (_selection.HasActiveSelection)
-                    CommitCurrentSelection();
+                {
+                    ViewModel.CommitCurrentSelection();
+                    _selectionOverlay.Clear();
+                }
             }
 
             var image = Canvas.CanvasImage;
@@ -502,7 +381,24 @@ namespace Hexel
                 {
                     int cx = Math.Clamp(x, 0, ViewModel.SpriteState.Width - 1);
                     int cy = Math.Clamp(y, 0, ViewModel.SpriteState.Height - 1);
-                    HandleSelectionDown(e, cx, cy);
+
+                    // Check if we should start a drag instead
+                    bool isReplace = !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && !Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
+                    if (isReplace && _selection.HasActiveSelection && _selection.IsPixelInSelection(cx, cy))
+                    {
+                        if (ViewModel.TryBeginSelectionDrag(cx, cy))
+                        {
+                            _dragStartMousePos = e.GetPosition(Canvas.PixelGridContainer);
+                            _dragStartFloatingX = _selection.FloatingX;
+                            _dragStartFloatingY = _selection.FloatingY;
+                            Mouse.Capture(Canvas.PixelGridContainer);
+                            return;
+                        }
+                    }
+
+                    ViewModel.ProcessSelectionInput(cx, cy, ToolAction.Down,
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                     return;
                 }
 
@@ -556,7 +452,9 @@ namespace Hexel
                 {
                     int cx = Math.Clamp(x, 0, ViewModel.SpriteState.Width - 1);
                     int cy = Math.Clamp(y, 0, ViewModel.SpriteState.Height - 1);
-                    HandleSelectionMove(cx, cy);
+                    ViewModel.ProcessSelectionInput(cx, cy, ToolAction.Move,
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                     return;
                 }
 
@@ -573,25 +471,6 @@ namespace Hexel
         private void ScrollViewer_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             _zoomPan.TryEndPan((ScrollViewer)sender, e);
-        }
-
-        // ── Status message ────────────────────────────────────────────────
-
-        private void ShowStatus(string message)
-        {
-            if (StatusBar.StatusLabel == null) return;
-            StatusBar.StatusLabel.Content = message;
-            StatusBar.StatusLabel.Visibility = Visibility.Visible;
-
-            _statusTimer?.Stop();
-            _statusTimer = new System.Windows.Threading.DispatcherTimer
-            { Interval = TimeSpan.FromSeconds(2) };
-            _statusTimer.Tick += (_, _) =>
-            {
-                StatusBar.StatusLabel.Visibility = Visibility.Hidden;
-                _statusTimer.Stop();
-            };
-            _statusTimer.Start();
         }
 
         // ── Utility ───────────────────────────────────────────────────────

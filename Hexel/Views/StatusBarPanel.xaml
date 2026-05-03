@@ -53,15 +53,24 @@
                        Foreground="{DynamicResource Theme.TextMutedBrush}"
                        VerticalAlignment="Center" />
 
-            <!-- Status message (right-aligned) -->
-            <Label x:Name="StatusLabel" x:FieldModifier="public"
-                   Grid.Column="4"
-                   Content=""
-                   Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Right"
-                   Visibility="Hidden"
-                   Padding="0" />
+            <!-- Status message (right-aligned, data-bound) -->
+            <TextBlock Grid.Column="4"
+                       Text="{Binding StatusMessage}"
+                       Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Right"
+                       Padding="0">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusMessage}" Value="">
+                                <Setter Property="Visibility" Value="Hidden" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
         </Grid>
     </Border>
 </UserControl>

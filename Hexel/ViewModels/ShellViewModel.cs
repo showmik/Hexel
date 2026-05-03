@@ -2,12 +2,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Hexel.Core;
 using Hexel.Services;
-using Hexel.Views;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
-using System.Windows;
 
 namespace Hexel.ViewModels
 {
@@ -23,6 +21,8 @@ namespace Hexel.ViewModels
         private readonly IDrawingService _drawingService;
         private readonly IClipboardService _clipboardService;
         private readonly IDialogService _dialogService;
+
+        private const string FileFilter = "Hexel Sprite (*.hexel)|*.hexel|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
 
         public const int MaxTabs = 10;
 
@@ -95,12 +95,9 @@ namespace Hexel.ViewModels
                 return;
             }
 
-            var dlg = new NewCanvasDialog { Owner = Application.Current.MainWindow };
-            if (dlg.ShowDialog() == true && dlg.Result.HasValue)
-            {
-                var (w, h) = dlg.Result.Value;
-                AddNewDocument(w, h);
-            }
+            var result = _dialogService.ShowNewCanvasDialog();
+            if (result.HasValue)
+                AddNewDocument(result.Value.Width, result.Value.Height);
         }
 
         // ── Open ──────────────────────────────────────────────────────────
@@ -113,17 +110,12 @@ namespace Hexel.ViewModels
                 return;
             }
 
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "Hexel Sprite (*.hexel)|*.hexel|JSON Files (*.json)|*.json|All Files (*.*)|*.*",
-                Title = "Open Sprite"
-            };
-
-            if (dialog.ShowDialog() != true) return;
+            var path = _dialogService.ShowOpenFileDialog(FileFilter, "Open Sprite");
+            if (path == null) return;
 
             try
             {
-                string json = File.ReadAllText(dialog.FileName);
+                string json = File.ReadAllText(path);
                 var loaded = JsonSerializer.Deserialize<SpriteState>(json);
                 if (loaded?.Pixels == null) return;
 
@@ -131,7 +123,7 @@ namespace Hexel.ViewModels
                 doc.SpriteState.Pixels = (bool[])loaded.Pixels.Clone();
                 doc.SpriteState.IsDisplayInverted = loaded.IsDisplayInverted;
                 doc.IsDisplayInverted = loaded.IsDisplayInverted;
-                doc.FilePath = dialog.FileName;
+                doc.FilePath = path;
                 doc.IsDirty = false;
                 doc.RedrawGridFromMemory();
                 doc.UpdateTextOutputs();
@@ -163,15 +155,9 @@ namespace Hexel.ViewModels
         {
             if (ActiveDocument == null) return;
 
-            var dialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "Hexel Sprite (*.hexel)|*.hexel|JSON Files (*.json)|*.json|All Files (*.*)|*.*",
-                DefaultExt = ".hexel",
-                Title = "Save Sprite"
-            };
-
-            if (dialog.ShowDialog() == true)
-                SaveToPath(ActiveDocument, dialog.FileName);
+            var path = _dialogService.ShowSaveFileDialog(FileFilter, "Save Sprite", ".hexel");
+            if (path != null)
+                SaveToPath(ActiveDocument, path);
         }
 
         private void SaveToPath(MainViewModel doc, string path)
@@ -199,35 +185,28 @@ namespace Hexel.ViewModels
 
             if (doc.IsDirty)
             {
-                var result = MessageBox.Show(
-                    $"Save changes to \"{doc.Title.TrimStart('*')}\"?",
-                    "Unsaved Changes",
-                    MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Warning);
+                var saveChoice = _dialogService.ShowUnsavedChangesDialog(doc.Title.TrimStart('*'));
 
-                switch (result)
+                if (saveChoice == null) return; // user cancelled
+
+                if (saveChoice == true)
                 {
-                    case MessageBoxResult.Yes:
-                        if (doc.FilePath != null)
-                            SaveToPath(doc, doc.FilePath);
+                    if (doc.FilePath != null)
+                    {
+                        SaveToPath(doc, doc.FilePath);
+                    }
+                    else
+                    {
+                        var path = _dialogService.ShowSaveFileDialog(
+                            "Hexel Sprite (*.hexel)|*.hexel|All Files (*.*)|*.*",
+                            "Save Sprite", ".hexel");
+                        if (path != null)
+                            SaveToPath(doc, path);
                         else
-                        {
-                            var dlg = new Microsoft.Win32.SaveFileDialog
-                            {
-                                Filter = "Hexel Sprite (*.hexel)|*.hexel|All Files (*.*)|*.*",
-                                DefaultExt = ".hexel",
-                                Title = "Save Sprite"
-                            };
-                            if (dlg.ShowDialog() == true)
-                                SaveToPath(doc, dlg.FileName);
-                            else
-                                return; // user cancelled the save dialog
-                        }
-                        break;
-                    case MessageBoxResult.Cancel:
-                        return;
-                    // MessageBoxResult.No → discard changes, continue closing
+                            return; // user cancelled the save dialog
+                    }
                 }
+                // saveChoice == false → discard changes, continue closing
             }
 
             int idx = OpenDocuments.IndexOf(doc);
@@ -252,16 +231,13 @@ namespace Hexel.ViewModels
         {
             if (ActiveDocument == null) return;
 
-            var dlg = new ResizeCanvasDialog(
+            var result = _dialogService.ShowResizeCanvasDialog(
                 ActiveDocument.SpriteState.Width,
-                ActiveDocument.SpriteState.Height)
-            {
-                Owner = Application.Current.MainWindow
-            };
+                ActiveDocument.SpriteState.Height);
 
-            if (dlg.ShowDialog() == true && dlg.Result.HasValue)
+            if (result.HasValue)
             {
-                var (w, h, anchor) = dlg.Result.Value;
+                var (w, h, anchor) = result.Value;
                 if (w == ActiveDocument.SpriteState.Width &&
                     h == ActiveDocument.SpriteState.Height) return;
 
