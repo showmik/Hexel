@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Hexel.ViewModels"
         Title="Resize Canvas"
-        Width="400" Height="400"
+        Width="400" Height="420"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource Theme.BackgroundBrush}"
@@ -12,6 +12,7 @@
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -34,8 +35,7 @@
                        Foreground="{DynamicResource Theme.TextMutedBrush}"
                        VerticalAlignment="Center"
                        Width="70" />
-            <TextBlock x:Name="TxtCurrentSize"
-                       Text="16 × 16"
+            <TextBlock Text="{Binding CurrentSizeText}"
                        Foreground="{DynamicResource Theme.TextMainBrush}"
                        VerticalAlignment="Center" />
         </StackPanel>
@@ -46,12 +46,11 @@
                        Foreground="{DynamicResource Theme.TextMainBrush}"
                        VerticalAlignment="Center"
                        Width="70" />
-            <ComboBox x:Name="PresetComboBox"
-                      Width="210"
+            <ComboBox Width="210"
                       Height="28"
                       Style="{StaticResource ModernComboBoxStyle}"
                       ItemsSource="{x:Static vm:MainViewModel.DisplayPresets}"
-                      SelectionChanged="Preset_SelectionChanged" />
+                      SelectedItem="{Binding SelectedPreset}" />
         </StackPanel>
 
         <!-- New Width x Height -->
@@ -60,21 +59,17 @@
                        Foreground="{DynamicResource Theme.TextMainBrush}"
                        VerticalAlignment="Center"
                        Width="70" />
-            <TextBox x:Name="TxtWidth"
-                     Text="16"
+            <TextBox Text="{Binding NewWidth, UpdateSourceTrigger=PropertyChanged}"
                      Width="70" Height="28"
                      Style="{StaticResource ModernTextBoxStyle}"
-                     PreviewTextInput="NumberOnly"
                      Margin="0,0,8,0" />
             <TextBlock Text="×"
                        Foreground="{DynamicResource Theme.TextMutedBrush}"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0" />
-            <TextBox x:Name="TxtHeight"
-                     Text="16"
+            <TextBox Text="{Binding NewHeight, UpdateSourceTrigger=PropertyChanged}"
                      Width="70" Height="28"
-                     Style="{StaticResource ModernTextBoxStyle}"
-                     PreviewTextInput="NumberOnly" />
+                     Style="{StaticResource ModernTextBoxStyle}" />
             <TextBlock Text="px"
                        Foreground="{DynamicResource Theme.TextMutedBrush}"
                        VerticalAlignment="Center"
@@ -105,60 +100,91 @@
                     </Grid.ColumnDefinitions>
 
                     <RadioButton Grid.Row="0" Grid.Column="0" GroupName="Anchor"
-                                 Tag="TopLeft" IsChecked="True"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=TopLeft}" />
                     <RadioButton Grid.Row="0" Grid.Column="1" GroupName="Anchor"
-                                 Tag="TopCenter"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=TopCenter}" />
                     <RadioButton Grid.Row="0" Grid.Column="2" GroupName="Anchor"
-                                 Tag="TopRight"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=TopRight}" />
 
                     <RadioButton Grid.Row="1" Grid.Column="0" GroupName="Anchor"
-                                 Tag="CenterLeft"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=CenterLeft}" />
                     <RadioButton Grid.Row="1" Grid.Column="1" GroupName="Anchor"
-                                 Tag="Center"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=Center}" />
                     <RadioButton Grid.Row="1" Grid.Column="2" GroupName="Anchor"
-                                 Tag="CenterRight"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=CenterRight}" />
 
                     <RadioButton Grid.Row="2" Grid.Column="0" GroupName="Anchor"
-                                 Tag="BottomLeft"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=BottomLeft}" />
                     <RadioButton Grid.Row="2" Grid.Column="1" GroupName="Anchor"
-                                 Tag="BottomCenter"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=BottomCenter}" />
                     <RadioButton Grid.Row="2" Grid.Column="2" GroupName="Anchor"
-                                 Tag="BottomRight"
                                  Style="{StaticResource AnchorDotStyle}"
-                                 Checked="Anchor_Checked" />
+                                 IsChecked="{Binding SelectedAnchor,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=BottomRight}" />
                 </Grid>
             </Border>
         </StackPanel>
 
+        <!-- Validation error -->
+        <TextBlock Grid.Row="5"
+                   Text="{Binding ErrorMessage}"
+                   Foreground="{DynamicResource Theme.DangerBrush}"
+                   FontSize="11"
+                   Margin="0,0,0,6"
+                   TextWrapping="Wrap">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding HasError}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
         <!-- OK / Cancel -->
-        <StackPanel Grid.Row="6"
+        <StackPanel Grid.Row="7"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button Content="Cancel"
                     Width="80" Height="30"
                     Style="{StaticResource ModernButtonStyle}"
                     Margin="0,0,8,0"
-                    Click="Cancel_Click" />
+                    Command="{Binding CancelCommand}" />
             <Button Content="Resize"
                     Width="80" Height="30"
                     Style="{StaticResource ModernButtonStyle}"
-                    Click="Resize_Click"
+                    Command="{Binding ResizeCommand}"
                     IsDefault="True" />
         </StackPanel>
     </Grid>

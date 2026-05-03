@@ -53,11 +53,10 @@
                                FontSize="11" />
 
                     <!-- Circle shape button -->
-                    <RadioButton x:Name="RbBrushCircle" x:FieldModifier="public"
-                                 GroupName="BrushShape"
-                                 IsChecked="True"
-                                 Checked="BrushShape_Checked"
-                                 Tag="Circle"
+                    <RadioButton GroupName="BrushShape"
+                                 IsChecked="{Binding BrushShape,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=Circle}"
                                  ToolTip="Circle Brush"
                                  Width="28" Height="28"
                                  Margin="0,0,2,0"
@@ -67,10 +66,10 @@
                     </RadioButton>
 
                     <!-- Square shape button -->
-                    <RadioButton x:Name="RbBrushSquare" x:FieldModifier="public"
-                                 GroupName="BrushShape"
-                                 Checked="BrushShape_Checked"
-                                 Tag="Square"
+                    <RadioButton GroupName="BrushShape"
+                                 IsChecked="{Binding BrushShape,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=Square}"
                                  ToolTip="Square Brush"
                                  Width="28" Height="28"
                                  Margin="0,0,2,0"
@@ -80,10 +79,10 @@
                     </RadioButton>
 
                     <!-- Line shape button -->
-                    <RadioButton x:Name="RbBrushLine" x:FieldModifier="public"
-                                 GroupName="BrushShape"
-                                 Checked="BrushShape_Checked"
-                                 Tag="Line"
+                    <RadioButton GroupName="BrushShape"
+                                 IsChecked="{Binding BrushShape,
+                                     Converter={StaticResource EnumToBoolConverter},
+                                     ConverterParameter=Line}"
                                  ToolTip="Line Brush"
                                  Width="28" Height="28"
                                  Margin="0,0,8,0"
@@ -111,7 +110,7 @@
                             Margin="0,0,4,0"
                             Style="{StaticResource ModernButtonStyle}"
                             Padding="0"
-                            Click="BtnBrushDown_Click" />
+                            Command="{Binding DecreaseBrushSizeCommand}" />
                     <Slider x:Name="BrushSizeSlider" x:FieldModifier="public"
                             Width="80"
                             Minimum="1"
@@ -127,9 +126,8 @@
                             Margin="4,0,4,0"
                             Style="{StaticResource ModernButtonStyle}"
                             Padding="0"
-                            Click="BtnBrushUp_Click" />
-                    <TextBox x:Name="BrushSizeTextBox" x:FieldModifier="public"
-                             Text="{Binding BrushSize, UpdateSourceTrigger=LostFocus}"
+                            Command="{Binding IncreaseBrushSizeCommand}" />
+                    <TextBox Text="{Binding BrushSize, UpdateSourceTrigger=LostFocus}"
                              Width="36"
                              Height="24"
                              Padding="4,2"
@@ -188,8 +186,7 @@
                                 IsSnapToTickEnabled="True"
                                 VerticalAlignment="Center"
                                 ToolTip="Brush rotation angle (0-359°)" />
-                        <TextBox x:Name="BrushAngleTextBox" x:FieldModifier="public"
-                                 Text="{Binding BrushAngle, UpdateSourceTrigger=LostFocus}"
+                        <TextBox Text="{Binding BrushAngle, UpdateSourceTrigger=LostFocus}"
                                  Width="36"
                                  Height="24"
                                  Padding="4,2"

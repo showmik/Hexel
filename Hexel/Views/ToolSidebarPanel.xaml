@@ -19,65 +19,71 @@
         </Border.Effect>
         <StackPanel Orientation="Vertical"
                     HorizontalAlignment="Center">
-            <RadioButton x:Name="RbPencil" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         IsChecked="True"
-                         Tag="Pencil"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=Pencil}"
                          Margin="0,0,0,4"
                          ToolTip="Pencil (P)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
                       Data="M3.40979 23.0017V12.4402l5.0521 2.7261 3.53861 -2.5275 3.5386 2.5275 5.0511 -2.7261v10.5615 M3.41949 12.4388 11.1783 1.42699c0.4028 -0.571599 1.2503 -0.571599 1.6531 0l7.7588 11.01181 M8.46191 15.1663v7.8354 M15.5391 15.1663v7.8354 M7.55359 6.57275h8.89381" />
             </RadioButton>
-            <RadioButton x:Name="RbLine" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="Line"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=Line}"
                          Margin="0,0,0,4"
                          ToolTip="Line (L)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
                       Data="M4 14L14 4" />
             </RadioButton>
-            <RadioButton x:Name="RbRectangle" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="Rectangle"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=Rectangle}"
                          Margin="0,0,0,4"
                          ToolTip="Rectangle (R)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
                       Data="M 5,5 H 19 V 19 H 5 Z" />
             </RadioButton>
-            <RadioButton x:Name="RbEllipse" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="Ellipse"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=Ellipse}"
                          Margin="0,0,0,4"
                          ToolTip="Ellipse (E)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
                       Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
             </RadioButton>
-            <RadioButton x:Name="RbFilledRectangle" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="FilledRectangle"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=FilledRectangle}"
                          Margin="0,0,0,4"
                          ToolTip="Filled Rectangle (Shift+R)">
                 <Path Style="{StaticResource FilledToolIconStyle}"
                       Data="M 5,5 H 19 V 19 H 5 Z" />
             </RadioButton>
-            <RadioButton x:Name="RbFilledEllipse" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="FilledEllipse"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=FilledEllipse}"
                          Margin="0,0,0,4"
                          ToolTip="Filled Ellipse (Shift+E)">
                 <Path Style="{StaticResource FilledToolIconStyle}"
                       Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
             </RadioButton>
-            <RadioButton x:Name="RbFill" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="Fill"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=Fill}"
                          Margin="0,0,0,4"
                          ToolTip="Fill (F)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
@@ -91,20 +97,22 @@
                        RadiusX="1"
                        RadiusY="1" />
 
-            <RadioButton x:Name="RbMarquee" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="Marquee"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=Marquee}"
                          Margin="0,0,0,4"
                          ToolTip="Marquee Select (M)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
                       StrokeDashArray="2,2"
                       Data="M 2,2 L 16,2 L 16,16 L 2,16 Z" />
             </RadioButton>
-            <RadioButton x:Name="RbLasso" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="Lasso"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=Lasso}"
                          ToolTip="Lasso Select (S)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
                       StrokeDashArray="2,2"
@@ -112,10 +120,11 @@
                       Width="22"
                       Data="{StaticResource Icon.Lasso}" />
             </RadioButton>
-            <RadioButton x:Name="RbMagicWand" x:FieldModifier="public"
-                         Style="{StaticResource VerticalToolButtonStyle}"
+            <RadioButton Style="{StaticResource VerticalToolButtonStyle}"
                          GroupName="Tools"
-                         Tag="MagicWand"
+                         IsChecked="{Binding CurrentTool,
+                             Converter={StaticResource EnumToBoolConverter},
+                             ConverterParameter=MagicWand}"
                          ToolTip="Magic Wand (W)">
                 <Path Style="{StaticResource StrokedToolIconStyle}"
                       Height="22"

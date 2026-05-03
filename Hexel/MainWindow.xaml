@@ -126,6 +126,16 @@
                           Command="{Binding ActiveDocument.DeleteSelectionCommand}"
                           InputGestureText="Del" />
             </MenuItem>
+
+            <!-- ── Help ── -->
+            <MenuItem Header="_Help">
+                <MenuItem Header="Documentation / _Help"
+                          Click="MenuHelp_Click"
+                          InputGestureText="F1" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem Header="_About Hexel"
+                          Click="MenuAbout_Click" />
+            </MenuItem>
         </Menu>
 
         <!-- ═══════════════════════════════════════════════════════════════

@@ -129,7 +129,11 @@ namespace Hexel.ViewModels
         public ToolMode CurrentTool
         {
             get => _currentTool;
-            set => SetProperty(ref _currentTool, value);
+            set
+            {
+                if (SetProperty(ref _currentTool, value))
+                    CancelInProgressDrawing();
+            }
         }
 
         private double _zoomLevel = 1.0;
@@ -303,6 +307,15 @@ namespace Hexel.ViewModels
         public IRelayCommand DeleteSelectionCommand { get; }
         public IRelayCommand CopyHexCommand { get; }
 
+        // Brush commands — bound by CanvasPanel toolbar buttons
+        public IRelayCommand IncreaseBrushSizeCommand { get; }
+        public IRelayCommand DecreaseBrushSizeCommand { get; }
+        /// <summary>
+        /// Accepts a string matching a <see cref="BrushShape"/> member name (e.g. "Circle").
+        /// Bound to brush-shape radio buttons via CommandParameter.
+        /// </summary>
+        public IRelayCommand<string> SetBrushShapeCommand { get; }
+
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
             ICodeGeneratorService codeGen,
@@ -361,6 +374,14 @@ namespace Hexel.ViewModels
                 _selectionService.DeleteSelection(SpriteState);
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
+            });
+
+            IncreaseBrushSizeCommand = new RelayCommand(() => BrushSize++);
+            DecreaseBrushSizeCommand = new RelayCommand(() => BrushSize--);
+            SetBrushShapeCommand = new RelayCommand<string>(tag =>
+            {
+                if (tag != null && System.Enum.TryParse<BrushShape>(tag, out var shape))
+                    BrushShape = shape;
             });
 
             // ── Initialization ────────────────────────────────────────────
