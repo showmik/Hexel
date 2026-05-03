@@ -27,7 +27,6 @@ namespace Hexel.ViewModels
         private readonly IClipboardService _clipboardService;
         private readonly IPixelClipboardService _pixelClipboard;
         private readonly IDialogService _dialogService;
-        private readonly IFileService _fileService;
         private readonly SynchronizationContext _uiContext;
 
         // ── Document identity ─────────────────────────────────────────────
@@ -364,8 +363,7 @@ namespace Hexel.ViewModels
             ISelectionService selectionService,
             IClipboardService clipboardService,
             IPixelClipboardService pixelClipboard,
-            IDialogService dialogService,
-            IFileService fileService)
+            IDialogService dialogService)
         {
             _uiContext = SynchronizationContext.Current ?? new SynchronizationContext();
             _codeGen = codeGen ?? throw new ArgumentNullException(nameof(codeGen));
@@ -375,7 +373,6 @@ namespace Hexel.ViewModels
             _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
             _pixelClipboard = pixelClipboard ?? throw new ArgumentNullException(nameof(pixelClipboard));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
-            _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
 
             // ── Commands ──────────────────────────────────────────────────
 

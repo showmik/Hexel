@@ -45,9 +45,4 @@ namespace Hexel.Services
         void ShowAboutDialog();
     }
 
-    public interface IFileService
-    {
-        void SaveSprite(SpriteState state);
-        SpriteState? LoadSprite();
-    }
 }

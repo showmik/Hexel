@@ -279,11 +279,10 @@ namespace Hexel.ViewModels
         {
             var history = new HistoryService();
             var selection = new SelectionService();
-            var fileService = new FileService();
 
             var doc = new MainViewModel(
                 _codeGen, _drawingService, history, selection,
-                _clipboardService, _pixelClipboard, _dialogService, fileService);
+                _clipboardService, _pixelClipboard, _dialogService);
 
             doc.InitializeGrid(width, height);
             return doc;
