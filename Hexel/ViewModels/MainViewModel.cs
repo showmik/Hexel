@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 
 namespace Hexel.ViewModels
 {
-    public class MainViewModel : ObservableObject
+    public class MainViewModel : ObservableObject, IBitmapBufferContext
     {
         // ── Services ──────────────────────────────────────────────────────
         private readonly ICodeGeneratorService _codeGen;
@@ -276,13 +276,15 @@ namespace Hexel.ViewModels
         private static uint ToBgra32(Color c) =>
             (uint)((c.A << 24) | (c.R << 16) | (c.G << 8) | c.B);
 
-        // ── Internal accessors for rendering subsystem ────────────────────
-        internal uint[] CanvasBuffer => _canvasBuffer;
-        internal uint[] PreviewBuffer => _previewBuffer;
-        internal uint ColorOnUint => _colorOnUint;
-        internal uint ColorOffUint => _colorOffUint;
-        internal uint PreviewOnUint => _previewOnUint;
-        internal uint PreviewOffUint => _previewOffUint;
+        // ── IBitmapBufferContext implementation ────────────────────────────
+        // Exposes bitmap buffer data through a narrow interface so
+        // BitmapPreviewRenderer doesn't need to depend on the full ViewModel.
+        uint[] IBitmapBufferContext.CanvasBuffer => _canvasBuffer;
+        uint[] IBitmapBufferContext.PreviewBuffer => _previewBuffer;
+        uint IBitmapBufferContext.ColorOnUint => _colorOnUint;
+        uint IBitmapBufferContext.ColorOffUint => _colorOffUint;
+        uint IBitmapBufferContext.PreviewOnUint => _previewOnUint;
+        uint IBitmapBufferContext.PreviewOffUint => _previewOffUint;
 
         // ── Extracted subsystems ──────────────────────────────────────────
         private ToolInputController _toolInput = null!;
@@ -380,23 +382,11 @@ namespace Hexel.ViewModels
         public void InitializeGrid(int width, int height)
         {
             SpriteState = new SpriteState(width, height);
-
-            CanvasBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
-            PreviewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
-
-            _canvasBuffer = new uint[width * height];
-            _previewBuffer = new uint[width * height];
+            RebuildBitmaps(width, height);
 
             UpdateTextOutputs();
             RedrawGridFromMemory();
-
-            OnPropertyChanged(nameof(GridViewport));
-            OnPropertyChanged(nameof(PreviewWidth));
-            OnPropertyChanged(nameof(PreviewHeight));
-            OnPropertyChanged(nameof(CanvasDisplayWidth));
-            OnPropertyChanged(nameof(CanvasDisplayHeight));
-            OnPropertyChanged(nameof(DynamicStrokeThickness));
-            OnPropertyChanged(nameof(CanvasDimensionText));
+            NotifyCanvasLayoutChanged();
         }
 
         /// <summary>
@@ -442,21 +432,11 @@ namespace Hexel.ViewModels
 
             // Re-initialize bitmaps for the new size and apply the new state
             SpriteState = newState;
-            CanvasBitmap = new WriteableBitmap(newW, newH, 96, 96, PixelFormats.Bgra32, null);
-            PreviewBitmap = new WriteableBitmap(newW, newH, 96, 96, PixelFormats.Bgra32, null);
-            _canvasBuffer = new uint[newW * newH];
-            _previewBuffer = new uint[newW * newH];
+            RebuildBitmaps(newW, newH);
 
             RedrawGridFromMemory();
             UpdateTextOutputs();
-
-            OnPropertyChanged(nameof(GridViewport));
-            OnPropertyChanged(nameof(PreviewWidth));
-            OnPropertyChanged(nameof(PreviewHeight));
-            OnPropertyChanged(nameof(CanvasDisplayWidth));
-            OnPropertyChanged(nameof(CanvasDisplayHeight));
-            OnPropertyChanged(nameof(DynamicStrokeThickness));
-            OnPropertyChanged(nameof(CanvasDimensionText));
+            NotifyCanvasLayoutChanged();
         }
 
         /// <summary>
@@ -589,17 +569,6 @@ namespace Hexel.ViewModels
         /// </summary>
         public void CancelInProgressDrawing() => _toolInput.CancelInProgressDrawing();
 
-        // ── Private: pixel helpers ────────────────────────────────────────
-
-        private void SetPixel(int x, int y, bool state)
-        {
-            if (x < 0 || x >= SpriteState.Width || y < 0 || y >= SpriteState.Height) return;
-            int index = (y * SpriteState.Width) + x;
-            if (SpriteState.Pixels[index] == state) return;
-            SpriteState.Pixels[index] = state;
-            RedrawGridFromMemory();
-        }
-
         // ── Private: history restore ──────────────────────────────────────
 
         private void RestoreState(SpriteState state)
@@ -635,6 +604,36 @@ namespace Hexel.ViewModels
             _colorOnUint = ToBgra32(colorOn);
             _previewOffUint = ToBgra32(prevOff);
             _previewOnUint = ToBgra32(prevOn);
+        }
+
+        // ── Private: bitmap lifecycle helpers ─────────────────────────────
+
+        /// <summary>
+        /// Allocates fresh WritableBitmaps and pixel buffers for the given dimensions.
+        /// Called by both <see cref="InitializeGrid"/> and <see cref="ResizeCanvas"/>
+        /// to avoid duplicating this initialization logic.
+        /// </summary>
+        private void RebuildBitmaps(int width, int height)
+        {
+            CanvasBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            PreviewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            _canvasBuffer = new uint[width * height];
+            _previewBuffer = new uint[width * height];
+        }
+
+        /// <summary>
+        /// Raises PropertyChanged for all layout-dependent computed properties.
+        /// Called after canvas dimensions change to keep bindings in sync.
+        /// </summary>
+        private void NotifyCanvasLayoutChanged()
+        {
+            OnPropertyChanged(nameof(GridViewport));
+            OnPropertyChanged(nameof(PreviewWidth));
+            OnPropertyChanged(nameof(PreviewHeight));
+            OnPropertyChanged(nameof(CanvasDisplayWidth));
+            OnPropertyChanged(nameof(CanvasDisplayHeight));
+            OnPropertyChanged(nameof(DynamicStrokeThickness));
+            OnPropertyChanged(nameof(CanvasDimensionText));
         }
     }
 }

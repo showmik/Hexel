@@ -17,11 +17,7 @@ namespace Hexel.Rendering
     /// </summary>
     public class BrushCursorManager
     {
-        private readonly Func<Image?> _getBrushOverlay;
-        private readonly Func<Line?> _getCrosshairH;
-        private readonly Func<Line?> _getCrosshairV;
-        private readonly Func<Image?> _getCanvasImage;
-        private readonly Func<FrameworkElement> _getGridContainer;
+        private readonly CanvasElementProvider _elements;
         private readonly Func<MainViewModel?> _getVm;
         private readonly Func<(int x, int y)> _getPixelCoords;
 
@@ -34,21 +30,13 @@ namespace Hexel.Rendering
         public bool IsMouseOverCanvas { get; set; }
 
         public BrushCursorManager(
-            Func<Image?> getBrushOverlay,
-            Func<Line?> getCrosshairH,
-            Func<Line?> getCrosshairV,
-            Func<Image?> getCanvasImage,
-            Func<FrameworkElement> getGridContainer,
+            CanvasElementProvider elements,
             Func<MainViewModel?> getVm,
             Func<(int x, int y)> getPixelCoords)
         {
-            _getBrushOverlay = getBrushOverlay;
-            _getCrosshairH = getCrosshairH;
-            _getCrosshairV = getCrosshairV;
-            _getCanvasImage = getCanvasImage;
-            _getGridContainer = getGridContainer;
-            _getVm = getVm;
-            _getPixelCoords = getPixelCoords;
+            _elements = elements ?? throw new ArgumentNullException(nameof(elements));
+            _getVm = getVm ?? throw new ArgumentNullException(nameof(getVm));
+            _getPixelCoords = getPixelCoords ?? throw new ArgumentNullException(nameof(getPixelCoords));
         }
 
         /// <summary>
@@ -57,9 +45,9 @@ namespace Hexel.Rendering
         public void Refresh()
         {
             if (!IsMouseOverCanvas) return;
-            var overlay = _getBrushOverlay();
+            var overlay = _elements.GetBrushCursorOverlay();
             if (overlay == null) return;
-            var image = _getCanvasImage();
+            var image = _elements.GetCanvasImage();
             if (image == null || image.ActualWidth == 0) return;
 
             _brushCursorCachedSize = -1;
@@ -72,7 +60,7 @@ namespace Hexel.Rendering
 
         public void Update(int pixelX, int pixelY, Point mousePos, double imgWidth, double imgHeight)
         {
-            var overlay = _getBrushOverlay();
+            var overlay = _elements.GetBrushCursorOverlay();
             if (overlay == null) return;
 
             var vm = _getVm();
@@ -88,7 +76,7 @@ namespace Hexel.Rendering
             int w = vm.SpriteState.Width;
             int h = vm.SpriteState.Height;
 
-            var grid = _getGridContainer();
+            var grid = _elements.GetPixelGridContainer();
             double gw = grid.ActualWidth > 0 ? grid.ActualWidth : 400.0;
             double gh = grid.ActualHeight > 0 ? grid.ActualHeight : 400.0;
             double cw = gw / w;
@@ -133,8 +121,8 @@ namespace Hexel.Rendering
             overlay.Visibility = Visibility.Visible;
 
             // Crosshair at exact mouse position
-            var crossH = _getCrosshairH();
-            var crossV = _getCrosshairV();
+            var crossH = _elements.GetCrosshairH();
+            var crossV = _elements.GetCrosshairV();
             double crossLen = Math.Max(cw, 6.0);
 
             if (crossH != null)
@@ -154,23 +142,23 @@ namespace Hexel.Rendering
                 crossV.Visibility = Visibility.Visible;
             }
 
-            var canvasImage = _getCanvasImage();
+            var canvasImage = _elements.GetCanvasImage();
             if (canvasImage != null && canvasImage.Cursor != Cursors.None)
                 canvasImage.Cursor = Cursors.None;
         }
 
         public void Hide()
         {
-            var overlay = _getBrushOverlay();
+            var overlay = _elements.GetBrushCursorOverlay();
             if (overlay != null) overlay.Visibility = Visibility.Hidden;
-            var crossH = _getCrosshairH();
+            var crossH = _elements.GetCrosshairH();
             if (crossH != null) crossH.Visibility = Visibility.Hidden;
-            var crossV = _getCrosshairV();
+            var crossV = _elements.GetCrosshairV();
             if (crossV != null) crossV.Visibility = Visibility.Hidden;
 
             IsMouseOverCanvas = false;
 
-            var canvasImage = _getCanvasImage();
+            var canvasImage = _elements.GetCanvasImage();
             if (canvasImage != null && canvasImage.Cursor == Cursors.None)
                 canvasImage.Cursor = null;
         }
@@ -238,8 +226,8 @@ namespace Hexel.Rendering
 
             _brushCursorBitmap.WritePixels(
                 new Int32Rect(0, 0, bmpW, bmpH), pixels, bmpW * 4, 0);
-            var overlay = _getBrushOverlay();
-            if (overlay != null) overlay.Source = _brushCursorBitmap;
+            var overlayImg = _elements.GetBrushCursorOverlay();
+            if (overlayImg != null) overlayImg.Source = _brushCursorBitmap;
         }
     }
 }

@@ -17,24 +17,18 @@ namespace Hexel.Rendering
     /// </summary>
     public class SelectionOverlayRenderer
     {
-        private readonly Func<Rectangle?> _getMarquee;
-        private readonly Func<Path?> _getLasso;
-        private readonly Func<FrameworkElement> _getGridContainer;
+        private readonly CanvasElementProvider _elements;
         private readonly Func<MainViewModel?> _getVm;
         private readonly Func<ISelectionService?> _getSelection;
 
         public SelectionOverlayRenderer(
-            Func<Rectangle?> getMarquee,
-            Func<Path?> getLasso,
-            Func<FrameworkElement> getGridContainer,
+            CanvasElementProvider elements,
             Func<MainViewModel?> getVm,
             Func<ISelectionService?> getSelection)
         {
-            _getMarquee = getMarquee;
-            _getLasso = getLasso;
-            _getGridContainer = getGridContainer;
-            _getVm = getVm;
-            _getSelection = getSelection;
+            _elements = elements ?? throw new ArgumentNullException(nameof(elements));
+            _getVm = getVm ?? throw new ArgumentNullException(nameof(getVm));
+            _getSelection = getSelection ?? throw new ArgumentNullException(nameof(getSelection));
         }
 
         public void Update()
@@ -59,8 +53,8 @@ namespace Hexel.Rendering
 
         public void Clear()
         {
-            var m = _getMarquee();
-            var l = _getLasso();
+            var m = _elements.GetMarqueeOverlay();
+            var l = _elements.GetLassoOverlay();
             if (m != null) m.Visibility = Visibility.Hidden;
             if (l != null) l.Visibility = Visibility.Hidden;
         }
@@ -69,10 +63,10 @@ namespace Hexel.Rendering
 
         private void UpdateMarqueeOverlay(ISelectionService sel, MainViewModel vm)
         {
-            var marquee = _getMarquee();
+            var marquee = _elements.GetMarqueeOverlay();
             if (marquee == null) return;
 
-            var grid = _getGridContainer();
+            var grid = _elements.GetPixelGridContainer();
             double gw = grid.ActualWidth > 0 ? grid.ActualWidth : 400.0;
             double gh = grid.ActualHeight > 0 ? grid.ActualHeight : 400.0;
             double cw = gw / vm.SpriteState.Width;
@@ -89,7 +83,7 @@ namespace Hexel.Rendering
             marquee.Height = (maxY - minY + 1) * ch;
             marquee.Visibility = Visibility.Visible;
 
-            var lasso = _getLasso();
+            var lasso = _elements.GetLassoOverlay();
             if (lasso != null) lasso.Visibility = Visibility.Hidden;
         }
 
@@ -97,10 +91,10 @@ namespace Hexel.Rendering
 
         private void UpdateLassoOverlay(ISelectionService sel, MainViewModel vm)
         {
-            var lasso = _getLasso();
+            var lasso = _elements.GetLassoOverlay();
             if (lasso == null) return;
 
-            var grid = _getGridContainer();
+            var grid = _elements.GetPixelGridContainer();
             double gw = grid.ActualWidth > 0 ? grid.ActualWidth : 400.0;
             double gh = grid.ActualHeight > 0 ? grid.ActualHeight : 400.0;
             double cw = gw / vm.SpriteState.Width;
@@ -201,7 +195,7 @@ namespace Hexel.Rendering
 
             lasso.Data = groupGeom;
             lasso.Visibility = Visibility.Visible;
-            var marquee = _getMarquee();
+            var marquee = _elements.GetMarqueeOverlay();
             if (marquee != null) marquee.Visibility = Visibility.Hidden;
         }
     }

@@ -21,6 +21,7 @@ namespace Hexel
         private ZoomPanController _zoomPan = null!;
         private SelectionOverlayRenderer _selectionOverlay = null!;
         private BrushCursorManager _brushCursor = null!;
+        private CanvasElementProvider _canvasElements = null!;
 
         // ── Drag tracking (screen-space, belongs in the View) ─────────────
         private Point _dragStartMousePos;
@@ -50,12 +51,20 @@ namespace Hexel
 
             // Initialize extracted subsystems
             _zoomPan = new ZoomPanController(Canvas.ZoomSlider, () => Canvas.CanvasImage, () => _shell);
+
+            _canvasElements = new CanvasElementProvider(
+                () => Canvas.CanvasImage,
+                () => Canvas.PixelGridContainer,
+                () => Canvas.BrushCursorOverlay,
+                () => Canvas.CrosshairH,
+                () => Canvas.CrosshairV,
+                () => Canvas.MarqueeOverlay,
+                () => Canvas.LassoOverlay);
+
             _selectionOverlay = new SelectionOverlayRenderer(
-                () => Canvas.MarqueeOverlay, () => Canvas.LassoOverlay,
-                () => Canvas.PixelGridContainer, () => ViewModel, () => _selection);
+                _canvasElements, () => ViewModel, () => _selection);
             _brushCursor = new BrushCursorManager(
-                () => Canvas.BrushCursorOverlay, () => Canvas.CrosshairH, () => Canvas.CrosshairV,
-                () => Canvas.CanvasImage, () => Canvas.PixelGridContainer, () => ViewModel,
+                _canvasElements, () => ViewModel,
                 () => GetPixelCoordinates(_brushCursor.LastCanvasMousePos, Canvas.CanvasImage.ActualWidth, Canvas.CanvasImage.ActualHeight));
 
             // Wire up tab change

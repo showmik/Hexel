@@ -1,62 +1,52 @@
 using System;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using Hexel.ViewModels;
 
 namespace Hexel.Rendering
 {
     /// <summary>
     /// Handles bitmap-level shape plotting for live previews during drag operations.
-    /// Extracted from MainViewModel to separate rendering concerns from ViewModel state.
+    /// Depends only on <see cref="IBitmapBufferContext"/> rather than the full
+    /// MainViewModel, keeping rendering concerns cleanly separated.
     /// </summary>
     public class BitmapPreviewRenderer
     {
-        private readonly MainViewModel _vm;
+        private readonly IBitmapBufferContext _ctx;
 
-        public BitmapPreviewRenderer(MainViewModel vm)
+        public BitmapPreviewRenderer(IBitmapBufferContext context)
         {
-            _vm = vm ?? throw new ArgumentNullException(nameof(vm));
+            _ctx = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         // ── Preview methods (called during shape drag, do not commit to state) ──
 
         public void PreviewLine(int x0, int y0, int x1, int y1, bool newState)
-        {
-            _vm.RedrawGridFromMemory();
-            PlotLine(x0, y0, x1, y1, newState ? _vm.ColorOnUint : _vm.ColorOffUint,
-                                       newState ? _vm.PreviewOnUint : _vm.PreviewOffUint);
-            FlushBitmaps();
-        }
+            => PreviewShape(PlotLine, x0, y0, x1, y1, newState);
 
         public void PreviewRectangle(int x0, int y0, int x1, int y1, bool newState)
-        {
-            _vm.RedrawGridFromMemory();
-            PlotRectangle(x0, y0, x1, y1, newState ? _vm.ColorOnUint : _vm.ColorOffUint,
-                                             newState ? _vm.PreviewOnUint : _vm.PreviewOffUint);
-            FlushBitmaps();
-        }
+            => PreviewShape(PlotRectangle, x0, y0, x1, y1, newState);
 
         public void PreviewEllipse(int x0, int y0, int x1, int y1, bool newState)
-        {
-            _vm.RedrawGridFromMemory();
-            PlotEllipse(x0, y0, x1, y1, newState ? _vm.ColorOnUint : _vm.ColorOffUint,
-                                           newState ? _vm.PreviewOnUint : _vm.PreviewOffUint);
-            FlushBitmaps();
-        }
+            => PreviewShape(PlotEllipse, x0, y0, x1, y1, newState);
 
         public void PreviewFilledRectangle(int x0, int y0, int x1, int y1, bool newState)
-        {
-            _vm.RedrawGridFromMemory();
-            PlotFilledRectangle(x0, y0, x1, y1, newState ? _vm.ColorOnUint : _vm.ColorOffUint,
-                                                  newState ? _vm.PreviewOnUint : _vm.PreviewOffUint);
-            FlushBitmaps();
-        }
+            => PreviewShape(PlotFilledRectangle, x0, y0, x1, y1, newState);
 
         public void PreviewFilledEllipse(int x0, int y0, int x1, int y1, bool newState)
+            => PreviewShape(PlotFilledEllipse, x0, y0, x1, y1, newState);
+
+        // ── Shared preview pipeline ───────────────────────────────────────
+        // All preview methods follow the same pattern: redraw base → plot → flush.
+        // Extracted into a single helper to eliminate the repeated boilerplate.
+
+        private delegate void PlotAction(int x0, int y0, int x1, int y1, uint cc, uint pc);
+
+        private void PreviewShape(PlotAction plot, int x0, int y0, int x1, int y1, bool newState)
         {
-            _vm.RedrawGridFromMemory();
-            PlotFilledEllipse(x0, y0, x1, y1, newState ? _vm.ColorOnUint : _vm.ColorOffUint,
-                                                 newState ? _vm.PreviewOnUint : _vm.PreviewOffUint);
+            _ctx.RedrawGridFromMemory();
+            uint cc = newState ? _ctx.ColorOnUint : _ctx.ColorOffUint;
+            uint pc = newState ? _ctx.PreviewOnUint : _ctx.PreviewOffUint;
+            plot(x0, y0, x1, y1, cc, pc);
             FlushBitmaps();
         }
 
@@ -64,12 +54,12 @@ namespace Hexel.Rendering
 
         private void PlotPixel(int x, int y, uint canvasColor, uint previewColor)
         {
-            int w = _vm.SpriteState.Width;
-            int h = _vm.SpriteState.Height;
+            int w = _ctx.SpriteState.Width;
+            int h = _ctx.SpriteState.Height;
             if (x < 0 || x >= w || y < 0 || y >= h) return;
             int i = (y * w) + x;
-            _vm.CanvasBuffer[i] = canvasColor;
-            _vm.PreviewBuffer[i] = previewColor;
+            _ctx.CanvasBuffer[i] = canvasColor;
+            _ctx.PreviewBuffer[i] = previewColor;
         }
 
         private void PlotLine(int x0, int y0, int x1, int y1, uint cc, uint pc)
@@ -166,9 +156,9 @@ namespace Hexel.Rendering
 
         private void FlushBitmaps()
         {
-            var rect = new Int32Rect(0, 0, _vm.SpriteState.Width, _vm.SpriteState.Height);
-            _vm.CanvasBitmap.WritePixels(rect, _vm.CanvasBuffer, _vm.SpriteState.Width * 4, 0);
-            _vm.PreviewBitmap.WritePixels(rect, _vm.PreviewBuffer, _vm.SpriteState.Width * 4, 0);
+            var rect = new Int32Rect(0, 0, _ctx.SpriteState.Width, _ctx.SpriteState.Height);
+            _ctx.CanvasBitmap.WritePixels(rect, _ctx.CanvasBuffer, _ctx.SpriteState.Width * 4, 0);
+            _ctx.PreviewBitmap.WritePixels(rect, _ctx.PreviewBuffer, _ctx.SpriteState.Width * 4, 0);
         }
     }
 }

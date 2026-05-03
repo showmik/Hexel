@@ -16,23 +16,37 @@ namespace Hexel.Services
             bool targetState = state.Pixels[startIndex];
             if (targetState == newState) return;
 
+            int total = state.Width * state.Height;
+            var visited = new bool[total];
             var queue = new Queue<int>();
+
+            visited[startIndex] = true;
             queue.Enqueue(startIndex);
 
             while (queue.Count > 0)
             {
                 int current = queue.Dequeue();
-                if (state.Pixels[current] != targetState) continue;
-
                 state.Pixels[current] = newState;
+
                 int x = current % state.Width;
                 int y = current / state.Width;
 
-                if (x > 0) queue.Enqueue(current - 1);
-                if (x < state.Width - 1) queue.Enqueue(current + 1);
-                if (y > 0) queue.Enqueue(current - state.Width);
-                if (y < state.Height - 1) queue.Enqueue(current + state.Width);
+                EnqueueIfTarget(queue, visited, state.Pixels, targetState, x > 0 ? current - 1 : -1);
+                EnqueueIfTarget(queue, visited, state.Pixels, targetState, x < state.Width - 1 ? current + 1 : -1);
+                EnqueueIfTarget(queue, visited, state.Pixels, targetState, y > 0 ? current - state.Width : -1);
+                EnqueueIfTarget(queue, visited, state.Pixels, targetState, y < state.Height - 1 ? current + state.Width : -1);
             }
+        }
+
+        /// <summary>
+        /// Enqueues a neighbor pixel if it hasn't been visited and matches the target state.
+        /// Prevents the same pixel from being enqueued multiple times.
+        /// </summary>
+        private static void EnqueueIfTarget(Queue<int> queue, bool[] visited, bool[] pixels, bool targetState, int index)
+        {
+            if (index < 0 || visited[index] || pixels[index] != targetState) return;
+            visited[index] = true;
+            queue.Enqueue(index);
         }
 
         public bool[,] GetFloodFillMask(SpriteState state, int startX, int startY, out int minX, out int minY, out int maxX, out int maxY)
