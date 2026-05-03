@@ -275,7 +275,7 @@
                                   MaxWidth="600" />
             </Grid.ColumnDefinitions>
 
-            <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Column="0" RadioButton.Checked="Tool_Checked" />
+            <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Column="0" />
 
             <views:CanvasPanel x:Name="Canvas" Grid.Column="1" 
                                Margin="15,20,20,20"

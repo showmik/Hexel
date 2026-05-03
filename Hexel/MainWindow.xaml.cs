@@ -76,6 +76,18 @@ namespace Hexel
             Canvas.MainScrollViewer.PreviewMouseUp += ScrollViewer_PreviewMouseUp;
             Canvas.CanvasImage.MouseLeave += CanvasImage_MouseLeave;
 
+            // Wire up tool selection
+            ToolSidebar.RbPencil.Checked += Tool_Checked;
+            ToolSidebar.RbLine.Checked += Tool_Checked;
+            ToolSidebar.RbRectangle.Checked += Tool_Checked;
+            ToolSidebar.RbEllipse.Checked += Tool_Checked;
+            ToolSidebar.RbFilledRectangle.Checked += Tool_Checked;
+            ToolSidebar.RbFilledEllipse.Checked += Tool_Checked;
+            ToolSidebar.RbFill.Checked += Tool_Checked;
+            ToolSidebar.RbMarquee.Checked += Tool_Checked;
+            ToolSidebar.RbLasso.Checked += Tool_Checked;
+            ToolSidebar.RbMagicWand.Checked += Tool_Checked;
+
             OnActiveTabChanged();
         }
 
