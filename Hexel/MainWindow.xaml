@@ -44,6 +44,8 @@
         <KeyBinding Key="D0"
                     Modifiers="Ctrl"
                     Command="{x:Static NavigationCommands.Zoom}" />
+        <KeyBinding Key="F1"
+                    Command="{Binding OpenDocumentationCommand}" />
     </Window.InputBindings>
 
     <Grid>
@@ -125,6 +127,16 @@
                 <MenuItem Header="_Delete Selection"
                           Command="{Binding ActiveDocument.DeleteSelectionCommand}"
                           InputGestureText="Del" />
+            </MenuItem>
+
+            <!-- ── Help ── -->
+            <MenuItem Header="_Help">
+                <MenuItem Header="_Documentation"
+                          Command="{Binding OpenDocumentationCommand}"
+                          InputGestureText="F1" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem Header="_About Hexel"
+                          Command="{Binding ShowAboutCommand}" />
             </MenuItem>
         </Menu>
 

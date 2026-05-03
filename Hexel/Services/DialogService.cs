@@ -67,5 +67,11 @@ namespace Hexel.Services
                 _ => null // Cancel
             };
         }
+
+        public void ShowAboutDialog()
+        {
+            var dlg = new AboutDialog { Owner = Application.Current.MainWindow };
+            dlg.ShowDialog();
+        }
     }
 }

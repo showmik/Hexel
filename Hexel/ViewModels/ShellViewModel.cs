@@ -4,6 +4,7 @@ using Hexel.Core;
 using Hexel.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -54,6 +55,8 @@ namespace Hexel.ViewModels
         public IRelayCommand SaveAsCommand { get; }
         public IRelayCommand<MainViewModel> CloseTabCommand { get; }
         public IRelayCommand ResizeCanvasCommand { get; }
+        public IRelayCommand OpenDocumentationCommand { get; }
+        public IRelayCommand ShowAboutCommand { get; }
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>Raised when a tab is added so the View can wire events.</summary>
@@ -80,6 +83,8 @@ namespace Hexel.ViewModels
             SaveAsCommand = new RelayCommand(ExecuteSaveAs, () => HasOpenDocument);
             CloseTabCommand = new RelayCommand<MainViewModel>(ExecuteCloseTab);
             ResizeCanvasCommand = new RelayCommand(ExecuteResizeCanvas, () => HasOpenDocument);
+            OpenDocumentationCommand = new RelayCommand(ExecuteOpenDocumentation);
+            ShowAboutCommand = new RelayCommand(ExecuteShowAbout);
 
             // Start with one blank document
             AddNewDocument(16, 16);
@@ -243,6 +248,18 @@ namespace Hexel.ViewModels
 
                 ActiveDocument.ResizeCanvas(w, h, anchor);
             }
+        }
+
+        // ── Help ──────────────────────────────────────────────────────────
+
+        private void ExecuteOpenDocumentation()
+        {
+            Process.Start(new ProcessStartInfo("https://github.com/showmik/Hexel") { UseShellExecute = true });
+        }
+
+        private void ExecuteShowAbout()
+        {
+            _dialogService.ShowAboutDialog();
         }
 
         // ── Helpers ───────────────────────────────────────────────────────

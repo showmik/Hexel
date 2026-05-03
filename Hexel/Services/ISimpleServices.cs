@@ -38,6 +38,11 @@ namespace Hexel.Services
         /// or null (cancel/abort the operation).
         /// </summary>
         bool? ShowUnsavedChangesDialog(string documentName);
+
+        /// <summary>
+        /// Shows the "About Hexel" dialog.
+        /// </summary>
+        void ShowAboutDialog();
     }
 
     public interface IFileService
