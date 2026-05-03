@@ -97,6 +97,11 @@ namespace Hexel
                 _ => ToolMode.Pencil
             };
 
+            // Reset drawing state so the new tool doesn't inherit a stale draw mode
+            // from the previous tool (e.g. pencil auto-drawing without mouse pressed).
+            _activeDrawMode = DrawMode.None;
+            ViewModel.CancelInProgressDrawing();
+
             // Switching away from a selection tool commits any floating content
             if (ViewModel.CurrentTool != ToolMode.Marquee &&
                 ViewModel.CurrentTool != ToolMode.Lasso)
@@ -127,13 +132,16 @@ namespace Hexel
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse)
             {
                 ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
-                _activeDrawMode = DrawMode.None;
             }
             else if (ViewModel.CurrentTool == ToolMode.Pencil)
             {
                 ViewModel.ProcessToolInput(-1, -1, ToolAction.Up, DrawMode.None, false, false);
-                _activeDrawMode = DrawMode.None;
             }
+
+            // Always clear the draw mode on mouse-up so that switching tools
+            // (via radio button click or keyboard shortcut) never leaves a
+            // stale Draw/Erase mode that would cause the next tool to auto-draw.
+            _activeDrawMode = DrawMode.None;
 
             if (e.ChangedButton == MouseButton.Left)
             {

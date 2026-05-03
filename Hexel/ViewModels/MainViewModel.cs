@@ -951,6 +951,23 @@ namespace Hexel.ViewModels
             }
         }
 
+        /// <summary>
+        /// Cancels any in-progress shape drawing and resets tracking state.
+        /// Called by the View when switching tools to prevent stale draw flags.
+        /// </summary>
+        public void CancelInProgressDrawing()
+        {
+            if (IsDrawingLine || IsDrawingRectangle || IsDrawingEllipse)
+            {
+                IsDrawingLine = false;
+                IsDrawingRectangle = false;
+                IsDrawingEllipse = false;
+                ResetLineTracking();
+                RedrawGridFromMemory();  // remove any shape preview
+            }
+            _pendingTextUpdateDuringDrag = false;
+        }
+
         private void ResetLineTracking()
         {
             _lineStartX = NoPosition;
