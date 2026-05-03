@@ -432,24 +432,6 @@ namespace Hexel
             }
             var groupGeom = new GeometryGroup();
 
-            if (_selection.IsSelecting && _selection.LassoPoints.Count >= 2 && !_selection.HasActiveSelection)
-            {
-                var polyGeom = new StreamGeometry();
-                using (var ctx = polyGeom.Open())
-                {
-                    var pts = _selection.LassoPoints;
-                    ctx.BeginFigure(
-                        new Point((pts[0].X + 0.5) * cw, (pts[0].Y + 0.5) * ch),
-                        isFilled: true, isClosed: true);
-                    for (int i = 1; i < pts.Count; i++)
-                        ctx.LineTo(
-                            new Point((pts[i].X + 0.5) * cw, (pts[i].Y + 0.5) * ch),
-                            isStroked: true, isSmoothJoin: false);
-                }
-                polyGeom.Freeze();
-                groupGeom.Children.Add(polyGeom);
-            }
-
             if (mask != null)
             {
                 var edgesByStart = new System.Collections.Generic.Dictionary<(int, int), System.Collections.Generic.List<(int, int)>>();
