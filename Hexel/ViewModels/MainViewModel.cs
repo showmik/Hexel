@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Hexel.Controllers;
 using Hexel.Core;
+using Hexel.Rendering;
 using Hexel.Services;
 using System;
 using System.Collections.Generic;
@@ -130,6 +132,13 @@ namespace Hexel.ViewModels
             set => SetProperty(ref _currentTool, value);
         }
 
+        private double _zoomLevel = 1.0;
+        public double ZoomLevel
+        {
+            get => _zoomLevel;
+            set => SetProperty(ref _zoomLevel, value);
+        }
+
         private int _brushSize = 1;
         public int BrushSize
         {
@@ -152,11 +161,11 @@ namespace Hexel.ViewModels
         }
 
         // Flags read by the View to know whether a shape preview is in progress
-        public bool IsDrawingLine { get; private set; }
-        public bool IsDrawingRectangle { get; private set; }
-        public bool IsDrawingEllipse { get; private set; }
-        public bool IsDrawingFilledRectangle { get; private set; }
-        public bool IsDrawingFilledEllipse { get; private set; }
+        public bool IsDrawingLine => _toolInput.IsDrawingLine;
+        public bool IsDrawingRectangle => _toolInput.IsDrawingRectangle;
+        public bool IsDrawingEllipse => _toolInput.IsDrawingEllipse;
+        public bool IsDrawingFilledRectangle => _toolInput.IsDrawingFilledRectangle;
+        public bool IsDrawingFilledEllipse => _toolInput.IsDrawingFilledEllipse;
 
         // ── Export format options ─────────────────────────────────────────
         private bool _binaryUseComma = false;
@@ -267,18 +276,17 @@ namespace Hexel.ViewModels
         private static uint ToBgra32(Color c) =>
             (uint)((c.A << 24) | (c.R << 16) | (c.G << 8) | c.B);
 
-        // ── Internal drawing tracking ─────────────────────────────────────
-        private const int NoPosition = int.MinValue;
-        private int _lineStartX = NoPosition;
-        private int _lineStartY = NoPosition;
-        private int _lineCurrentX = NoPosition;
-        private int _lineCurrentY = NoPosition;
-        private bool _lineDrawState = false;
-        private int _lastClickedX = NoPosition;
-        private int _lastClickedY = NoPosition;
-        private bool _pendingTextUpdateDuringDrag;
-        private bool _lastShiftDown;
-        private bool _lastAltDown;
+        // ── Internal accessors for rendering subsystem ────────────────────
+        internal uint[] CanvasBuffer => _canvasBuffer;
+        internal uint[] PreviewBuffer => _previewBuffer;
+        internal uint ColorOnUint => _colorOnUint;
+        internal uint ColorOffUint => _colorOffUint;
+        internal uint PreviewOnUint => _previewOnUint;
+        internal uint PreviewOffUint => _previewOffUint;
+
+        // ── Extracted subsystems ──────────────────────────────────────────
+        private ToolInputController _toolInput = null!;
+        private BitmapPreviewRenderer _previewRenderer = null!;
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>
@@ -357,6 +365,8 @@ namespace Hexel.ViewModels
 
             // ── Initialization ────────────────────────────────────────────
             InitializeBrushColors();
+            _previewRenderer = new BitmapPreviewRenderer(this);
+            _toolInput = new ToolInputController(this, _drawingService, _previewRenderer);
         }
 
         /// <summary>
@@ -437,8 +447,6 @@ namespace Hexel.ViewModels
             _canvasBuffer = new uint[newW * newH];
             _previewBuffer = new uint[newW * newH];
 
-
-
             RedrawGridFromMemory();
             UpdateTextOutputs();
 
@@ -515,28 +523,10 @@ namespace Hexel.ViewModels
 
         /// <summary>
         /// Main entry point for all non-selection tool input from the View.
-        /// Uses typed enums instead of the previous magic strings and bool? tri-state.
+        /// Delegates to the extracted ToolInputController.
         /// </summary>
         public void ProcessToolInput(int x, int y, ToolAction action, DrawMode mode, bool isShiftDown, bool isAltDown = false)
-        {
-            // Marquee and Lasso are handled entirely in the View via SelectionService
-            if (CurrentTool == ToolMode.Marquee || CurrentTool == ToolMode.Lasso) return;
-
-            switch (action)
-            {
-                case ToolAction.Down:
-                    HandleToolDown(x, y, mode, isShiftDown);
-                    break;
-
-                case ToolAction.Move:
-                    HandleToolMove(x, y, mode, isShiftDown, isAltDown);
-                    break;
-
-                case ToolAction.Up:
-                    HandleToolUp(isShiftDown, isAltDown);
-                    break;
-            }
-        }
+            => _toolInput.ProcessToolInput(x, y, action, mode, isShiftDown, isAltDown);
 
         public void SaveStateForUndo()
         {
@@ -550,48 +540,6 @@ namespace Hexel.ViewModels
             _drawingService.ShiftGrid(SpriteState, offsetX, offsetY);
             RedrawGridFromMemory();
             UpdateTextOutputs();
-        }
-
-        // ── Preview methods (used during shape drag, do not commit to state) ──
-
-        public void PreviewLine(int x0, int y0, int x1, int y1, bool newState)
-        {
-            RedrawGridFromMemory();
-            PlotLine(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
-                                       newState ? _previewOnUint : _previewOffUint);
-            FlushBitmaps();
-        }
-
-        public void PreviewRectangle(int x0, int y0, int x1, int y1, bool newState)
-        {
-            RedrawGridFromMemory();
-            PlotRectangle(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
-                                             newState ? _previewOnUint : _previewOffUint);
-            FlushBitmaps();
-        }
-
-        public void PreviewEllipse(int x0, int y0, int x1, int y1, bool newState)
-        {
-            RedrawGridFromMemory();
-            PlotEllipse(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
-                                           newState ? _previewOnUint : _previewOffUint);
-            FlushBitmaps();
-        }
-
-        public void PreviewFilledRectangle(int x0, int y0, int x1, int y1, bool newState)
-        {
-            RedrawGridFromMemory();
-            PlotFilledRectangle(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
-                                                  newState ? _previewOnUint : _previewOffUint);
-            FlushBitmaps();
-        }
-
-        public void PreviewFilledEllipse(int x0, int y0, int x1, int y1, bool newState)
-        {
-            RedrawGridFromMemory();
-            PlotFilledEllipse(x0, y0, x1, y1, newState ? _colorOnUint : _colorOffUint,
-                                                 newState ? _previewOnUint : _previewOffUint);
-            FlushBitmaps();
         }
 
         // ── Text output ───────────────────────────────────────────────────
@@ -635,351 +583,11 @@ namespace Hexel.ViewModels
             }
         }
 
-        // ── Private: tool dispatch ────────────────────────────────────────
-
-        private void HandleToolDown(int x, int y, DrawMode mode, bool isShiftDown)
-        {
-            bool newState = mode == DrawMode.Draw;
-
-            switch (CurrentTool)
-            {
-                case ToolMode.Fill:
-                    // BUG FIX: previously SaveStateForUndo() was called here AND inside
-                    // ApplyFloodFill, resulting in two undo entries per fill operation.
-                    // History is now saved exactly once, here at the call site.
-                    _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                    _drawingService.ApplyFloodFill(SpriteState, x, y, newState);
-                    _lastClickedX = x;
-                    _lastClickedY = y;
-                    RedrawGridFromMemory();
-                    UpdateTextOutputs();
-                    break;
-
-                case ToolMode.Line:
-                    IsDrawingLine = true;
-                    _lineStartX = x;
-                    _lineStartY = y;
-                    _lineCurrentX = x;
-                    _lineCurrentY = y;
-                    _lineDrawState = newState;
-                    PreviewLine(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    break;
-
-                case ToolMode.Rectangle:
-                    IsDrawingRectangle = true;
-                    _lineStartX = x;
-                    _lineStartY = y;
-                    _lineCurrentX = x;
-                    _lineCurrentY = y;
-                    _lineDrawState = newState;
-                    PreviewRectangle(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    break;
-
-                case ToolMode.Ellipse:
-                    IsDrawingEllipse = true;
-                    _lineStartX = x;
-                    _lineStartY = y;
-                    _lineCurrentX = x;
-                    _lineCurrentY = y;
-                    _lineDrawState = newState;
-                    PreviewEllipse(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    break;
-
-                case ToolMode.FilledRectangle:
-                    IsDrawingFilledRectangle = true;
-                    _lineStartX = x;
-                    _lineStartY = y;
-                    _lineCurrentX = x;
-                    _lineCurrentY = y;
-                    _lineDrawState = newState;
-                    PreviewFilledRectangle(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    break;
-
-                case ToolMode.FilledEllipse:
-                    IsDrawingFilledEllipse = true;
-                    _lineStartX = x;
-                    _lineStartY = y;
-                    _lineCurrentX = x;
-                    _lineCurrentY = y;
-                    _lineDrawState = newState;
-                    PreviewFilledEllipse(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, _lineDrawState);
-                    break;
-
-                case ToolMode.Pencil:
-                    if (isShiftDown && _lastClickedX != NoPosition)
-                    {
-                        _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize, BrushShape, BrushAngle);
-                        _lastClickedX = x;
-                        _lastClickedY = y;
-                        RedrawGridFromMemory();
-                        UpdateTextOutputs();
-                    }
-                    else
-                    {
-                        _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                        _drawingService.DrawBrushStamp(SpriteState, x, y, BrushSize, newState, BrushShape, BrushAngle);
-                        _lastClickedX = x;
-                        _lastClickedY = y;
-                        RedrawGridFromMemory();
-                        UpdateTextOutputs();
-                    }
-                    break;
-            }
-        }
-
-        private (int x0, int y0, int x1, int y1) GetConstrainedShapeBounds(int startX, int startY, int currentX, int currentY, ToolMode tool, bool isShift, bool isAlt)
-        {
-            int targetX = currentX;
-            int targetY = currentY;
-
-            if (tool == ToolMode.Line)
-            {
-                if (isShift)
-                {
-                    double angle = Math.Atan2(targetY - startY, targetX - startX);
-                    angle = Math.Round(angle / (Math.PI / 12.0)) * (Math.PI / 12.0);
-                    double dist = Math.Sqrt(Math.Pow(targetX - startX, 2) + Math.Pow(targetY - startY, 2));
-                    targetX = startX + (int)Math.Round(Math.Cos(angle) * dist);
-                    targetY = startY + (int)Math.Round(Math.Sin(angle) * dist);
-                }
-
-                int x0 = startX;
-                int y0 = startY;
-                if (isAlt)
-                {
-                    x0 = 2 * startX - targetX;
-                    y0 = 2 * startY - targetY;
-                }
-                return (x0, y0, targetX, targetY);
-            }
-            else
-            {
-                if (isShift)
-                {
-                    int dx = currentX - startX;
-                    int dy = currentY - startY;
-                    int side = Math.Max(Math.Abs(dx), Math.Abs(dy));
-                    targetX = startX + (dx >= 0 ? side : -side);
-                    targetY = startY + (dy >= 0 ? side : -side);
-                }
-
-                int x0 = startX;
-                int y0 = startY;
-                if (isAlt)
-                {
-                    x0 = 2 * startX - targetX;
-                    y0 = 2 * startY - targetY;
-                }
-                return (x0, y0, targetX, targetY);
-            }
-        }
-
-        private void HandleToolMove(int x, int y, DrawMode mode, bool isShiftDown, bool isAltDown)
-        {
-            bool newState = mode == DrawMode.Draw;
-
-            switch (CurrentTool)
-            {
-                case ToolMode.Line when IsDrawingLine:
-                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
-                    {
-                        _lineCurrentX = x;
-                        _lineCurrentY = y;
-                        _lastShiftDown = isShiftDown;
-                        _lastAltDown = isAltDown;
-                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Line, isShiftDown, isAltDown);
-                        PreviewLine(x0, y0, x1, y1, _lineDrawState);
-                    }
-                    break;
-
-                case ToolMode.Rectangle when IsDrawingRectangle:
-                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
-                    {
-                        _lineCurrentX = x;
-                        _lineCurrentY = y;
-                        _lastShiftDown = isShiftDown;
-                        _lastAltDown = isAltDown;
-                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Rectangle, isShiftDown, isAltDown);
-                        PreviewRectangle(x0, y0, x1, y1, _lineDrawState);
-                    }
-                    break;
-
-                case ToolMode.Ellipse when IsDrawingEllipse:
-                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
-                    {
-                        _lineCurrentX = x;
-                        _lineCurrentY = y;
-                        _lastShiftDown = isShiftDown;
-                        _lastAltDown = isAltDown;
-                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Ellipse, isShiftDown, isAltDown);
-                        PreviewEllipse(x0, y0, x1, y1, _lineDrawState);
-                    }
-                    break;
-
-                case ToolMode.FilledRectangle when IsDrawingFilledRectangle:
-                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
-                    {
-                        _lineCurrentX = x;
-                        _lineCurrentY = y;
-                        _lastShiftDown = isShiftDown;
-                        _lastAltDown = isAltDown;
-                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledRectangle, isShiftDown, isAltDown);
-                        PreviewFilledRectangle(x0, y0, x1, y1, _lineDrawState);
-                    }
-                    break;
-
-                case ToolMode.FilledEllipse when IsDrawingFilledEllipse:
-                    if (_lineCurrentX != x || _lineCurrentY != y || _lastShiftDown != isShiftDown || _lastAltDown != isAltDown)
-                    {
-                        _lineCurrentX = x;
-                        _lineCurrentY = y;
-                        _lastShiftDown = isShiftDown;
-                        _lastAltDown = isAltDown;
-                        var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledEllipse, isShiftDown, isAltDown);
-                        PreviewFilledEllipse(x0, y0, x1, y1, _lineDrawState);
-                    }
-                    break;
-
-                case ToolMode.Pencil when mode != DrawMode.None:
-                    if (_lastClickedX != NoPosition && (_lastClickedX != x || _lastClickedY != y))
-                    {
-                        // Continuous pencil drag: draw line segment but don't push undo
-                        // (the undo entry was already pushed on Down)
-                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize, BrushShape, BrushAngle);
-                        _lastClickedX = x;
-                        _lastClickedY = y;
-                        _pendingTextUpdateDuringDrag = true;
-                        RedrawGridFromMemory();
-                    }
-                    break;
-            }
-        }
-
-        private void HandleToolUp(bool isShiftDown, bool isAltDown)
-        {
-            if (IsDrawingLine)
-            {
-                IsDrawingLine = false;
-                if (_lineStartX != NoPosition)
-                {
-                    _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Line, isShiftDown, isAltDown);
-                    _drawingService.DrawLine(SpriteState, x0, y0, x1, y1, _lineDrawState);
-                    _lastClickedX = x1;
-                    _lastClickedY = y1;
-                    RedrawGridFromMemory();
-                }
-                ResetLineTracking();
-                UpdateTextOutputs();
-            }
-
-            if (IsDrawingRectangle)
-            {
-                IsDrawingRectangle = false;
-                if (_lineStartX != NoPosition)
-                {
-                    _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Rectangle, isShiftDown, isAltDown);
-                    _drawingService.DrawRectangle(SpriteState, x0, y0, x1, y1, _lineDrawState);
-                    _lastClickedX = x1;
-                    _lastClickedY = y1;
-                    RedrawGridFromMemory();
-                }
-                ResetLineTracking();
-                UpdateTextOutputs();
-            }
-
-            if (IsDrawingEllipse)
-            {
-                IsDrawingEllipse = false;
-                if (_lineStartX != NoPosition)
-                {
-                    _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.Ellipse, isShiftDown, isAltDown);
-                    _drawingService.DrawEllipse(SpriteState, x0, y0, x1, y1, _lineDrawState);
-                    _lastClickedX = x1;
-                    _lastClickedY = y1;
-                    RedrawGridFromMemory();
-                }
-                ResetLineTracking();
-                UpdateTextOutputs();
-            }
-
-            if (IsDrawingFilledRectangle)
-            {
-                IsDrawingFilledRectangle = false;
-                if (_lineStartX != NoPosition)
-                {
-                    _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledRectangle, isShiftDown, isAltDown);
-                    _drawingService.DrawFilledRectangle(SpriteState, x0, y0, x1, y1, _lineDrawState);
-                    _lastClickedX = x1;
-                    _lastClickedY = y1;
-                    RedrawGridFromMemory();
-                }
-                ResetLineTracking();
-                UpdateTextOutputs();
-            }
-
-            if (IsDrawingFilledEllipse)
-            {
-                IsDrawingFilledEllipse = false;
-                if (_lineStartX != NoPosition)
-                {
-                    _historyService.SaveState(SpriteState);
-                    IsDirty = true;
-                    var (x0, y0, x1, y1) = GetConstrainedShapeBounds(_lineStartX, _lineStartY, _lineCurrentX, _lineCurrentY, ToolMode.FilledEllipse, isShiftDown, isAltDown);
-                    _drawingService.DrawFilledEllipse(SpriteState, x0, y0, x1, y1, _lineDrawState);
-                    _lastClickedX = x1;
-                    _lastClickedY = y1;
-                    RedrawGridFromMemory();
-                }
-                ResetLineTracking();
-                UpdateTextOutputs();
-            }
-
-            if (CurrentTool == ToolMode.Pencil && _pendingTextUpdateDuringDrag)
-            {
-                _pendingTextUpdateDuringDrag = false;
-                UpdateTextOutputs();
-            }
-        }
-
         /// <summary>
         /// Cancels any in-progress shape drawing and resets tracking state.
         /// Called by the View when switching tools to prevent stale draw flags.
         /// </summary>
-        public void CancelInProgressDrawing()
-        {
-            if (IsDrawingLine || IsDrawingRectangle || IsDrawingEllipse ||
-                IsDrawingFilledRectangle || IsDrawingFilledEllipse)
-            {
-                IsDrawingLine = false;
-                IsDrawingRectangle = false;
-                IsDrawingEllipse = false;
-                IsDrawingFilledRectangle = false;
-                IsDrawingFilledEllipse = false;
-                ResetLineTracking();
-                RedrawGridFromMemory();  // remove any shape preview
-            }
-            _pendingTextUpdateDuringDrag = false;
-        }
-
-        private void ResetLineTracking()
-        {
-            _lineStartX = NoPosition;
-            _lineStartY = NoPosition;
-            _lineCurrentX = NoPosition;
-            _lineCurrentY = NoPosition;
-        }
+        public void CancelInProgressDrawing() => _toolInput.CancelInProgressDrawing();
 
         // ── Private: pixel helpers ────────────────────────────────────────
 
@@ -990,117 +598,6 @@ namespace Hexel.ViewModels
             if (SpriteState.Pixels[index] == state) return;
             SpriteState.Pixels[index] = state;
             RedrawGridFromMemory();
-        }
-
-        // ── Private: bitmap plotting (for previews) ───────────────────────
-
-        private void PlotPixel(int x, int y, uint canvasColor, uint previewColor)
-        {
-            int w = SpriteState.Width;
-            int h = SpriteState.Height;
-            if (x < 0 || x >= w || y < 0 || y >= h) return;
-            int i = (y * w) + x;
-            _canvasBuffer[i] = canvasColor;
-            _previewBuffer[i] = previewColor;
-        }
-
-        private void PlotLine(int x0, int y0, int x1, int y1, uint cc, uint pc)
-        {
-            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
-            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-            int err = dx - dy;
-            while (true)
-            {
-                PlotPixel(x0, y0, cc, pc);
-                if (x0 == x1 && y0 == y1) break;
-                int e2 = 2 * err;
-                if (e2 > -dy) { err -= dy; x0 += sx; }
-                if (e2 < dx) { err += dx; y0 += sy; }
-            }
-        }
-
-        private void PlotRectangle(int x0, int y0, int x1, int y1, uint cc, uint pc)
-        {
-            int minX = Math.Min(x0, x1), maxX = Math.Max(x0, x1);
-            int minY = Math.Min(y0, y1), maxY = Math.Max(y0, y1);
-            for (int x = minX; x <= maxX; x++) { PlotPixel(x, minY, cc, pc); PlotPixel(x, maxY, cc, pc); }
-            for (int y = minY; y <= maxY; y++) { PlotPixel(minX, y, cc, pc); PlotPixel(maxX, y, cc, pc); }
-        }
-
-        private void PlotEllipse(int x0, int y0, int x1, int y1, uint cc, uint pc)
-        {
-            int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
-            long dx = 4L * (1 - a) * b * b, dy = 4L * (b1 + 1) * a * a;
-            long err = dx + dy + (long)b1 * a * a, e2;
-
-            if (x0 > x1) { x0 = x1; x1 += a; }
-            if (y0 > y1) y0 = y1;
-            y0 += (b + 1) / 2;
-            y1 = y0 - b1;
-            a *= 8 * a;
-            b1 = 8 * b * b;
-
-            do
-            {
-                PlotPixel(x1, y0, cc, pc); PlotPixel(x0, y0, cc, pc);
-                PlotPixel(x0, y1, cc, pc); PlotPixel(x1, y1, cc, pc);
-                e2 = 2 * err;
-                if (e2 <= dy) { y0++; y1--; err += dy += a; }
-                if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += b1; }
-            }
-            while (x0 <= x1);
-
-            while (y0 - y1 < b)
-            {
-                PlotPixel(x0 - 1, y0, cc, pc); PlotPixel(x1 + 1, y0, cc, pc);
-                PlotPixel(x0 - 1, y1, cc, pc); PlotPixel(x1 + 1, y1, cc, pc);
-                y0++; y1--;
-            }
-        }
-
-        private void PlotFilledRectangle(int x0, int y0, int x1, int y1, uint cc, uint pc)
-        {
-            int minX = Math.Min(x0, x1), maxX = Math.Max(x0, x1);
-            int minY = Math.Min(y0, y1), maxY = Math.Max(y0, y1);
-            for (int y = minY; y <= maxY; y++)
-                for (int x = minX; x <= maxX; x++)
-                    PlotPixel(x, y, cc, pc);
-        }
-
-        private void PlotFilledEllipse(int x0, int y0, int x1, int y1, uint cc, uint pc)
-        {
-            int a = Math.Abs(x1 - x0), b = Math.Abs(y1 - y0), b1 = b & 1;
-            long dx = 4L * (1 - a) * b * b, dy = 4L * (b1 + 1) * a * a;
-            long err = dx + dy + (long)b1 * a * a, e2;
-
-            if (x0 > x1) { x0 = x1; x1 += a; }
-            if (y0 > y1) y0 = y1;
-            y0 += (b + 1) / 2;
-            y1 = y0 - b1;
-            a *= 8 * a;
-            b1 = 8 * b * b;
-
-            do
-            {
-                for (int px = x0; px <= x1; px++) { PlotPixel(px, y0, cc, pc); PlotPixel(px, y1, cc, pc); }
-                e2 = 2 * err;
-                if (e2 <= dy) { y0++; y1--; err += dy += a; }
-                if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += b1; }
-            }
-            while (x0 <= x1);
-
-            while (y0 - y1 < b)
-            {
-                for (int px = x0 - 1; px <= x1 + 1; px++) { PlotPixel(px, y0, cc, pc); PlotPixel(px, y1, cc, pc); }
-                y0++; y1--;
-            }
-        }
-
-        private void FlushBitmaps()
-        {
-            var rect = new Int32Rect(0, 0, SpriteState.Width, SpriteState.Height);
-            CanvasBitmap.WritePixels(rect, _canvasBuffer, SpriteState.Width * 4, 0);
-            PreviewBitmap.WritePixels(rect, _previewBuffer, SpriteState.Width * 4, 0);
         }
 
         // ── Private: history restore ──────────────────────────────────────

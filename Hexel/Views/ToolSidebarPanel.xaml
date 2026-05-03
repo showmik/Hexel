@@ -1,0 +1,127 @@
+<UserControl x:Class="Hexel.Views.ToolSidebarPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="100">
+    <Border Background="{DynamicResource Theme.ToolSidebarBackgroundBrush}"
+            Padding="8,16"
+            Margin="20,20,0,0"
+            CornerRadius="12"
+            VerticalAlignment="Top">
+        <Border.Effect>
+            <DropShadowEffect Color="Black"
+                              BlurRadius="10"
+                              Opacity="0.15"
+                              Direction="270"
+                              ShadowDepth="3" />
+        </Border.Effect>
+        <StackPanel Orientation="Vertical"
+                    HorizontalAlignment="Center">
+            <RadioButton x:Name="RbPencil" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         IsChecked="True"
+                         Tag="Pencil"
+                         Margin="0,0,0,4"
+                         ToolTip="Pencil (P)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      Data="M3.40979 23.0017V12.4402l5.0521 2.7261 3.53861 -2.5275 3.5386 2.5275 5.0511 -2.7261v10.5615 M3.41949 12.4388 11.1783 1.42699c0.4028 -0.571599 1.2503 -0.571599 1.6531 0l7.7588 11.01181 M8.46191 15.1663v7.8354 M15.5391 15.1663v7.8354 M7.55359 6.57275h8.89381" />
+            </RadioButton>
+            <RadioButton x:Name="RbLine" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="Line"
+                         Margin="0,0,0,4"
+                         ToolTip="Line (L)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      Data="M4 14L14 4" />
+            </RadioButton>
+            <RadioButton x:Name="RbRectangle" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="Rectangle"
+                         Margin="0,0,0,4"
+                         ToolTip="Rectangle (R)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      Data="M 5,5 H 19 V 19 H 5 Z" />
+            </RadioButton>
+            <RadioButton x:Name="RbEllipse" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="Ellipse"
+                         Margin="0,0,0,4"
+                         ToolTip="Ellipse (E)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
+            </RadioButton>
+            <RadioButton x:Name="RbFilledRectangle" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="FilledRectangle"
+                         Margin="0,0,0,4"
+                         ToolTip="Filled Rectangle (Shift+R)">
+                <Path Style="{StaticResource FilledToolIconStyle}"
+                      Data="M 5,5 H 19 V 19 H 5 Z" />
+            </RadioButton>
+            <RadioButton x:Name="RbFilledEllipse" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="FilledEllipse"
+                         Margin="0,0,0,4"
+                         ToolTip="Filled Ellipse (Shift+E)">
+                <Path Style="{StaticResource FilledToolIconStyle}"
+                      Data="M 12,5 C 4,5 2,12 2,12 C 2,12 4,19 12,19 C 20,19 22,12 22,12 C 22,12 20,5 12,5 Z" />
+            </RadioButton>
+            <RadioButton x:Name="RbFill" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="Fill"
+                         Margin="0,0,0,4"
+                         ToolTip="Fill (F)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      Data="M45 39.3999c0 3.0928 -2.2386 5.6 -5 5.6s-5 -2.5072 -5 -5.6c0 -2.8526 2.3065 -5.7051 3.7864 -7.2418 0.6738 -0.6997 1.7534 -0.6997 2.4272 0C42.6935 33.6948 45 36.5473 45 39.3999Z M4.61826 9.7989c0.54387 -0.77989 1.54378 -0.98039 2.45947 -0.72608C9.9592 9.87308 16.6614 11.789 23.008 14.0004c1.436 0.5003 2.3292 1.9896 1.9345 3.4582 -0.3947 1.4687 -1.9151 2.3131 -3.4095 2.0306 -6.6053 -1.2489 -13.37034 -2.931 -16.26708 -3.6744 -0.92053 -0.2363 -1.68594 -0.9084 -1.76585 -1.855 -0.05162 -0.6113 -0.03039 -1.3674 0.18788 -2.1796 0.21827 -0.8122 0.57907 -1.4776 0.93031 -1.9813Z M9.49611 16.867c-1.69888 2.1041 -3.50226 4.3976 -5.33812 6.8245 -1.51733 2.0058 -1.56961 4.7519 0.00334 6.7144 1.16214 1.45 2.68002 3.2177 4.44771 4.9854 1.76766 1.7677 3.53536 3.2856 4.98536 4.4477 1.9625 1.573 4.7085 1.5207 6.7143 0.0034 8.3622 -6.3258 15.1404 -12.2659 18.0434 -14.8746 0.8424 -0.757 0.8624 -2.0546 0.0616 -2.8555L21.8879 5.58631c-0.8009 -0.80084 -2.0985 -0.78085 -2.8555 0.06155 -1.0907 1.21386 -2.7639 3.10521 -4.8042 5.50654" />
+            </RadioButton>
+
+            <!-- Separator between draw and select tools -->
+            <Rectangle Height="1"
+                       Fill="{DynamicResource Theme.SeparatorBrush}"
+                       Margin="4,6"
+                       RadiusX="1"
+                       RadiusY="1" />
+
+            <RadioButton x:Name="RbMarquee" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="Marquee"
+                         Margin="0,0,0,4"
+                         ToolTip="Marquee Select (M)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      StrokeDashArray="2,2"
+                      Data="M 2,2 L 16,2 L 16,16 L 2,16 Z" />
+            </RadioButton>
+            <RadioButton x:Name="RbLasso" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="Lasso"
+                         ToolTip="Lasso Select (S)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      StrokeDashArray="2,2"
+                      Height="22"
+                      Width="22"
+                      Data="{StaticResource Icon.Lasso}" />
+            </RadioButton>
+            <RadioButton x:Name="RbMagicWand" x:FieldModifier="public"
+                         Style="{StaticResource VerticalToolButtonStyle}"
+                         GroupName="Tools"
+                         Tag="MagicWand"
+                         ToolTip="Magic Wand (W)">
+                <Path Style="{StaticResource StrokedToolIconStyle}"
+                      Height="22"
+                      Width="22"
+                      Data="{StaticResource Icon.MagicWand}" />
+            </RadioButton>
+        </StackPanel>
+    </Border>
+</UserControl>
