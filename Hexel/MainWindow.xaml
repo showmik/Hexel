@@ -1,6 +1,8 @@
 <Window x:Class="Hexel.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="clr-namespace:Hexel.Core"
+        xmlns:vm="clr-namespace:Hexel.ViewModels"
         Title="Hexel"
         MinHeight="650"
         MinWidth="950"
@@ -41,9 +43,10 @@
         <Menu Grid.Row="0">
             <!-- ── File ── -->
             <MenuItem Header="_File">
-                <MenuItem Header="New Canvas"
-                          Command="{Binding NewCanvasCommand}"
-                          InputGestureText="" />
+                <MenuItem Header="_New Canvas"
+                          Command="{Binding NewCanvasCommand}" />
+                <MenuItem Header="_Resize Canvas"
+                          Command="{Binding ResizeCanvasCommand}" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Save"
                           Command="{Binding SaveCommand}"
@@ -386,32 +389,132 @@
                                        FontStyle="Italic" />
                         </StackPanel>
 
-                        <!-- Canvas size (compact) -->
+                        <!-- Canvas resize panel -->
                         <StackPanel Orientation="Horizontal"
-                                    Grid.Column="2">
-                            <TextBox Text="{Binding InputWidth}"
-                                     Width="36"
+                                    Grid.Column="2"
+                                    VerticalAlignment="Center">
+
+                            <!-- CANVAS label -->
+                            <TextBlock Text="CANVAS"
+                                       Style="{StaticResource HeaderStyle}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"
+                                       FontSize="11" />
+
+                            <!-- Preset dropdown -->
+                            <ComboBox x:Name="PresetComboBox"
+                                      Width="155"
+                                      Style="{StaticResource ModernComboBoxStyle}"
+                                      ItemsSource="{x:Static vm:MainViewModel.DisplayPresets}"
+                                      SelectedItem="{Binding SelectedPreset}"
+                                      ToolTip="Display size preset"
+                                      Margin="0,0,10,0" />
+
+                            <!-- Width × Height inputs -->
+                            <TextBox Text="{Binding InputWidth, UpdateSourceTrigger=PropertyChanged}"
+                                     Width="40"
                                      Style="{StaticResource ModernTextBoxStyle}"
                                      Margin="0,0,4,0"
-                                     ToolTip="Canvas width"
+                                     ToolTip="Canvas width (Enter to resize)"
                                      GotKeyboardFocus="CanvasInput_GotFocus"
                                      PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
                                      LostFocus="CanvasInput_LostFocus"
+                                     KeyDown="CanvasInput_KeyDown"
                                      PreviewTextInput="NumberValidationTextBox"
                                      DataObject.Pasting="TextBoxPasting" />
                             <TextBlock Text="×"
                                        VerticalAlignment="Center"
                                        Foreground="{DynamicResource Theme.TextMutedBrush}"
                                        Margin="0,0,4,0" />
-                            <TextBox Text="{Binding InputHeight}"
-                                     Width="36"
+                            <TextBox Text="{Binding InputHeight, UpdateSourceTrigger=PropertyChanged}"
+                                     Width="40"
                                      Style="{StaticResource ModernTextBoxStyle}"
-                                     ToolTip="Canvas height"
+                                     Margin="0,0,10,0"
+                                     ToolTip="Canvas height (Enter to resize)"
                                      GotKeyboardFocus="CanvasInput_GotFocus"
                                      PreviewMouseLeftButtonDown="CanvasInput_PreviewMouseDown"
                                      LostFocus="CanvasInput_LostFocus"
+                                     KeyDown="CanvasInput_KeyDown"
                                      PreviewTextInput="NumberValidationTextBox"
                                      DataObject.Pasting="TextBoxPasting" />
+
+                            <!-- 3×3 Anchor grid -->
+                            <Border Background="{DynamicResource Theme.BackgroundBrush}"
+                                    CornerRadius="4"
+                                    Padding="2"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Resize anchor — where existing content is pinned">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Row 0 -->
+                                    <RadioButton Grid.Row="0" Grid.Column="0" GroupName="AnchorGrid"
+                                                 Tag="TopLeft" IsChecked="True"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+                                    <RadioButton Grid.Row="0" Grid.Column="1" GroupName="AnchorGrid"
+                                                 Tag="TopCenter"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+                                    <RadioButton Grid.Row="0" Grid.Column="2" GroupName="AnchorGrid"
+                                                 Tag="TopRight"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+
+                                    <!-- Row 1 -->
+                                    <RadioButton Grid.Row="1" Grid.Column="0" GroupName="AnchorGrid"
+                                                 Tag="CenterLeft"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+                                    <RadioButton Grid.Row="1" Grid.Column="1" GroupName="AnchorGrid"
+                                                 Tag="Center"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+                                    <RadioButton Grid.Row="1" Grid.Column="2" GroupName="AnchorGrid"
+                                                 Tag="CenterRight"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+
+                                    <!-- Row 2 -->
+                                    <RadioButton Grid.Row="2" Grid.Column="0" GroupName="AnchorGrid"
+                                                 Tag="BottomLeft"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+                                    <RadioButton Grid.Row="2" Grid.Column="1" GroupName="AnchorGrid"
+                                                 Tag="BottomCenter"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+                                    <RadioButton Grid.Row="2" Grid.Column="2" GroupName="AnchorGrid"
+                                                 Tag="BottomRight"
+                                                 Style="{StaticResource AnchorDotStyle}"
+                                                 Checked="AnchorButton_Checked" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Action buttons -->
+                            <Button Content="Resize"
+                                    Height="28"
+                                    Padding="10,0"
+                                    Margin="0,0,4,0"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Command="{Binding ResizeCanvasCommand}"
+                                    ToolTip="Resize canvas, preserving existing pixel art at the chosen anchor" />
+                            <Button Content="New"
+                                    Height="28"
+                                    Padding="10,0"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Command="{Binding NewCanvasCommand}"
+                                    ToolTip="Create a new blank canvas at the specified dimensions" />
                         </StackPanel>
 
                         <Rectangle Grid.Column="3"

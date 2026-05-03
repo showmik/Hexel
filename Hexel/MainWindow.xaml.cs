@@ -779,6 +779,31 @@ namespace Hexel
                 e.CancelCommand();
         }
 
+        // ── Canvas input: Enter key commits ─────────────────────────────
+
+        private void CanvasInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter && e.Key != Key.Return) return;
+
+            // Move focus away so LostFocus validation fires, then execute resize
+            Keyboard.ClearFocus();
+            if (ViewModel?.ResizeCanvasCommand?.CanExecute(null) == true)
+                ViewModel.ResizeCanvasCommand.Execute(null);
+
+            e.Handled = true;
+        }
+
+        // ── Anchor grid handler ──────────────────────────────────────────
+
+        private void AnchorButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.RadioButton rb || rb.Tag is not string tagStr) return;
+            if (ViewModel == null) return;
+
+            if (Enum.TryParse<Hexel.Core.ResizeAnchor>(tagStr, out var anchor))
+                ViewModel.ResizeAnchor = anchor;
+        }
+
         // ── Utility ───────────────────────────────────────────────────────
 
         private (int x, int y) GetPixelCoordinates(Point pos, double actualWidth, double actualHeight)

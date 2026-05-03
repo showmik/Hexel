@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Hexel.Core;
 using Hexel.Services;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -25,17 +26,77 @@ namespace Hexel.ViewModels
         // ── Canvas size input ─────────────────────────────────────────────
         private string _inputWidth = "16";
         private string _inputHeight = "16";
+        private bool _isApplyingPreset; // prevents circular reset of SelectedPreset
 
         public string InputWidth
         {
             get => _inputWidth;
-            set => SetProperty(ref _inputWidth, value);
+            set
+            {
+                if (!SetProperty(ref _inputWidth, value)) return;
+                // Manual edit → drop preset to Custom
+                if (!_isApplyingPreset && _selectedPreset != "Custom")
+                {
+                    _selectedPreset = "Custom";
+                    OnPropertyChanged(nameof(SelectedPreset));
+                }
+            }
         }
         public string InputHeight
         {
             get => _inputHeight;
-            set => SetProperty(ref _inputHeight, value);
+            set
+            {
+                if (!SetProperty(ref _inputHeight, value)) return;
+                if (!_isApplyingPreset && _selectedPreset != "Custom")
+                {
+                    _selectedPreset = "Custom";
+                    OnPropertyChanged(nameof(SelectedPreset));
+                }
+            }
         }
+
+        // ── Resize anchor ─────────────────────────────────────────────────
+        private ResizeAnchor _resizeAnchor = ResizeAnchor.TopLeft;
+        public ResizeAnchor ResizeAnchor
+        {
+            get => _resizeAnchor;
+            set => SetProperty(ref _resizeAnchor, value);
+        }
+
+        // ── Display preset ────────────────────────────────────────────────
+        private string _selectedPreset = "Custom";
+        public string SelectedPreset
+        {
+            get => _selectedPreset;
+            set
+            {
+                if (!SetProperty(ref _selectedPreset, value) || value == "Custom") return;
+                if (ApplyPresetCommand == null) return; // not yet initialized during construction
+                ApplyPresetCommand.Execute(value);
+            }
+        }
+
+        /// <summary>
+        /// Common OLED/embedded display presets. Each entry is "Label|WxH".
+        /// The View binds to this list to populate the preset ComboBox.
+        /// </summary>
+        public static IReadOnlyList<string> DisplayPresets { get; } = new[]
+        {
+            "Custom",
+            "8×8 Icon",
+            "16×16 Sprite",
+            "32×32 Tile",
+            "64×64 Large",
+            "84×48 Nokia 5110",
+            "128×32 SSD1306 Mini",
+            "128×64 SSD1306",
+            "160×128 ST7735",
+            "240×135 ST7789 Mini",
+            "240×240 ST7789",
+            "296×128 e-Paper",
+            "320×240 ILI9341",
+        };
 
         public string CanvasDimensionText => $"{SpriteState?.Width ?? 16}×{SpriteState?.Height ?? 16}";
 
@@ -228,6 +289,8 @@ namespace Hexel.ViewModels
 
         // ── Commands ──────────────────────────────────────────────────────
         public IRelayCommand NewCanvasCommand { get; }
+        public IRelayCommand ResizeCanvasCommand { get; }
+        public IRelayCommand<string> ApplyPresetCommand { get; }
         public IRelayCommand UndoCommand { get; }
         public IRelayCommand RedoCommand { get; }
         public IRelayCommand ClearCommand { get; }
@@ -347,6 +410,48 @@ namespace Hexel.ViewModels
                 UpdateTextOutputs();
             });
 
+            ResizeCanvasCommand = new RelayCommand(() =>
+            {
+                if (!int.TryParse(InputWidth, out int w) || w <= 0 ||
+                    !int.TryParse(InputHeight, out int h) || h <= 0)
+                {
+                    InputWidth = (SpriteState?.Width ?? 16).ToString();
+                    InputHeight = (SpriteState?.Height ?? 16).ToString();
+                    return;
+                }
+
+                if (w > SpriteState.MaxDimension || h > SpriteState.MaxDimension)
+                {
+                    _dialogService.ShowMessage(
+                        $"Maximum canvas size is {SpriteState.MaxDimension}×{SpriteState.MaxDimension}.");
+                    return;
+                }
+
+                // Same dimensions → nothing to do
+                if (w == SpriteState.Width && h == SpriteState.Height) return;
+
+                ResizeCanvas(w, h, ResizeAnchor);
+            });
+
+            ApplyPresetCommand = new RelayCommand<string>(preset =>
+            {
+                if (string.IsNullOrEmpty(preset) || preset == "Custom") return;
+
+                // Parse "WxH" from the front of the preset string (e.g. "128×64 SSD1306")
+                var label = preset.Split(' ')[0]; // "128×64"
+                // Handle both '×' (Unicode multiplication sign) and 'x' (ASCII)
+                var parts = label.Split(new[] { '×', 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 &&
+                    int.TryParse(parts[0], out int pw) &&
+                    int.TryParse(parts[1], out int ph))
+                {
+                    _isApplyingPreset = true;
+                    InputWidth = pw.ToString();
+                    InputHeight = ph.ToString();
+                    _isApplyingPreset = false;
+                }
+            });
+
             // ── Initialization ────────────────────────────────────────────
             InitializeGrid(int.Parse(InputWidth), int.Parse(InputHeight));
             InitializeBrushColors();
@@ -381,6 +486,93 @@ namespace Hexel.ViewModels
             OnPropertyChanged(nameof(CanvasDisplayHeight));
             OnPropertyChanged(nameof(DynamicStrokeThickness));
             OnPropertyChanged(nameof(CanvasDimensionText));
+        }
+
+        /// <summary>
+        /// Resizes the canvas to <paramref name="newW"/>×<paramref name="newH"/>,
+        /// preserving existing pixel data positioned according to the specified
+        /// <paramref name="anchor"/>. Pixels falling outside the new bounds are cropped.
+        /// </summary>
+        public void ResizeCanvas(int newW, int newH, ResizeAnchor anchor)
+        {
+            var oldState = SpriteState;
+            int oldW = oldState.Width;
+            int oldH = oldState.Height;
+
+            // Cancel any in-progress selection before resizing
+            _selectionService.Cancel();
+
+            // Push current state for undo
+            _historyService.SaveState(oldState);
+
+            // Compute where the old content should be placed in the new canvas
+            var (offsetX, offsetY) = ComputeAnchorOffset(oldW, oldH, newW, newH, anchor);
+
+            // Create the new state and copy pixels
+            var newState = new SpriteState(newW, newH)
+            {
+                IsDisplayInverted = oldState.IsDisplayInverted
+            };
+
+            for (int y = 0; y < oldH; y++)
+            {
+                int destY = y + offsetY;
+                if (destY < 0 || destY >= newH) continue;
+
+                for (int x = 0; x < oldW; x++)
+                {
+                    int destX = x + offsetX;
+                    if (destX < 0 || destX >= newW) continue;
+
+                    newState.Pixels[(destY * newW) + destX] = oldState.Pixels[(y * oldW) + x];
+                }
+            }
+
+            // Re-initialize bitmaps for the new size and apply the new state
+            SpriteState = newState;
+            CanvasBitmap = new WriteableBitmap(newW, newH, 96, 96, PixelFormats.Bgra32, null);
+            PreviewBitmap = new WriteableBitmap(newW, newH, 96, 96, PixelFormats.Bgra32, null);
+            _canvasBuffer = new uint[newW * newH];
+            _previewBuffer = new uint[newW * newH];
+
+            InputWidth = newW.ToString();
+            InputHeight = newH.ToString();
+
+            RedrawGridFromMemory();
+            UpdateTextOutputs();
+
+            OnPropertyChanged(nameof(GridViewport));
+            OnPropertyChanged(nameof(PreviewWidth));
+            OnPropertyChanged(nameof(PreviewHeight));
+            OnPropertyChanged(nameof(CanvasDisplayWidth));
+            OnPropertyChanged(nameof(CanvasDisplayHeight));
+            OnPropertyChanged(nameof(DynamicStrokeThickness));
+            OnPropertyChanged(nameof(CanvasDimensionText));
+        }
+
+        /// <summary>
+        /// Computes the pixel offset at which the old content should be placed
+        /// within the new canvas, based on the anchor position.
+        /// </summary>
+        private static (int offsetX, int offsetY) ComputeAnchorOffset(
+            int oldW, int oldH, int newW, int newH, ResizeAnchor anchor)
+        {
+            int dx = newW - oldW;
+            int dy = newH - oldH;
+
+            return anchor switch
+            {
+                ResizeAnchor.TopLeft      => (0,      0),
+                ResizeAnchor.TopCenter    => (dx / 2, 0),
+                ResizeAnchor.TopRight     => (dx,     0),
+                ResizeAnchor.CenterLeft   => (0,      dy / 2),
+                ResizeAnchor.Center       => (dx / 2, dy / 2),
+                ResizeAnchor.CenterRight  => (dx,     dy / 2),
+                ResizeAnchor.BottomLeft   => (0,      dy),
+                ResizeAnchor.BottomCenter => (dx / 2, dy),
+                ResizeAnchor.BottomRight  => (dx,     dy),
+                _ => (0, 0)
+            };
         }
 
         public void RedrawGridFromMemory()
