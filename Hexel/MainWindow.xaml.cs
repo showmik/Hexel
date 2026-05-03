@@ -168,7 +168,9 @@ namespace Hexel
                 _brushCursor.Hide();
 
             _activeDrawMode = DrawMode.None;
-            _selectionOverlay.Clear();
+            // Do NOT clear the selection overlay here — selection persists across tool switches.
+            // Only refresh it so it stays visually current.
+            _selectionOverlay.Update();
         }
 
         private void OnSelectionChanged(object? s, EventArgs e) => _selectionOverlay.Update();
@@ -258,6 +260,12 @@ namespace Hexel
                 else if (e.Key == Key.Down) { ViewModel.ShiftGrid(0, 1); e.Handled = true; }
                 else if (e.Key == Key.Left) { ViewModel.ShiftGrid(-1, 0); e.Handled = true; }
                 else if (e.Key == Key.Right) { ViewModel.ShiftGrid(1, 0); e.Handled = true; }
+                else if (e.Key == Key.D)
+                {
+                    // Ctrl+D: DeselectCommand handles the model side via KeyBinding;
+                    // we clear the visual overlay here.
+                    _selectionOverlay.Clear();
+                }
                 return;
             }
 
@@ -378,7 +386,9 @@ namespace Hexel
 
             if (e.ChangedButton == MouseButton.Left && e.OriginalSource is not Image)
             {
-                if (_selection.HasActiveSelection)
+                // Only auto-commit a floating selection when clicking outside the canvas.
+                // Non-floating selections persist until explicitly deselected (Ctrl+D).
+                if (_selection.HasActiveSelection && _selection.IsFloating)
                 {
                     ViewModel.CommitCurrentSelection();
                     _selectionOverlay.Clear();

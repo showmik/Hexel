@@ -55,6 +55,9 @@
         <KeyBinding Key="V"
                     Modifiers="Ctrl"
                     Command="{Binding ActiveDocument.PasteCommand}" />
+        <KeyBinding Key="D"
+                    Modifiers="Ctrl"
+                    Command="{Binding ActiveDocument.DeselectCommand}" />
     </Window.InputBindings>
 
     <Grid>
@@ -156,6 +159,10 @@
                 <MenuItem Header="_Delete Selection"
                           Command="{Binding ActiveDocument.DeleteSelectionCommand}"
                           InputGestureText="Del" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem Header="D_eselect"
+                          Command="{Binding ActiveDocument.DeselectCommand}"
+                          InputGestureText="Ctrl+D" />
             </MenuItem>
 
             <!-- ── Help ── -->

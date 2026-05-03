@@ -336,6 +336,7 @@ namespace Hexel.ViewModels
         public IRelayCommand CopySelectionCommand { get; }
         public IRelayCommand CutSelectionCommand { get; }
         public IRelayCommand PasteCommand { get; }
+        public IRelayCommand DeselectCommand { get; }
         public IRelayCommand<string> SelectToolCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
@@ -436,6 +437,11 @@ namespace Hexel.ViewModels
                 _selectionService.DeleteSelection(SpriteState);
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
+            });
+
+            DeselectCommand = new RelayCommand(() =>
+            {
+                _selectionInput.CommitIfActive();
             });
 
             SelectToolCommand = new RelayCommand<string>(ExecuteSelectTool);
@@ -678,14 +684,6 @@ namespace Hexel.ViewModels
             };
 
             _toolInput.CancelInProgressDrawing();
-
-            // Commit any active selection when switching to a non-selection tool
-            if (CurrentTool != ToolMode.Marquee &&
-                CurrentTool != ToolMode.Lasso &&
-                CurrentTool != ToolMode.MagicWand)
-            {
-                _selectionInput.CommitIfActive();
-            }
 
             ToolChanged?.Invoke(this, EventArgs.Empty);
         }

@@ -6,11 +6,33 @@ namespace Hexel.Services
 {
     public class DrawingService : IDrawingService
     {
+        // ── Selection clip ─────────────────────────────────────────────────
+        private ISelectionService? _activeClip;
+
+        public void SetSelectionClip(ISelectionService? selectionService)
+        {
+            _activeClip = selectionService;
+        }
+
+        /// <summary>
+        /// Returns true if the pixel at (x, y) should NOT be written because
+        /// it falls outside the active selection clip.
+        /// </summary>
+        private bool IsClipped(int x, int y)
+        {
+            return _activeClip != null
+                && _activeClip.HasActiveSelection
+                && !_activeClip.IsFloating
+                && !_activeClip.IsPixelInSelection(x, y);
+        }
+
         // ── Flood fill ────────────────────────────────────────────────────
 
         public void ApplyFloodFill(SpriteState state, int startX, int startY, bool newState)
         {
             if (startX < 0 || startX >= state.Width || startY < 0 || startY >= state.Height) return;
+            // If the start pixel is outside the selection, do nothing
+            if (IsClipped(startX, startY)) return;
 
             int startIndex = (startY * state.Width) + startX;
             bool targetState = state.Pixels[startIndex];
@@ -31,11 +53,25 @@ namespace Hexel.Services
                 int x = current % state.Width;
                 int y = current / state.Width;
 
-                EnqueueIfTarget(queue, visited, state.Pixels, targetState, x > 0 ? current - 1 : -1);
-                EnqueueIfTarget(queue, visited, state.Pixels, targetState, x < state.Width - 1 ? current + 1 : -1);
-                EnqueueIfTarget(queue, visited, state.Pixels, targetState, y > 0 ? current - state.Width : -1);
-                EnqueueIfTarget(queue, visited, state.Pixels, targetState, y < state.Height - 1 ? current + state.Width : -1);
+                TryEnqueue(queue, visited, state, targetState, x - 1, y);
+                TryEnqueue(queue, visited, state, targetState, x + 1, y);
+                TryEnqueue(queue, visited, state, targetState, x, y - 1);
+                TryEnqueue(queue, visited, state, targetState, x, y + 1);
             }
+        }
+
+        /// <summary>
+        /// Enqueues a neighbor pixel if it is in bounds, inside the selection clip,
+        /// hasn't been visited, and matches the target state.
+        /// </summary>
+        private void TryEnqueue(Queue<int> queue, bool[] visited, SpriteState state, bool targetState, int x, int y)
+        {
+            if (x < 0 || x >= state.Width || y < 0 || y >= state.Height) return;
+            int index = (y * state.Width) + x;
+            if (visited[index] || state.Pixels[index] != targetState) return;
+            if (IsClipped(x, y)) return;
+            visited[index] = true;
+            queue.Enqueue(index);
         }
 
         /// <summary>
@@ -218,7 +254,7 @@ namespace Hexel.Services
         {
             if (brushSize <= 1)
             {
-                if (cx >= 0 && cx < state.Width && cy >= 0 && cy < state.Height)
+                if (cx >= 0 && cx < state.Width && cy >= 0 && cy < state.Height && !IsClipped(cx, cy))
                     state.Pixels[(cy * state.Width) + cx] = newState;
                 return;
             }
@@ -228,7 +264,7 @@ namespace Hexel.Services
             foreach (var (dx, dy) in offsets)
             {
                 int px = cx + dx, py = cy + dy;
-                if (px >= 0 && px < w && py >= 0 && py < h)
+                if (px >= 0 && px < w && py >= 0 && py < h && !IsClipped(px, py))
                     state.Pixels[(py * w) + px] = newState;
             }
         }
@@ -243,7 +279,7 @@ namespace Hexel.Services
 
             while (true)
             {
-                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height)
+                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height && !IsClipped(x0, y0))
                     state.Pixels[(y0 * state.Width) + x0] = newState;
                 if (x0 == x1 && y0 == y1) break;
 
@@ -298,16 +334,16 @@ namespace Hexel.Services
             {
                 if (x >= 0 && x < width)
                 {
-                    if (minY >= 0 && minY < height) state.Pixels[(minY * width) + x] = newState;
-                    if (maxY >= 0 && maxY < height) state.Pixels[(maxY * width) + x] = newState;
+                    if (minY >= 0 && minY < height && !IsClipped(x, minY)) state.Pixels[(minY * width) + x] = newState;
+                    if (maxY >= 0 && maxY < height && !IsClipped(x, maxY)) state.Pixels[(maxY * width) + x] = newState;
                 }
             }
             for (int y = minY + 1; y < maxY; y++)
             {
                 if (y >= 0 && y < height)
                 {
-                    if (minX >= 0 && minX < width) state.Pixels[(y * width) + minX] = newState;
-                    if (maxX >= 0 && maxX < width) state.Pixels[(y * width) + maxX] = newState;
+                    if (minX >= 0 && minX < width && !IsClipped(minX, y)) state.Pixels[(y * width) + minX] = newState;
+                    if (maxX >= 0 && maxX < width && !IsClipped(maxX, y)) state.Pixels[(y * width) + maxX] = newState;
                 }
             }
         }
@@ -326,7 +362,8 @@ namespace Hexel.Services
 
             for (int y = minY; y <= maxY; y++)
                 for (int x = minX; x <= maxX; x++)
-                    state.Pixels[(y * width) + x] = newState;
+                    if (!IsClipped(x, y))
+                        state.Pixels[(y * width) + x] = newState;
         }
 
         // ── Ellipse ───────────────────────────────────────────────────────
@@ -356,7 +393,7 @@ namespace Hexel.Services
 
             void SetPixel(int px, int py)
             {
-                if (px >= 0 && px < width && py >= 0 && py < height)
+                if (px >= 0 && px < width && py >= 0 && py < height && !IsClipped(px, py))
                     state.Pixels[(py * width) + px] = newState;
             }
 
@@ -409,7 +446,8 @@ namespace Hexel.Services
                 int clampL = Math.Clamp(lx, 0, width - 1);
                 int clampR = Math.Clamp(rx, 0, width - 1);
                 for (int px = clampL; px <= clampR; px++)
-                    state.Pixels[(py * width) + px] = newState;
+                    if (!IsClipped(px, py))
+                        state.Pixels[(py * width) + px] = newState;
             }
 
             do

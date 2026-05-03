@@ -4,6 +4,13 @@ namespace Hexel.Services
 {
     public interface IDrawingService
     {
+        /// <summary>
+        /// Sets (or clears) the active selection clip. When set, all pixel-write
+        /// operations will be masked to only affect pixels inside the selection.
+        /// Pass null to disable clipping.
+        /// </summary>
+        void SetSelectionClip(ISelectionService? selectionService);
+
         void ApplyFloodFill(SpriteState state, int x, int y, bool newState);
         void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState);
         void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState, int brushSize, BrushShape shape = BrushShape.Circle, int angleDeg = 0);

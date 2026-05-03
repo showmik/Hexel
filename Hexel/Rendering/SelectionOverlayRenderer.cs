@@ -45,7 +45,14 @@ namespace Hexel.Rendering
             var vm = _getVm();
             if (vm == null) return;
 
-            if (sel.Mask != null || vm.CurrentTool == ToolMode.Lasso || vm.CurrentTool == ToolMode.MagicWand)
+            // Use the lasso/boundary renderer when the selection has a per-pixel mask,
+            // or when actively drawing with a tool that produces one.
+            // A finalized marquee selection (Mask == null) always uses the marquee renderer
+            // regardless of which tool is currently active.
+            bool needsLassoRenderer = sel.Mask != null
+                || (sel.IsSelecting && (vm.CurrentTool == ToolMode.Lasso || vm.CurrentTool == ToolMode.MagicWand));
+
+            if (needsLassoRenderer)
                 UpdateLassoOverlay(sel, vm);
             else
                 UpdateMarqueeOverlay(sel, vm);

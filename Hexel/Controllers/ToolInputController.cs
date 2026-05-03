@@ -99,6 +99,9 @@ namespace Hexel.Controllers
             // Marquee and Lasso are handled entirely in the View via SelectionService
             if (_vm.CurrentTool == ToolMode.Marquee || _vm.CurrentTool == ToolMode.Lasso) return;
 
+            // Activate selection clipping so drawing only affects selected pixels
+            _drawingService.SetSelectionClip(_vm.SelectionService);
+
             switch (action)
             {
                 case ToolAction.Down:
