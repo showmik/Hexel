@@ -119,7 +119,88 @@ namespace Hexel.Services
 
         // ── Brush stamp ───────────────────────────────────────────────────
 
-        public void DrawBrushStamp(SpriteState state, int cx, int cy, int brushSize, bool newState)
+        /// <summary>
+        /// Computes the set of pixel offsets (dx, dy) relative to the brush center
+        /// for the given shape, size, and rotation angle. Shared by DrawBrushStamp
+        /// and the cursor preview in the View.
+        /// </summary>
+        public static List<(int dx, int dy)> ComputeStampOffsets(int brushSize, BrushShape shape, int angleDeg)
+        {
+            var offsets = new List<(int dx, int dy)>();
+
+            if (brushSize <= 1)
+            {
+                offsets.Add((0, 0));
+                return offsets;
+            }
+
+            switch (shape)
+            {
+                case BrushShape.Circle:
+                {
+                    // Use float radius for symmetrical shapes at all sizes
+                    double radius = brushSize / 2.0;
+                    double rSq = radius * radius;
+                    for (int py = 0; py < brushSize; py++)
+                    {
+                        for (int px = 0; px < brushSize; px++)
+                        {
+                            double cx = px - radius + 0.5;
+                            double cy = py - radius + 0.5;
+                            if (cx * cx + cy * cy <= rSq)
+                            {
+                                int dx = px - (brushSize - 1) / 2;
+                                int dy = py - (brushSize - 1) / 2;
+                                offsets.Add((dx, dy));
+                            }
+                        }
+                    }
+                    break;
+                }
+
+                case BrushShape.Square:
+                {
+                    int half = (brushSize - 1) / 2;
+                    double rad = angleDeg * Math.PI / 180.0;
+                    double cos = Math.Cos(rad), sin = Math.Sin(rad);
+                    var set = new HashSet<(int, int)>();
+
+                    for (int dy = -half; dy <= half + (brushSize % 2 == 0 ? 0 : 0); dy++)
+                    {
+                        for (int dx = -half; dx <= half; dx++)
+                        {
+                            int rx = (int)Math.Round(dx * cos - dy * sin);
+                            int ry = (int)Math.Round(dx * sin + dy * cos);
+                            set.Add((rx, ry));
+                        }
+                    }
+                    offsets.AddRange(set);
+                    break;
+                }
+
+                case BrushShape.Line:
+                {
+                    int half = (brushSize - 1) / 2;
+                    double rad = angleDeg * Math.PI / 180.0;
+                    double cos = Math.Cos(rad), sin = Math.Sin(rad);
+                    var set = new HashSet<(int, int)>();
+
+                    // Horizontal line of brushSize pixels, rotated by angleDeg
+                    for (int dx = -half; dx <= half; dx++)
+                    {
+                        int rx = (int)Math.Round(dx * cos);
+                        int ry = (int)Math.Round(dx * sin);
+                        set.Add((rx, ry));
+                    }
+                    offsets.AddRange(set);
+                    break;
+                }
+            }
+
+            return offsets;
+        }
+
+        public void DrawBrushStamp(SpriteState state, int cx, int cy, int brushSize, bool newState, BrushShape shape = BrushShape.Circle, int angleDeg = 0)
         {
             if (brushSize <= 1)
             {
@@ -129,22 +210,12 @@ namespace Hexel.Services
             }
 
             int w = state.Width, h = state.Height;
-            // For even sizes, the center shifts by -0.5, so we use integer math:
-            // radius = brushSize / 2, offset = (brushSize - 1) / 2
-            int offset = (brushSize - 1) / 2;
-            int rSq = brushSize * brushSize / 4; // radius squared threshold
-
-            for (int dy = -offset; dy < brushSize - offset; dy++)
+            var offsets = ComputeStampOffsets(brushSize, shape, angleDeg);
+            foreach (var (dx, dy) in offsets)
             {
-                for (int dx = -offset; dx < brushSize - offset; dx++)
-                {
-                    // Use distance from center to create a circular stamp
-                    if (dx * dx + dy * dy > rSq) continue;
-
-                    int px = cx + dx, py = cy + dy;
-                    if (px >= 0 && px < w && py >= 0 && py < h)
-                        state.Pixels[(py * w) + px] = newState;
-                }
+                int px = cx + dx, py = cy + dy;
+                if (px >= 0 && px < w && py >= 0 && py < h)
+                    state.Pixels[(py * w) + px] = newState;
             }
         }
 
@@ -168,7 +239,7 @@ namespace Hexel.Services
             }
         }
 
-        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState, int brushSize)
+        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState, int brushSize, BrushShape shape = BrushShape.Circle, int angleDeg = 0)
         {
             if (brushSize <= 1)
             {
@@ -182,7 +253,7 @@ namespace Hexel.Services
 
             while (true)
             {
-                DrawBrushStamp(state, x0, y0, brushSize, newState);
+                DrawBrushStamp(state, x0, y0, brushSize, newState, shape, angleDeg);
                 if (x0 == x1 && y0 == y1) break;
 
                 int e2 = 2 * err;

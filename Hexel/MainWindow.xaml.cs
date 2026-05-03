@@ -40,6 +40,8 @@ namespace Hexel
         // ── Brush cursor bitmap cache ─────────────────────────────────────
         private System.Windows.Media.Imaging.WriteableBitmap? _brushCursorBitmap;
         private int _brushCursorCachedSize = -1;
+        private Core.BrushShape _brushCursorCachedShape = (Core.BrushShape)(-1);
+        private int _brushCursorCachedAngle = -1;
         private Point _lastCanvasMousePos;
         private bool _isMouseOverCanvas;
 
@@ -106,7 +108,9 @@ namespace Hexel
         private void OnSelectionChanged(object? s, EventArgs e) => UpdateSelectionOverlays();
         private void OnDocPropertyChanged(object? s, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ViewModels.MainViewModel.BrushSize))
+            if (e.PropertyName == nameof(ViewModels.MainViewModel.BrushSize) ||
+                e.PropertyName == nameof(ViewModels.MainViewModel.BrushShape) ||
+                e.PropertyName == nameof(ViewModels.MainViewModel.BrushAngle))
                 RefreshBrushCursor();
         }
 
@@ -126,6 +130,20 @@ namespace Hexel
             {
                 _shell.CloseTabCommand.Execute(doc);
             }
+        }
+
+        // ── Brush shape selection ─────────────────────────────────────────
+
+        private void BrushShape_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not RadioButton rb || rb.Tag is null || ViewModel is null) return;
+
+            ViewModel.BrushShape = rb.Tag.ToString() switch
+            {
+                "Square" => Core.BrushShape.Square,
+                "Line" => Core.BrushShape.Line,
+                _ => Core.BrushShape.Circle
+            };
         }
 
         // ── Tool selection ────────────────────────────────────────────────
@@ -612,9 +630,16 @@ namespace Hexel
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            // Hold Ctrl to pan/scroll normally; without Ctrl, scroll-wheel zooms
+            // Ctrl+Scroll = adjust brush size
             if (Keyboard.Modifiers == ModifierKeys.Control)
-                return; // let the ScrollViewer handle normal 
+            {
+                if (ViewModel != null)
+                {
+                    ViewModel.BrushSize += e.Delta > 0 ? 1 : -1;
+                }
+                e.Handled = true;
+                return;
+            }
 
             var sv = (ScrollViewer)sender;
             double factor = e.Delta > 0 ? ZoomFactor : 1.0 / ZoomFactor;
@@ -901,66 +926,72 @@ namespace Hexel
         // ── Brush cursor overlay ───────────────────────────────────────────
 
         /// <summary>
-        /// Rebuilds the brush stamp bitmap when brush size changes.
-        /// Replicates the same circular pattern as DrawBrushStamp so the
-        /// preview is pixel-accurate.
+        /// Rebuilds the brush stamp bitmap when brush size, shape, or angle changes.
+        /// Uses the same ComputeStampOffsets as DrawingService for pixel-accurate preview.
         /// </summary>
-        private void RebuildBrushCursorBitmap(int brushSize)
+        private void RebuildBrushCursorBitmap(int brushSize, Core.BrushShape shape, int angleDeg)
         {
-            if (brushSize == _brushCursorCachedSize && _brushCursorBitmap != null) return;
+            if (brushSize == _brushCursorCachedSize &&
+                shape == _brushCursorCachedShape &&
+                angleDeg == _brushCursorCachedAngle &&
+                _brushCursorBitmap != null) return;
+
             _brushCursorCachedSize = brushSize;
+            _brushCursorCachedShape = shape;
+            _brushCursorCachedAngle = angleDeg;
+
+            var offsets = Services.DrawingService.ComputeStampOffsets(brushSize, shape, angleDeg);
+
+            // Compute bounding box of the offsets
+            int minDx = 0, maxDx = 0, minDy = 0, maxDy = 0;
+            foreach (var (dx, dy) in offsets)
+            {
+                if (dx < minDx) minDx = dx;
+                if (dx > maxDx) maxDx = dx;
+                if (dy < minDy) minDy = dy;
+                if (dy > maxDy) maxDy = dy;
+            }
+
+            int bmpW = maxDx - minDx + 1;
+            int bmpH = maxDy - minDy + 1;
+            if (bmpW < 1) bmpW = 1;
+            if (bmpH < 1) bmpH = 1;
 
             _brushCursorBitmap = new System.Windows.Media.Imaging.WriteableBitmap(
-                brushSize, brushSize, 96, 96, PixelFormats.Bgra32, null);
+                bmpW, bmpH, 96, 96, PixelFormats.Bgra32, null);
 
-            var pixels = new uint[brushSize * brushSize];
+            var pixels = new uint[bmpW * bmpH];
+            const uint edgeColor = 0xDDFFFFFF;
+            const uint fillColor = 0x40FFFFFF;
 
-            // Edge color: bright white outline. Fill: semi-transparent.
-            const uint edgeColor = 0xDDFFFFFF; // ~87% opaque white
-            const uint fillColor = 0x40FFFFFF; // ~25% opaque white
-
-            if (brushSize <= 1)
+            // Mark stamp pixels
+            var inStamp = new bool[bmpW * bmpH];
+            foreach (var (dx, dy) in offsets)
             {
-                pixels[0] = edgeColor;
+                int px = dx - minDx;
+                int py = dy - minDy;
+                inStamp[py * bmpW + px] = true;
             }
-            else
+
+            // Fill interior and outline edges
+            for (int py = 0; py < bmpH; py++)
             {
-                int offset = (brushSize - 1) / 2;
-                int rSq = brushSize * brushSize / 4;
-
-                // First pass: mark which pixels are in the stamp
-                var inStamp = new bool[brushSize * brushSize];
-                for (int dy = -offset; dy < brushSize - offset; dy++)
+                for (int px = 0; px < bmpW; px++)
                 {
-                    for (int dx = -offset; dx < brushSize - offset; dx++)
-                    {
-                        if (dx * dx + dy * dy > rSq) continue;
-                        int px = dx + offset, py = dy + offset;
-                        inStamp[py * brushSize + px] = true;
-                    }
-                }
+                    if (!inStamp[py * bmpW + px]) continue;
 
-                // Second pass: fill interior, outline edges
-                for (int py = 0; py < brushSize; py++)
-                {
-                    for (int px = 0; px < brushSize; px++)
-                    {
-                        if (!inStamp[py * brushSize + px]) continue;
+                    bool isEdge = px == 0 || py == 0 || px == bmpW - 1 || py == bmpH - 1
+                        || !inStamp[py * bmpW + (px - 1)]
+                        || !inStamp[py * bmpW + (px + 1)]
+                        || !inStamp[(py - 1) * bmpW + px]
+                        || !inStamp[(py + 1) * bmpW + px];
 
-                        // Check if any neighbor is outside the stamp → edge pixel
-                        bool isEdge = px == 0 || py == 0 || px == brushSize - 1 || py == brushSize - 1
-                            || !inStamp[py * brushSize + (px - 1)]
-                            || !inStamp[py * brushSize + (px + 1)]
-                            || !inStamp[(py - 1) * brushSize + px]
-                            || !inStamp[(py + 1) * brushSize + px];
-
-                        pixels[py * brushSize + px] = isEdge ? edgeColor : fillColor;
-                    }
+                    pixels[py * bmpW + px] = isEdge ? edgeColor : fillColor;
                 }
             }
 
             _brushCursorBitmap.WritePixels(
-                new Int32Rect(0, 0, brushSize, brushSize), pixels, brushSize * 4, 0);
+                new Int32Rect(0, 0, bmpW, bmpH), pixels, bmpW * 4, 0);
             BrushCursorOverlay.Source = _brushCursorBitmap;
         }
 
@@ -975,8 +1006,10 @@ namespace Hexel
             var image = CanvasImage;
             if (image == null || image.ActualWidth == 0) return;
 
-            // Invalidate the bitmap cache so it rebuilds with the new size
+            // Invalidate the bitmap cache so it rebuilds with the new size/shape/angle
             _brushCursorCachedSize = -1;
+            _brushCursorCachedShape = (Core.BrushShape)(-1);
+            _brushCursorCachedAngle = -1;
 
             var (x, y) = GetPixelCoordinates(_lastCanvasMousePos, image.ActualWidth, image.ActualHeight);
             UpdateBrushCursor(x, y, _lastCanvasMousePos, image.ActualWidth, image.ActualHeight);
@@ -993,6 +1026,8 @@ namespace Hexel
             }
 
             int brushSize = ViewModel.BrushSize;
+            var brushShape = ViewModel.BrushShape;
+            int brushAngle = ViewModel.BrushAngle;
             int w = ViewModel.SpriteState.Width;
             int h = ViewModel.SpriteState.Height;
 
@@ -1001,15 +1036,27 @@ namespace Hexel
             double cw = gw / w;
             double ch = gh / h;
 
+            // Compute the actual bounding box of the stamp from offsets
+            var offsets = Services.DrawingService.ComputeStampOffsets(brushSize, brushShape, brushAngle);
+            int minDx = 0, maxDx = 0, minDy = 0, maxDy = 0;
+            foreach (var (dx, dy) in offsets)
+            {
+                if (dx < minDx) minDx = dx;
+                if (dx > maxDx) maxDx = dx;
+                if (dy < minDy) minDy = dy;
+                if (dy > maxDy) maxDy = dy;
+            }
+            int stampW = maxDx - minDx + 1;
+            int stampH = maxDy - minDy + 1;
+
             // Shrink factor: the bitmap represents the full stamp footprint but we
             // draw it slightly smaller so the outline sits inside the pixel cell,
             // not straddling the grid line of the neighbouring cell.
             const double shrink = 0.85;
-            double cursorW = brushSize * cw * shrink;
-            double cursorH = brushSize * ch * shrink;
+            double cursorW = stampW * cw * shrink;
+            double cursorH = stampH * ch * shrink;
 
             // Hide only when the entire stamp would be outside the canvas.
-            // Half-widths in pixel-space for the clamped overlap check:
             double halfW = cursorW / 2.0;
             double halfH = cursorH / 2.0;
 
@@ -1023,7 +1070,7 @@ namespace Hexel
                 return;
             }
 
-            RebuildBrushCursorBitmap(brushSize);
+            RebuildBrushCursorBitmap(brushSize, brushShape, brushAngle);
 
             BrushCursorOverlay.Width = cursorW;
             BrushCursorOverlay.Height = cursorH;
@@ -1071,6 +1118,34 @@ namespace Hexel
         private void CanvasImage_MouseLeave(object sender, MouseEventArgs e)
         {
             HideBrushCursor();
+        }
+
+        // ── Text input validation ─────────────────────────────────────────
+
+        private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // Only allow digits
+            e.Handled = !Regex.IsMatch(e.Text, @"^[0-9]+$");
+        }
+
+        private void BrushSizeTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb && ViewModel != null)
+            {
+                if (int.TryParse(tb.Text, out int val))
+                    ViewModel.BrushSize = Math.Clamp(val, 1, 64);
+                tb.Text = ViewModel.BrushSize.ToString();
+            }
+        }
+
+        private void BrushAngleTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb && ViewModel != null)
+            {
+                if (int.TryParse(tb.Text, out int val))
+                    ViewModel.BrushAngle = ((val % 360) + 360) % 360;
+                tb.Text = ViewModel.BrushAngle.ToString();
+            }
         }
     }
 }

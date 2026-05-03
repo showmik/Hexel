@@ -435,7 +435,7 @@
 
                         <!-- Contextual Options (all share Column 0) -->
 
-                        <!-- 1. Brush size (Pencil only) -->
+                        <!-- 1. Brush options (Pencil only) -->
                         <StackPanel Orientation="Horizontal"
                                     Grid.Column="0">
                             <StackPanel.Style>
@@ -452,10 +452,65 @@
                                 </Style>
                             </StackPanel.Style>
 
-                            <TextBlock Text="BRUSH"
+                            <!-- Brush Shape label -->
+                            <TextBlock Text="SHAPE"
                                        Style="{StaticResource HeaderStyle}"
                                        VerticalAlignment="Center"
-                                       Margin="0,0,10,0"
+                                       Margin="0,0,8,0"
+                                       FontSize="11" />
+
+                            <!-- Circle shape button -->
+                            <RadioButton x:Name="RbBrushCircle"
+                                         GroupName="BrushShape"
+                                         IsChecked="True"
+                                         Checked="BrushShape_Checked"
+                                         Tag="Circle"
+                                         ToolTip="Circle Brush"
+                                         Width="28" Height="28"
+                                         Margin="0,0,2,0"
+                                         Style="{StaticResource VerticalToolButtonStyle}">
+                                <Ellipse Width="10" Height="10"
+                                         Fill="{DynamicResource Theme.TextMainBrush}" />
+                            </RadioButton>
+
+                            <!-- Square shape button -->
+                            <RadioButton x:Name="RbBrushSquare"
+                                         GroupName="BrushShape"
+                                         Checked="BrushShape_Checked"
+                                         Tag="Square"
+                                         ToolTip="Square Brush"
+                                         Width="28" Height="28"
+                                         Margin="0,0,2,0"
+                                         Style="{StaticResource VerticalToolButtonStyle}">
+                                <Rectangle Width="10" Height="10"
+                                           Fill="{DynamicResource Theme.TextMainBrush}" />
+                            </RadioButton>
+
+                            <!-- Line shape button -->
+                            <RadioButton x:Name="RbBrushLine"
+                                         GroupName="BrushShape"
+                                         Checked="BrushShape_Checked"
+                                         Tag="Line"
+                                         ToolTip="Line Brush"
+                                         Width="28" Height="28"
+                                         Margin="0,0,8,0"
+                                         Style="{StaticResource VerticalToolButtonStyle}">
+                                <Rectangle Width="14" Height="2"
+                                           Fill="{DynamicResource Theme.TextMainBrush}" />
+                            </RadioButton>
+
+                            <!-- Separator -->
+                            <Rectangle Width="2"
+                                       Fill="{DynamicResource Theme.PanelBorderBrush}"
+                                       Margin="0,4,8,4"
+                                       RadiusX="1"
+                                       RadiusY="1" />
+
+                            <!-- Brush Size label -->
+                            <TextBlock Text="SIZE"
+                                       Style="{StaticResource HeaderStyle}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"
                                        FontSize="11" />
                             <Button Content="-"
                                     Width="24"
@@ -467,24 +522,102 @@
                             <Slider x:Name="BrushSizeSlider"
                                     Width="80"
                                     Minimum="1"
-                                    Maximum="16"
+                                    Maximum="64"
                                     Value="{Binding BrushSize}"
                                     TickFrequency="1"
                                     IsSnapToTickEnabled="True"
                                     VerticalAlignment="Center"
-                                    ToolTip="Pencil brush size ([ / ])" />
+                                    ToolTip="Pencil brush size ([ / ] or Ctrl+Scroll)" />
                             <Button Content="+"
                                     Width="24"
                                     Height="24"
-                                    Margin="4,0,6,0"
+                                    Margin="4,0,4,0"
                                     Style="{StaticResource ModernButtonStyle}"
                                     Padding="0"
                                     Click="BtnBrushUp_Click" />
-                            <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}"
-                                       Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
-                                       FontWeight="Bold"
+                            <TextBox x:Name="BrushSizeTextBox"
+                                     Text="{Binding BrushSize, UpdateSourceTrigger=LostFocus}"
+                                     Width="36"
+                                     Height="24"
+                                     Padding="4,2"
+                                     HorizontalContentAlignment="Center"
+                                     VerticalContentAlignment="Center"
+                                     FontSize="12"
+                                     FontWeight="Bold"
+                                     Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                                     Background="{DynamicResource Theme.BackgroundBrush}"
+                                     BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                     BorderThickness="1"
+                                     PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                     LostFocus="BrushSizeTextBox_LostFocus"
+                                     ToolTip="Brush size (1-64)" />
+                            <TextBlock Text="px"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}"
                                        VerticalAlignment="Center"
-                                       Width="30" />
+                                       Margin="3,0,0,0"
+                                       FontSize="11" />
+
+                            <!-- Rotation controls (only for Square and Line) -->
+                            <StackPanel x:Name="RotationPanel"
+                                        Orientation="Horizontal"
+                                        Margin="8,0,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding BrushShape}" Value="Square">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding BrushShape}" Value="Line">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <Rectangle Width="2"
+                                           Fill="{DynamicResource Theme.PanelBorderBrush}"
+                                           Margin="0,4,8,4"
+                                           RadiusX="1"
+                                           RadiusY="1" />
+
+                                <TextBlock Text="ANGLE"
+                                           Style="{StaticResource HeaderStyle}"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0"
+                                           FontSize="11" />
+                                <Slider x:Name="BrushAngleSlider"
+                                        Width="80"
+                                        Minimum="0"
+                                        Maximum="359"
+                                        Value="{Binding BrushAngle}"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Brush rotation angle (0-359°)" />
+                                <TextBox x:Name="BrushAngleTextBox"
+                                         Text="{Binding BrushAngle, UpdateSourceTrigger=LostFocus}"
+                                         Width="36"
+                                         Height="24"
+                                         Padding="4,2"
+                                         Margin="4,0,0,0"
+                                         HorizontalContentAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         FontSize="12"
+                                         FontWeight="Bold"
+                                         Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                                         Background="{DynamicResource Theme.BackgroundBrush}"
+                                         BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                         BorderThickness="1"
+                                         PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                         LostFocus="BrushAngleTextBox_LostFocus"
+                                         ToolTip="Brush angle (0-359°)" />
+                                <TextBlock Text="°"
+                                           Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                           VerticalAlignment="Center"
+                                           Margin="3,0,0,0"
+                                           FontSize="12" />
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- 2. Shape hints (Line, Rectangle, Ellipse) -->

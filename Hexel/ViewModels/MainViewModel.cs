@@ -134,7 +134,21 @@ namespace Hexel.ViewModels
         public int BrushSize
         {
             get => _brushSize;
-            set => SetProperty(ref _brushSize, Math.Clamp(value, 1, 16));
+            set => SetProperty(ref _brushSize, Math.Clamp(value, 1, 64));
+        }
+
+        private BrushShape _brushShape = BrushShape.Circle;
+        public BrushShape BrushShape
+        {
+            get => _brushShape;
+            set => SetProperty(ref _brushShape, value);
+        }
+
+        private int _brushAngle = 0;
+        public int BrushAngle
+        {
+            get => _brushAngle;
+            set => SetProperty(ref _brushAngle, ((value % 360) + 360) % 360);
         }
 
         // Flags read by the View to know whether a shape preview is in progress
@@ -697,7 +711,7 @@ namespace Hexel.ViewModels
                     {
                         _historyService.SaveState(SpriteState);
                     IsDirty = true;
-                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize);
+                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize, BrushShape, BrushAngle);
                         _lastClickedX = x;
                         _lastClickedY = y;
                         RedrawGridFromMemory();
@@ -707,7 +721,7 @@ namespace Hexel.ViewModels
                     {
                         _historyService.SaveState(SpriteState);
                     IsDirty = true;
-                        _drawingService.DrawBrushStamp(SpriteState, x, y, BrushSize, newState);
+                        _drawingService.DrawBrushStamp(SpriteState, x, y, BrushSize, newState, BrushShape, BrushAngle);
                         _lastClickedX = x;
                         _lastClickedY = y;
                         RedrawGridFromMemory();
@@ -835,7 +849,7 @@ namespace Hexel.ViewModels
                     {
                         // Continuous pencil drag: draw line segment but don't push undo
                         // (the undo entry was already pushed on Down)
-                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize);
+                        _drawingService.DrawLine(SpriteState, _lastClickedX, _lastClickedY, x, y, newState, BrushSize, BrushShape, BrushAngle);
                         _lastClickedX = x;
                         _lastClickedY = y;
                         _pendingTextUpdateDuringDrag = true;
