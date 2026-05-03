@@ -25,6 +25,7 @@ namespace Hexel.ViewModels
         private readonly ISelectionService _selectionService;
         public ISelectionService SelectionService => _selectionService;
         private readonly IClipboardService _clipboardService;
+        private readonly IPixelClipboardService _pixelClipboard;
         private readonly IDialogService _dialogService;
         private readonly IFileService _fileService;
         private readonly SynchronizationContext _uiContext;
@@ -332,6 +333,9 @@ namespace Hexel.ViewModels
         public IRelayCommand InvertCommand { get; }
         public IRelayCommand DeleteSelectionCommand { get; }
         public IRelayCommand CopyHexCommand { get; }
+        public IRelayCommand CopySelectionCommand { get; }
+        public IRelayCommand CutSelectionCommand { get; }
+        public IRelayCommand PasteCommand { get; }
         public IRelayCommand<string> SelectToolCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
@@ -341,6 +345,7 @@ namespace Hexel.ViewModels
             IHistoryService historyService,
             ISelectionService selectionService,
             IClipboardService clipboardService,
+            IPixelClipboardService pixelClipboard,
             IDialogService dialogService,
             IFileService fileService)
         {
@@ -350,6 +355,7 @@ namespace Hexel.ViewModels
             _historyService = historyService ?? throw new ArgumentNullException(nameof(historyService));
             _selectionService = selectionService ?? throw new ArgumentNullException(nameof(selectionService));
             _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
+            _pixelClipboard = pixelClipboard ?? throw new ArgumentNullException(nameof(pixelClipboard));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
 
@@ -381,6 +387,46 @@ namespace Hexel.ViewModels
                 IsDisplayInverted = !IsDisplayInverted;
                 RedrawGridFromMemory();
                 UpdateTextOutputs();
+            });
+
+            CopySelectionCommand = new RelayCommand(() =>
+            {
+                if (!_selectionService.HasActiveSelection) return;
+                var data = _selectionService.CopySelection(SpriteState);
+                if (data != null)
+                {
+                    _pixelClipboard.Store(data);
+                    ShowStatus("Selection copied");
+                }
+            });
+
+            CutSelectionCommand = new RelayCommand(() =>
+            {
+                if (!_selectionService.HasActiveSelection) return;
+                var data = _selectionService.CopySelection(SpriteState);
+                if (data != null)
+                {
+                    _pixelClipboard.Store(data);
+                    SaveStateForUndo();
+                    _selectionService.DeleteSelection(SpriteState);
+                    RedrawGridFromMemory();
+                    UpdateTextOutputs();
+                    ShowStatus("Selection cut");
+                }
+            });
+
+            PasteCommand = new RelayCommand(() =>
+            {
+                if (!_pixelClipboard.HasData || _pixelClipboard.Data == null) return;
+                // Commit any existing selection before pasting
+                _selectionInput.CommitIfActive();
+                SaveStateForUndo();
+                _selectionService.PasteAsFloating(
+                    _pixelClipboard.Data,
+                    SpriteState.Width,
+                    SpriteState.Height);
+                RedrawGridFromMemory();
+                ShowStatus("Pasted from clipboard");
             });
 
             DeleteSelectionCommand = new RelayCommand(() =>

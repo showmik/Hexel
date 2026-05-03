@@ -21,6 +21,7 @@ namespace Hexel.ViewModels
         private readonly ICodeGeneratorService _codeGen;
         private readonly IDrawingService _drawingService;
         private readonly IClipboardService _clipboardService;
+        private readonly IPixelClipboardService _pixelClipboard;
         private readonly IDialogService _dialogService;
 
         private const string FileFilter = "Hexel Sprite (*.hexel)|*.hexel|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
@@ -75,6 +76,7 @@ namespace Hexel.ViewModels
             _codeGen = codeGen;
             _drawingService = drawingService;
             _clipboardService = clipboardService;
+            _pixelClipboard = new PixelClipboardService();
             _dialogService = dialogService;
 
             NewCanvasCommand = new RelayCommand(ExecuteNewCanvas);
@@ -281,7 +283,7 @@ namespace Hexel.ViewModels
 
             var doc = new MainViewModel(
                 _codeGen, _drawingService, history, selection,
-                _clipboardService, _dialogService, fileService);
+                _clipboardService, _pixelClipboard, _dialogService, fileService);
 
             doc.InitializeGrid(width, height);
             return doc;

@@ -429,6 +429,69 @@ namespace Hexel.Services
             Notify();
         }
 
+        // ── Clipboard integration ────────────────────────────────────────
+
+        public PixelClipboardData? CopySelection(SpriteState state)
+        {
+            if (!HasActiveSelection) return null;
+
+            if (IsFloating && FloatingPixels != null)
+            {
+                // Copy from the floating layer
+                var copy = new bool[FloatingWidth, FloatingHeight];
+                Array.Copy(FloatingPixels, copy, FloatingPixels.Length);
+                return new PixelClipboardData(copy, FloatingWidth, FloatingHeight);
+            }
+
+            // Copy from the canvas using the selection bounds + mask
+            int w = MaxX - MinX + 1;
+            int h = MaxY - MinY + 1;
+            var pixels = new bool[w, h];
+
+            int canvasW = state.Width;
+            for (int y = MinY; y <= MaxY; y++)
+            {
+                for (int x = MinX; x <= MaxX; x++)
+                {
+                    if (!IsPixelInSelection(x, y)) continue;
+                    if (x < 0 || x >= state.Width || y < 0 || y >= state.Height) continue;
+
+                    int idx = (y * canvasW) + x;
+                    pixels[x - MinX, y - MinY] = state.Pixels[idx];
+                }
+            }
+
+            return new PixelClipboardData(pixels, w, h);
+        }
+
+        public void PasteAsFloating(PixelClipboardData data, int canvasWidth, int canvasHeight)
+        {
+            if (data == null) return;
+
+            // Reset any existing selection state
+            ResetState();
+
+            // Center the pasted content on the canvas
+            FloatingX = (canvasWidth - data.Width) / 2;
+            FloatingY = (canvasHeight - data.Height) / 2;
+            FloatingWidth = data.Width;
+            FloatingHeight = data.Height;
+            FloatingPixels = new bool[data.Width, data.Height];
+            Array.Copy(data.Pixels, FloatingPixels, data.Pixels.Length);
+
+            // Mark as a floating active selection
+            IsFloating = true;
+            HasActiveSelection = true;
+
+            // Set selection bounds to match the floating layer
+            MinX = FloatingX;
+            MinY = FloatingY;
+            MaxX = FloatingX + FloatingWidth - 1;
+            MaxY = FloatingY + FloatingHeight - 1;
+
+            Notify();
+        }
+
         // ── Private helpers ───────────────────────────────────────────────
 
         private void ResetState()

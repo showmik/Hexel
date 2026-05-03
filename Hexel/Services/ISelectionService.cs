@@ -88,6 +88,21 @@ namespace Hexel.Services
         /// <summary>Clears all selection state without modifying the sprite.</summary>
         void Cancel();
 
+        // ── Clipboard integration ────────────────────────────────────────
+        /// <summary>
+        /// Returns a copy of the selected pixels from the sprite (or from the
+        /// floating layer if one is active). Does not modify the sprite state.
+        /// Returns null if there is no active selection.
+        /// </summary>
+        PixelClipboardData? CopySelection(SpriteState state);
+
+        /// <summary>
+        /// Creates a new floating selection from the given pixel data,
+        /// centered on the canvas. Any existing selection is committed first
+        /// by the caller.
+        /// </summary>
+        void PasteAsFloating(PixelClipboardData data, int canvasWidth, int canvasHeight);
+
         // ── Drag ─────────────────────────────────────────────────────────
         void BeginDrag();
         void MoveFloatingTo(int newX, int newY);

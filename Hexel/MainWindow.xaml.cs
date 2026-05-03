@@ -107,10 +107,22 @@ namespace Hexel
                     _subscribedDoc.SelectionService.SelectionChanged += OnSelectionChanged;
             }
 
-            _selectionOverlay.Clear();
+            // ── Reset stale view-layer state ─────────────────────────────
+            _activeDrawMode = DrawMode.None;
+            _lastHoveredX = -1;
+            _lastHoveredY = -1;
+            ReleaseDragCapture();
+            if (Mouse.Captured != null) Mouse.Capture(null);
+
+            // ── Sync visuals to the new document ─────────────────────────
+            _selectionOverlay.Update();
             _brushCursor.Hide();
             SyncBrushShapeRadioButtons();
-            
+
+            // Sync tool sidebar radio buttons without triggering SelectToolCommand
+            if (_subscribedDoc != null)
+                ToolSidebar.SyncToTool(_subscribedDoc.CurrentTool);
+
             CenterScrollViewer();
         }
 
@@ -173,7 +185,11 @@ namespace Hexel
         private void Tab_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement fe && fe.DataContext is ViewModels.MainViewModel doc)
+            {
+                if (doc == _shell.ActiveDocument) return; // already active
                 _shell.ActiveDocument = doc;
+                OnActiveTabChanged();
+            }
         }
 
         private void TabClose_Click(object sender, RoutedEventArgs e)

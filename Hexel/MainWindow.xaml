@@ -46,6 +46,15 @@
                     Command="{x:Static NavigationCommands.Zoom}" />
         <KeyBinding Key="F1"
                     Command="{Binding OpenDocumentationCommand}" />
+        <KeyBinding Key="C"
+                    Modifiers="Ctrl"
+                    Command="{Binding ActiveDocument.CopySelectionCommand}" />
+        <KeyBinding Key="X"
+                    Modifiers="Ctrl"
+                    Command="{Binding ActiveDocument.CutSelectionCommand}" />
+        <KeyBinding Key="V"
+                    Modifiers="Ctrl"
+                    Command="{Binding ActiveDocument.PasteCommand}" />
     </Window.InputBindings>
 
     <Grid>
@@ -97,6 +106,16 @@
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Copy _HEX"
                           Command="{Binding ActiveDocument.CopyHexCommand}" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem Header="Cu_t"
+                          Command="{Binding ActiveDocument.CutSelectionCommand}"
+                          InputGestureText="Ctrl+X" />
+                <MenuItem Header="_Copy"
+                          Command="{Binding ActiveDocument.CopySelectionCommand}"
+                          InputGestureText="Ctrl+C" />
+                <MenuItem Header="_Paste"
+                          Command="{Binding ActiveDocument.PasteCommand}"
+                          InputGestureText="Ctrl+V" />
             </MenuItem>
 
             <!-- ── Image ── -->
@@ -124,6 +143,16 @@
 
             <!-- ── Selection ── -->
             <MenuItem Header="_Selection">
+                <MenuItem Header="Cu_t"
+                          Command="{Binding ActiveDocument.CutSelectionCommand}"
+                          InputGestureText="Ctrl+X" />
+                <MenuItem Header="_Copy"
+                          Command="{Binding ActiveDocument.CopySelectionCommand}"
+                          InputGestureText="Ctrl+C" />
+                <MenuItem Header="_Paste"
+                          Command="{Binding ActiveDocument.PasteCommand}"
+                          InputGestureText="Ctrl+V" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Delete Selection"
                           Command="{Binding ActiveDocument.DeleteSelectionCommand}"
                           InputGestureText="Del" />
@@ -287,7 +316,7 @@
                                   MaxWidth="600" />
             </Grid.ColumnDefinitions>
 
-            <views:ToolSidebarPanel Grid.Column="0" />
+            <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Column="0" />
 
             <views:CanvasPanel x:Name="Canvas" Grid.Column="1" 
                                Margin="15,20,20,20"
