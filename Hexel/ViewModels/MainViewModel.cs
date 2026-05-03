@@ -272,7 +272,23 @@ namespace Hexel.ViewModels
         public double CanvasDisplayHeight => (SpriteState?.Height ?? 16) * CellSize;
 
         public Rect GridViewport => new Rect(0, 0, CellSize, CellSize);
-        public double DynamicStrokeThickness => SpriteState != null ? Math.Max(0.5, CellSize * 0.08) : 2.0;
+        /// <summary>
+        /// Grid stroke thickness as a constant fraction of cell size (4%).
+        /// No minimum floor — this keeps the grid proportionally identical
+        /// at every resolution. At very high resolutions the grid naturally
+        /// fades as cells become sub-pixel.
+        /// </summary>
+        public double DynamicStrokeThickness => SpriteState != null
+            ? CellSize * 0.04
+            : 1.0;
+
+        /// <summary>
+        /// Stroke thickness for selection overlays (marquee, lasso) that scales
+        /// proportionally with the cell size so it remains visible at all resolutions.
+        /// </summary>
+        public double SelectionStrokeThickness => SpriteState != null
+            ? Math.Max(0.5, CellSize * 0.08)
+            : 2.0;
         public int PreviewWidth => (SpriteState?.Width ?? 16) * 2;
         public int PreviewHeight => (SpriteState?.Height ?? 16) * 2;
 
@@ -579,6 +595,61 @@ namespace Hexel.ViewModels
         }
 
         /// <summary>
+        /// Partial redraw: only updates the pixel buffers and bitmaps within the
+        /// specified bounding box. Much faster than a full <see cref="RedrawGridFromMemory"/>
+        /// for small brush strokes on large canvases.
+        /// </summary>
+        public void RedrawRegion(int minX, int minY, int maxX, int maxY)
+        {
+            if (CanvasBitmap == null || _canvasBuffer == null || SpriteState?.Pixels == null) return;
+
+            int w = SpriteState.Width;
+            int h = SpriteState.Height;
+
+            // Clamp to canvas bounds
+            int x0 = Math.Clamp(minX, 0, w - 1);
+            int y0 = Math.Clamp(minY, 0, h - 1);
+            int x1 = Math.Clamp(maxX, 0, w - 1);
+            int y1 = Math.Clamp(maxY, 0, h - 1);
+            if (x0 > x1 || y0 > y1) return;
+
+            bool hasFloating = _selectionService.IsFloating && _selectionService.FloatingPixels != null;
+
+            for (int y = y0; y <= y1; y++)
+            {
+                for (int x = x0; x <= x1; x++)
+                {
+                    int i = (y * w) + x;
+                    bool isPixelOn = SpriteState.Pixels[i];
+
+                    if (hasFloating)
+                    {
+                        int fx = x - _selectionService.FloatingX;
+                        int fy = y - _selectionService.FloatingY;
+                        if (fx >= 0 && fx < _selectionService.FloatingWidth &&
+                            fy >= 0 && fy < _selectionService.FloatingHeight &&
+                            _selectionService.FloatingPixels![fx, fy])
+                        {
+                            isPixelOn = true;
+                        }
+                    }
+
+                    _canvasBuffer[i] = isPixelOn ? _colorOnUint : _colorOffUint;
+                    _previewBuffer[i] = isPixelOn ? _previewOnUint : _previewOffUint;
+                }
+            }
+
+            int regionW = x1 - x0 + 1;
+            int regionH = y1 - y0 + 1;
+            // Use the 5-param overload: sourceRect is the region within the source buffer,
+            // destX/Y is where it lands in the bitmap. This avoids the buffer-size
+            // validation issue with the offset-based overload.
+            var srcRect = new Int32Rect(x0, y0, regionW, regionH);
+            CanvasBitmap.WritePixels(srcRect, _canvasBuffer, w * 4, x0, y0);
+            PreviewBitmap.WritePixels(srcRect, _previewBuffer, w * 4, x0, y0);
+        }
+
+        /// <summary>
         /// Main entry point for all non-selection tool input from the View.
         /// Delegates to the extracted ToolInputController.
         /// </summary>
@@ -753,6 +824,7 @@ namespace Hexel.ViewModels
             OnPropertyChanged(nameof(CanvasDisplayWidth));
             OnPropertyChanged(nameof(CanvasDisplayHeight));
             OnPropertyChanged(nameof(DynamicStrokeThickness));
+            OnPropertyChanged(nameof(SelectionStrokeThickness));
             OnPropertyChanged(nameof(CanvasDimensionText));
         }
     }

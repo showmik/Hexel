@@ -26,6 +26,19 @@ namespace Hexel.Rendering
         private BrushShape _brushCursorCachedShape = (BrushShape)(-1);
         private int _brushCursorCachedAngle = -1;
 
+        // Cached overlay dimensions — only recomputed when brush params or canvas size change
+        private double _cachedOverlayW;
+        private double _cachedOverlayH;
+        private double _cachedHalfW;
+        private double _cachedHalfH;
+        private double _cachedCrossLen;
+        private double _cachedCrossStroke;
+        private int _cachedCanvasW = -1;
+        private int _cachedCanvasH = -1;
+
+        // Reusable TranslateTransform for the overlay (avoids layout invalidation)
+        private TranslateTransform? _overlayTransform;
+
         public Point LastCanvasMousePos { get; set; }
         public bool IsMouseOverCanvas { get; set; }
 
@@ -50,9 +63,7 @@ namespace Hexel.Rendering
             var image = _elements.GetCanvasImage();
             if (image == null || image.ActualWidth == 0) return;
 
-            _brushCursorCachedSize = -1;
-            _brushCursorCachedShape = (BrushShape)(-1);
-            _brushCursorCachedAngle = -1;
+            InvalidateCache();
 
             var (x, y) = _getPixelCoords();
             Update(x, y, LastCanvasMousePos, image.ActualWidth, image.ActualHeight);
@@ -76,34 +87,19 @@ namespace Hexel.Rendering
             int w = vm.SpriteState.Width;
             int h = vm.SpriteState.Height;
 
-            var grid = _elements.GetPixelGridContainer();
-            double gw = grid.ActualWidth > 0 ? grid.ActualWidth : 400.0;
-            double gh = grid.ActualHeight > 0 ? grid.ActualHeight : 400.0;
-            double cw = gw / w;
-            double ch = gh / h;
-
-            var offsets = DrawingService.ComputeStampOffsets(brushSize, brushShape, brushAngle);
-            int minDx = 0, maxDx = 0, minDy = 0, maxDy = 0;
-            foreach (var (dx, dy) in offsets)
+            // Rebuild cached overlay dimensions when brush params or canvas resolution change
+            if (brushSize != _brushCursorCachedSize ||
+                brushShape != _brushCursorCachedShape ||
+                brushAngle != _brushCursorCachedAngle ||
+                w != _cachedCanvasW || h != _cachedCanvasH ||
+                _brushCursorBitmap == null)
             {
-                if (dx < minDx) minDx = dx;
-                if (dx > maxDx) maxDx = dx;
-                if (dy < minDy) minDy = dy;
-                if (dy > maxDy) maxDy = dy;
+                RebuildOverlayCache(brushSize, brushShape, brushAngle, w, h);
             }
-            int stampW = maxDx - minDx + 1;
-            int stampH = maxDy - minDy + 1;
-
-            const double shrink = 0.85;
-            double cursorW = stampW * cw * shrink;
-            double cursorH = stampH * ch * shrink;
-
-            double halfW = cursorW / 2.0;
-            double halfH = cursorH / 2.0;
 
             bool completelyOutside =
-                mousePos.X + halfW < 0 || mousePos.X - halfW > imgWidth ||
-                mousePos.Y + halfH < 0 || mousePos.Y - halfH > imgHeight;
+                mousePos.X + _cachedHalfW < 0 || mousePos.X - _cachedHalfW > imgWidth ||
+                mousePos.Y + _cachedHalfH < 0 || mousePos.Y - _cachedHalfH > imgHeight;
 
             if (completelyOutside)
             {
@@ -111,34 +107,38 @@ namespace Hexel.Rendering
                 return;
             }
 
-            RebuildBitmap(brushSize, brushShape, brushAngle);
+            // Ensure the overlay has a TranslateTransform for positioning
+            // (RenderTransform doesn't trigger layout passes — much faster than Canvas.SetLeft/Top)
+            if (_overlayTransform == null)
+            {
+                _overlayTransform = new TranslateTransform();
+                overlay.RenderTransform = _overlayTransform;
+            }
 
-            overlay.Width = cursorW;
-            overlay.Height = cursorH;
-
-            Canvas.SetLeft(overlay, mousePos.X - halfW);
-            Canvas.SetTop(overlay, mousePos.Y - halfH);
+            _overlayTransform.X = mousePos.X - _cachedHalfW;
+            _overlayTransform.Y = mousePos.Y - _cachedHalfH;
             overlay.Visibility = Visibility.Visible;
 
-            // Crosshair at exact mouse position
+            // Crosshair at exact mouse position — length and stroke scale with cell size
             var crossH = _elements.GetCrosshairH();
             var crossV = _elements.GetCrosshairV();
-            double crossLen = Math.Max(cw, 6.0);
 
             if (crossH != null)
             {
-                crossH.X1 = mousePos.X - crossLen;
-                crossH.X2 = mousePos.X + crossLen;
+                crossH.X1 = mousePos.X - _cachedCrossLen;
+                crossH.X2 = mousePos.X + _cachedCrossLen;
                 crossH.Y1 = mousePos.Y;
                 crossH.Y2 = mousePos.Y;
+                crossH.StrokeThickness = _cachedCrossStroke;
                 crossH.Visibility = Visibility.Visible;
             }
             if (crossV != null)
             {
                 crossV.X1 = mousePos.X;
                 crossV.X2 = mousePos.X;
-                crossV.Y1 = mousePos.Y - crossLen;
-                crossV.Y2 = mousePos.Y + crossLen;
+                crossV.Y1 = mousePos.Y - _cachedCrossLen;
+                crossV.Y2 = mousePos.Y + _cachedCrossLen;
+                crossV.StrokeThickness = _cachedCrossStroke;
                 crossV.Visibility = Visibility.Visible;
             }
 
@@ -164,6 +164,69 @@ namespace Hexel.Rendering
         }
 
         public void OnMouseLeave() => Hide();
+
+        // ── Private helpers ───────────────────────────────────────────────
+
+        private void InvalidateCache()
+        {
+            _brushCursorCachedSize = -1;
+            _brushCursorCachedShape = (BrushShape)(-1);
+            _brushCursorCachedAngle = -1;
+            _cachedCanvasW = -1;
+            _cachedCanvasH = -1;
+        }
+
+        /// <summary>
+        /// Rebuilds the overlay bitmap AND all cached dimensions/metrics.
+        /// Called only when brush parameters or canvas resolution change,
+        /// NOT on every mouse move.
+        /// </summary>
+        private void RebuildOverlayCache(int brushSize, BrushShape shape, int angleDeg, int canvasW, int canvasH)
+        {
+            _cachedCanvasW = canvasW;
+            _cachedCanvasH = canvasH;
+
+            var grid = _elements.GetPixelGridContainer();
+            double gw = grid.ActualWidth > 0 ? grid.ActualWidth : 400.0;
+            double gh = grid.ActualHeight > 0 ? grid.ActualHeight : 400.0;
+            double cw = gw / canvasW;
+            double ch = gh / canvasH;
+            double cellUnit = Math.Min(cw, ch);
+
+            // Crosshair metrics
+            _cachedCrossLen = cellUnit * 0.65;
+            _cachedCrossStroke = Math.Max(cellUnit * 0.08, 0.3);
+
+            // Rebuild bitmap (will skip if brush params haven't changed)
+            RebuildBitmap(brushSize, shape, angleDeg);
+
+            // Compute overlay dimensions from the stamp offsets
+            var offsets = DrawingService.ComputeStampOffsets(brushSize, shape, angleDeg);
+            int minDx = 0, maxDx = 0, minDy = 0, maxDy = 0;
+            foreach (var (dx, dy) in offsets)
+            {
+                if (dx < minDx) minDx = dx;
+                if (dx > maxDx) maxDx = dx;
+                if (dy < minDy) minDy = dy;
+                if (dy > maxDy) maxDy = dy;
+            }
+            int stampW = maxDx - minDx + 1;
+            int stampH = maxDy - minDy + 1;
+
+            const double shrink = 0.85;
+            _cachedOverlayW = stampW * cw * shrink;
+            _cachedOverlayH = stampH * ch * shrink;
+            _cachedHalfW = _cachedOverlayW / 2.0;
+            _cachedHalfH = _cachedOverlayH / 2.0;
+
+            // Apply overlay dimensions (only when they change, not every frame)
+            var overlay = _elements.GetBrushCursorOverlay();
+            if (overlay != null)
+            {
+                overlay.Width = _cachedOverlayW;
+                overlay.Height = _cachedOverlayH;
+            }
+        }
 
         // ── Private: bitmap generation ────────────────────────────────────
 

@@ -172,10 +172,19 @@ namespace Hexel.Controllers
                     {
                         _vm.SaveStateForUndo();
                         _drawingService.DrawLine(_vm.SpriteState, _lastClickedX, _lastClickedY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
+
+                        // Partial redraw for the line segment — use full brush size
+                        // as margin to account for rotated Square/Line brush offsets
+                        int brushMargin1 = _vm.BrushSize + 1;
+                        _vm.RedrawRegion(
+                            Math.Min(_lastClickedX, x) - brushMargin1,
+                            Math.Min(_lastClickedY, y) - brushMargin1,
+                            Math.Max(_lastClickedX, x) + brushMargin1,
+                            Math.Max(_lastClickedY, y) + brushMargin1);
+
                         _lastClickedX = x;
                         _lastClickedY = y;
-                        _vm.RedrawGridFromMemory();
-                        _vm.UpdateTextOutputs();
+                        _pendingTextUpdateDuringDrag = true;
                     }
                     else
                     {
@@ -183,8 +192,12 @@ namespace Hexel.Controllers
                         _drawingService.DrawBrushStamp(_vm.SpriteState, x, y, _vm.BrushSize, newState, _vm.BrushShape, _vm.BrushAngle);
                         _lastClickedX = x;
                         _lastClickedY = y;
-                        _vm.RedrawGridFromMemory();
-                        _vm.UpdateTextOutputs();
+
+                        // Partial redraw for the single stamp — use full brush size
+                        // as margin to account for rotated Square/Line brush offsets
+                        int brushMargin2 = _vm.BrushSize + 1;
+                        _vm.RedrawRegion(x - brushMargin2, y - brushMargin2, x + brushMargin2, y + brushMargin2);
+                        _pendingTextUpdateDuringDrag = true;
                     }
                     break;
             }
@@ -214,13 +227,23 @@ namespace Hexel.Controllers
             {
                 if (_lastClickedX != NoPosition && (_lastClickedX != x || _lastClickedY != y))
                 {
+                    int prevX = _lastClickedX, prevY = _lastClickedY;
+
                     // Continuous pencil drag: draw line segment but don't push undo
                     // (the undo entry was already pushed on Down)
-                    _drawingService.DrawLine(_vm.SpriteState, _lastClickedX, _lastClickedY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
+                    _drawingService.DrawLine(_vm.SpriteState, prevX, prevY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
                     _lastClickedX = x;
                     _lastClickedY = y;
                     _pendingTextUpdateDuringDrag = true;
-                    _vm.RedrawGridFromMemory();
+
+                    // Partial redraw: only update the bounding box of the stroke segment
+                    // Use full brush size as margin to handle rotated brush offsets
+                    int brushMargin = _vm.BrushSize + 1;
+                    int dirtyMinX = Math.Min(prevX, x) - brushMargin;
+                    int dirtyMinY = Math.Min(prevY, y) - brushMargin;
+                    int dirtyMaxX = Math.Max(prevX, x) + brushMargin;
+                    int dirtyMaxY = Math.Max(prevY, y) + brushMargin;
+                    _vm.RedrawRegion(dirtyMinX, dirtyMinY, dirtyMaxX, dirtyMaxY);
                 }
             }
         }

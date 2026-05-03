@@ -261,6 +261,16 @@ namespace Hexel.Services
 
             int w = state.Width, h = state.Height;
             var offsets = ComputeStampOffsets(brushSize, shape, angleDeg);
+            StampOffsets(state, cx, cy, newState, offsets);
+        }
+
+        /// <summary>
+        /// Fast stamp using pre-computed offsets — avoids re-allocating and
+        /// re-computing offsets when called repeatedly (e.g. along a line).
+        /// </summary>
+        private void StampOffsets(SpriteState state, int cx, int cy, bool newState, List<(int dx, int dy)> offsets)
+        {
+            int w = state.Width, h = state.Height;
             foreach (var (dx, dy) in offsets)
             {
                 int px = cx + dx, py = cy + dy;
@@ -297,13 +307,16 @@ namespace Hexel.Services
                 return;
             }
 
+            // Pre-compute offsets once for the entire line instead of per-pixel
+            var offsets = ComputeStampOffsets(brushSize, shape, angleDeg);
+
             int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
             int err = dx - dy;
 
             while (true)
             {
-                DrawBrushStamp(state, x0, y0, brushSize, newState, shape, angleDeg);
+                StampOffsets(state, x0, y0, newState, offsets);
                 if (x0 == x1 && y0 == y1) break;
 
                 int e2 = 2 * err;

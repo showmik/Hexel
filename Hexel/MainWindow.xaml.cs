@@ -434,6 +434,13 @@ namespace Hexel
 
                 if (_activeDrawMode != DrawMode.None)
                 {
+                    // Update brush cursor immediately on press so the overlay
+                    // doesn't lag until the first PreviewMouseMove event fires.
+                    var imgPos = e.GetPosition(image);
+                    _brushCursor.LastCanvasMousePos = imgPos;
+                    _brushCursor.IsMouseOverCanvas = true;
+                    _brushCursor.Update(x, y, imgPos, image.ActualWidth, image.ActualHeight);
+
                     _lastHoveredX = x;
                     _lastHoveredY = y;
                     ViewModel.ProcessToolInput(x, y, ToolAction.Down, _activeDrawMode,
@@ -461,15 +468,16 @@ namespace Hexel
 
             if (ViewModel == null || _selection == null) return;
 
-            ViewModel.CursorX = x;
-            ViewModel.CursorY = y;
-
+            // Update brush cursor every mouse move for smooth visual tracking
             _brushCursor.Update(x, y, pos, image.ActualWidth, image.ActualHeight);
 
+            // Only process drawing/selection when the pixel coordinate actually changes
             if (x != _lastHoveredX || y != _lastHoveredY)
             {
                 _lastHoveredX = x;
                 _lastHoveredY = y;
+                ViewModel.CursorX = x;
+                ViewModel.CursorY = y;
 
                 if ((ViewModel.CurrentTool == ToolMode.Marquee ||
                      ViewModel.CurrentTool == ToolMode.Lasso ||

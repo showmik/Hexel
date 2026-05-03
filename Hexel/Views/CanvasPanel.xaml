@@ -460,7 +460,7 @@
 
                             <Rectangle x:Name="MarqueeOverlay" x:FieldModifier="public"
                                        Stroke="{DynamicResource Theme.WarningBrush}"
-                                       StrokeThickness="{Binding DynamicStrokeThickness}"
+                                       StrokeThickness="{Binding SelectionStrokeThickness}"
                                        StrokeDashArray="4,4"
                                        Visibility="Hidden"
                                        IsHitTestVisible="False" />
@@ -468,7 +468,7 @@
                             <!-- Light transparent yellow fill shows the lasso interior -->
                             <Path x:Name="LassoOverlay" x:FieldModifier="public"
                                   Stroke="{DynamicResource Theme.WarningBrush}"
-                                  StrokeThickness="{Binding DynamicStrokeThickness}"
+                                  StrokeThickness="{Binding SelectionStrokeThickness}"
                                   StrokeDashArray="4,4"
                                   Fill="#40F2E94E"
                                   Visibility="Hidden"
@@ -484,13 +484,13 @@
                             <!-- Crosshair lines (follow mouse smoothly) -->
                             <Line x:Name="CrosshairH" x:FieldModifier="public"
                                   Stroke="#CCFFFFFF"
-                                  StrokeThickness="1"
+                                  StrokeThickness="0.5"
                                   Visibility="Hidden"
                                   IsHitTestVisible="False"
                                   SnapsToDevicePixels="True" />
                             <Line x:Name="CrosshairV" x:FieldModifier="public"
                                   Stroke="#CCFFFFFF"
-                                  StrokeThickness="1"
+                                  StrokeThickness="0.5"
                                   Visibility="Hidden"
                                   IsHitTestVisible="False"
                                   SnapsToDevicePixels="True" />
