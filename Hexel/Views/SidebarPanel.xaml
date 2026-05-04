@@ -222,56 +222,26 @@
             </Border>
 
             <!-- ═══════════════════════════════════════════════════════
-                 IMPORT FROM CODE (collapsible)
+                 IMPORT FROM CODE
                  ═══════════════════════════════════════════════════════ -->
             <Border Style="{StaticResource PanelStyle}"
                     Padding="16,8,16,16"
                     Margin="0,0,0,12">
-                <Expander Style="{StaticResource ModernExpanderStyle}"
-                          IsExpanded="False">
-                    <Expander.Header>
-                        <TextBlock Text="IMPORT FROM CODE"
-                                   Style="{StaticResource HeaderStyle}"
-                                   Margin="0"
-                                   VerticalAlignment="Center"/>
-                    </Expander.Header>
-                    <StackPanel Margin="0,12,0,0">
-                        <TextBlock Text="Paste Adafruit GFX / raw hex / C array code here and click Parse."
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   FontSize="11"
-                                   Margin="0,0,0,8"/>
-                        <Border Background="{DynamicResource Theme.BackgroundBrush}"
-                                CornerRadius="6"
-                                BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
-                                BorderThickness="1"
-                                Padding="2"
-                                Margin="0,0,0,8">
-                            <TextBox x:Name="TxtImport"
-                                     Text="{Binding ImportCode, UpdateSourceTrigger=PropertyChanged}"
-                                     TextWrapping="Wrap"
-                                     AcceptsReturn="True"
-                                     MinHeight="90"
-                                     MaxHeight="160"
-                                     FontFamily="{DynamicResource Theme.CodeFont}"
-                                     FontSize="12"
-                                     Background="Transparent"
-                                     Foreground="{DynamicResource Theme.CodeTxtBrush}"
-                                     BorderThickness="0"
-                                     Padding="8"
-                                     VerticalScrollBarVisibility="Auto"/>
-                        </Border>
-                        <Button Content="Parse &amp; Apply to Canvas"
-                                Style="{StaticResource AccentButtonStyle}"
-                                HorizontalAlignment="Stretch"
-                                Command="{Binding ImportFromCodeCommand}"
-                                ToolTip="Parse the pasted code and update the canvas"/>
-                        <TextBlock Text="* Canvas dimensions must match the pasted data."
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   FontSize="10"
-                                   Margin="0,6,0,0"/>
-                    </StackPanel>
-                </Expander>
+                <StackPanel>
+                    <TextBlock Text="IMPORT"
+                               Style="{StaticResource HeaderStyle}"
+                               Margin="0,0,0,10"/>
+                    <TextBlock Text="Import sprite data from Adafruit GFX, u8g2, plain C array, or raw hex code. Dimensions and variable name are auto-detected."
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               FontSize="11"
+                               Margin="0,0,0,12"/>
+                    <Button Content="Import from Code…"
+                            Style="{StaticResource AccentButtonStyle}"
+                            HorizontalAlignment="Stretch"
+                            Click="ImportFromCode_Click"
+                            ToolTip="Open the Import from Code dialog (Ctrl+Shift+I)"/>
+                </StackPanel>
             </Border>
 
             <!-- ═══════════════════════════════════════════════════════

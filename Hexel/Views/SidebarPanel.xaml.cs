@@ -271,5 +271,17 @@ namespace Hexel.Views
             }
             catch { /* fallback colours already set in field initialisers */ }
         }
+
+        // ── Import button ────────────────────────────────────────────────────
+
+        private void ImportFromCode_Click(object sender, RoutedEventArgs e)
+        {
+            // Reach up to the ShellViewModel (MainWindow's DataContext) and invoke its command
+            if (Application.Current.MainWindow?.DataContext is ShellViewModel shell &&
+                shell.ImportFromCodeMenuCommand.CanExecute(null))
+            {
+                shell.ImportFromCodeMenuCommand.Execute(null);
+            }
+        }
     }
 }
