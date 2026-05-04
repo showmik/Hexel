@@ -73,8 +73,9 @@ namespace Hexel
                 _canvasElements, () => ViewModel,
                 () => GetPixelCoordinates(_brushCursor.LastCanvasMousePos, Canvas.CanvasImage.ActualWidth, Canvas.CanvasImage.ActualHeight));
 
-            // Wire up tab change
+            // Wire up events
             _shell.ActiveTabChanged += (_, _) => OnActiveTabChanged();
+            _shell.ThemeChanged += (_, _) => _brushCursor.Refresh();
 
             // Zoom keyboard shortcuts
             CommandBindings.Add(new CommandBinding(NavigationCommands.IncreaseZoom,

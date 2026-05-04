@@ -483,13 +483,11 @@
 
                             <!-- Crosshair lines (follow mouse smoothly) -->
                             <Line x:Name="CrosshairH" x:FieldModifier="public"
-                                  Stroke="{DynamicResource Theme.CrosshairStrokeBrush}"
                                   StrokeThickness="0.5"
                                   Visibility="Hidden"
                                   IsHitTestVisible="False"
                                   SnapsToDevicePixels="True" />
                             <Line x:Name="CrosshairV" x:FieldModifier="public"
-                                  Stroke="{DynamicResource Theme.CrosshairStrokeBrush}"
                                   StrokeThickness="0.5"
                                   Visibility="Hidden"
                                   IsHitTestVisible="False"

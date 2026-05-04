@@ -71,8 +71,8 @@ namespace Hexel.ViewModels
         public event EventHandler<MainViewModel>? TabAdded;
         /// <summary>Raised when a tab is about to be removed.</summary>
         public event EventHandler<MainViewModel>? TabRemoved;
-        /// <summary>Raised when the active tab changes.</summary>
         public event EventHandler? ActiveTabChanged;
+        public event EventHandler? ThemeChanged;
 
         /// <summary>
         /// Gets whether the current theme is Dark. Used for menu radio-button binding.
@@ -120,6 +120,8 @@ namespace Hexel.ViewModels
                 // Re-read pixel colors from the new theme and redraw all open canvases
                 foreach (var doc in OpenDocuments)
                     doc.RefreshCanvasColors();
+
+                ThemeChanged?.Invoke(this, EventArgs.Empty);
             };
 
             // No auto-created document — the welcome screen is shown instead

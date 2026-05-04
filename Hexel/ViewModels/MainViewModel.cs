@@ -771,21 +771,24 @@ namespace Hexel.ViewModels
                     _selectionService.FloatingWidth,
                     _selectionService.FloatingHeight);
 
+                // Compute stats on the background thread — avoid blocking UI with regex
+                int byteCount;
+                if (settingsSnapshot.Format == ExportFormat.RawBinary)
+                    byteCount = SpriteState != null
+                        ? SpriteState.Height * (int)Math.Ceiling(SpriteState.Width / 8.0)
+                        : 0;
+                else
+                    byteCount = System.Text.RegularExpressions.Regex
+                        .Matches(code, @"0[xX][0-9a-fA-F]{1,2}").Count;
+
+                string stats = $"{byteCount} byte{(byteCount != 1 ? "s" : "")}  ·  {code.Length:N0} chars";
+
                 _uiContext.Post(_ =>
                 {
                     _exportedCode = code;
                     OnPropertyChanged(nameof(ExportedCode));
 
-                    // Update stats: count unique 0xNN tokens as byte count
-                    int byteCount = System.Text.RegularExpressions.Regex
-                        .Matches(code, @"0[xX][0-9a-fA-F]{1,2}").Count;
-                    // For raw binary / raw hex, count differently
-                    if (settingsSnapshot.Format == ExportFormat.RawBinary)
-                        byteCount = SpriteState != null
-                            ? SpriteState.Height * (int)Math.Ceiling(SpriteState.Width / 8.0)
-                            : 0;
-
-                    _exportStats = $"{byteCount} byte{(byteCount != 1 ? "s" : "")}  ·  {code.Length:N0} chars";
+                    _exportStats = stats;
                     OnPropertyChanged(nameof(ExportStats));
 
                     _isUpdatingProgrammatically = false;

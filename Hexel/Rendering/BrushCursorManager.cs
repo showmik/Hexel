@@ -57,13 +57,13 @@ namespace Hexel.Rendering
         /// </summary>
         public void Refresh()
         {
+            InvalidateCache();
+
             if (!IsMouseOverCanvas) return;
             var overlay = _elements.GetBrushCursorOverlay();
             if (overlay == null) return;
             var image = _elements.GetCanvasImage();
             if (image == null || image.ActualWidth == 0) return;
-
-            InvalidateCache();
 
             var (x, y) = _getPixelCoords();
             Update(x, y, LastCanvasMousePos, image.ActualWidth, image.ActualHeight);
@@ -197,6 +197,13 @@ namespace Hexel.Rendering
             _cachedCrossLen = cellUnit * 0.65;
             _cachedCrossStroke = Math.Max(cellUnit * 0.08, 0.3);
 
+            // Apply crosshair theme brush once per cache rebuild to avoid DynamicResource lag
+            var crosshairBrush = (SolidColorBrush)Application.Current.Resources["Theme.CrosshairStrokeBrush"];
+            var crossH = _elements.GetCrosshairH();
+            var crossV = _elements.GetCrosshairV();
+            if (crossH != null) crossH.Stroke = crosshairBrush;
+            if (crossV != null) crossV.Stroke = crosshairBrush;
+
             // Rebuild bitmap (will skip if brush params haven't changed)
             RebuildBitmap(brushSize, shape, angleDeg);
 
@@ -260,8 +267,12 @@ namespace Hexel.Rendering
             _brushCursorBitmap = new WriteableBitmap(bmpW, bmpH, 96, 96, PixelFormats.Bgra32, null);
 
             var pixels = new uint[bmpW * bmpH];
-            const uint edgeColor = 0xDDFFFFFF;
-            const uint fillColor = 0x40FFFFFF;
+            // Fetch colors from active theme
+            var res = Application.Current.Resources;
+            Color edge = (Color)res["Color.BrushCursorEdge"];
+            Color fill = (Color)res["Color.BrushCursorFill"];
+            uint edgeColor = (uint)((edge.A << 24) | (edge.R << 16) | (edge.G << 8) | edge.B);
+            uint fillColor = (uint)((fill.A << 24) | (fill.R << 16) | (fill.G << 8) | fill.B);
 
             var inStamp = new bool[bmpW * bmpH];
             foreach (var (dx, dy) in offsets)

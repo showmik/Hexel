@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace Hexel.Views
 {
@@ -18,6 +19,14 @@ namespace Hexel.Views
         private SolidColorBrush _commentBrush = new(Color.FromRgb(0x6A, 0x99, 0x55));
         private SolidColorBrush _identifierBrush = new(Color.FromRgb(0x9C, 0xDC, 0xFE));
         private SolidColorBrush _defaultBrush = new(Color.FromRgb(0xD4, 0xD4, 0xD4));
+
+        // Compiled once — avoids re-parsing the regex pattern on every export update
+        private static readonly Regex s_tokenRegex = new(
+            @"(0[xX][0-9a-fA-F]+|\d+)" +              // hex OR decimal literal
+            @"|(const|uint8_t|PROGMEM|U8X8_PROGMEM|bytearray|framebuf|display|u8g2)" + // keywords
+            @"|([a-zA-Z_][a-zA-Z0-9_]*)" +            // identifiers
+            @"|([^a-zA-Z0-9_]+)",                      // punctuation / whitespace
+            RegexOptions.Compiled);
 
         private MainViewModel? _vm;
 
@@ -148,10 +157,12 @@ namespace Hexel.Views
         // ── Syntax highlighting ──────────────────────────────────────────────
 
         /// <summary>
-        /// Parses the export code and applies token-level syntax colouring to
-        /// the RichTextBox via a rebuilt FlowDocument.
-        /// Runs entirely on the UI thread (called via Dispatcher.BeginInvoke).
+        /// Maximum code length for full per-token syntax highlighting.
+        /// Above this threshold we show plain monospace text to avoid
+        /// stalling the UI thread with thousands of Run objects.
         /// </summary>
+        private const int SyntaxHighlightCharLimit = 2000;
+
         private void UpdateSyntaxOutput(string code)
         {
             // Resolve brushes from theme resources (so they respect theme switches)
@@ -167,6 +178,19 @@ namespace Hexel.Views
             if (string.IsNullOrEmpty(code))
             {
                 doc.Blocks.Add(new Paragraph(new Run("(no output)") { Foreground = _commentBrush }));
+                RtbOutput.Document = doc;
+                return;
+            }
+
+            // For large code outputs (high-res canvases), skip per-token
+            // highlighting — a single Run is near-instant vs thousands of Runs.
+            if (code.Length > SyntaxHighlightCharLimit)
+            {
+                doc.Blocks.Add(new Paragraph(new Run(code) { Foreground = _defaultBrush })
+                {
+                    Margin = new Thickness(0),
+                    LineHeight = 18
+                });
                 RtbOutput.Document = doc;
                 return;
             }
@@ -206,21 +230,7 @@ namespace Hexel.Views
             string codePart = commentIdx >= 0 ? line[..commentIdx] : line;
             string commentPart = commentIdx >= 0 ? line[commentIdx..] : string.Empty;
 
-            // Tokenise the code part.
-            // Group 1: numeric literals — hex (0xFF) OR decimal (8, 16, …)
-            //   Plain decimal digits are NOT matched by the identifier or punctuation
-            //   groups, so without this they are silently dropped from the output.
-            // Group 2: C/Python keywords and type names
-            // Group 3: identifiers (letters / underscores + alphanums)
-            // Group 4: everything else — punctuation, spaces, braces, commas …
-            var tokenRegex = new Regex(
-                @"(0[xX][0-9a-fA-F]+|\d+)" +              // hex OR decimal literal
-                @"|(const|uint8_t|PROGMEM|U8X8_PROGMEM|bytearray|framebuf|display|u8g2)" + // keywords
-                @"|([a-zA-Z_][a-zA-Z0-9_]*)" +            // identifiers
-                @"|([^a-zA-Z0-9_]+)"                       // punctuation / whitespace
-            );
-
-            foreach (Match m in tokenRegex.Matches(codePart))
+            foreach (Match m in s_tokenRegex.Matches(codePart))
             {
                 string token = m.Value;
                 SolidColorBrush brush;

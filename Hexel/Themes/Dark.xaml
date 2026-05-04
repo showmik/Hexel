@@ -44,6 +44,8 @@
     <Color x:Key="Color.BrandGradientEnd">#7C3AED</Color>
     <Color x:Key="Color.CrosshairStroke">#CCFFFFFF</Color>
     <Color x:Key="Color.LassoFill">#40F2E94E</Color>
+    <Color x:Key="Color.BrushCursorEdge">#DDFFFFFF</Color>
+    <Color x:Key="Color.BrushCursorFill">#40FFFFFF</Color>
     <Color x:Key="Color.InputBackground">#1C1F32</Color>
     <Color x:Key="Color.ShadowColor">#000000</Color>
     <Color x:Key="Color.SurfaceOverlay">#2A2D42</Color>
