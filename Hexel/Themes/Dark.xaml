@@ -1,0 +1,142 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Core palette
+         ═══════════════════════════════════════════════════════════ -->
+    <Color x:Key="Color.Background">#232536</Color>
+    <Color x:Key="Color.PanelBackground">#1A1C2E</Color>
+    <Color x:Key="Color.PanelBorder">#2C3145</Color>
+    <Color x:Key="Color.CanvasBackground">#080C18</Color>
+    <Color x:Key="Color.TextMain">#EDF2F7</Color>
+    <Color x:Key="Color.TextMuted">#939DB5</Color>
+    <Color x:Key="Color.TextInverse">#0F172A</Color>
+    <Color x:Key="Color.CodeTxt">#8696AD</Color>
+    <Color x:Key="Color.PrimaryAccent">#F0C4B8</Color>
+    <Color x:Key="Color.SelectionBackground">#4F46E5</Color>
+    <Color x:Key="Color.Danger">#E8675A</Color>
+    <Color x:Key="Color.Warning">#F2E94E</Color>
+    <Color x:Key="Color.OledBackground">#000000</Color>
+    <Color x:Key="Color.OledForeground">#74B3CE</Color>
+    <Color x:Key="Color.InvertButtonBackground">#0088CC</Color>
+    <Color x:Key="Color.ClearButtonBackground">#E04545</Color>
+    <Color x:Key="Color.CopyButtonBackground">#6DA65B</Color>
+    <Color x:Key="Color.ThumbBackground">#1A1C2E</Color>
+    <Color x:Key="Color.ScrollBar">#383D54</Color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         UI-shell palette for menu bar, sidebar, toolbar,
+         status bar, and separators
+         ═══════════════════════════════════════════════════════════ -->
+    <Color x:Key="Color.MenuBarBackground">#1A1C2E</Color>
+    <Color x:Key="Color.MenuItemHover">#33384E</Color>
+    <Color x:Key="Color.StatusBarBackground">#161828</Color>
+    <Color x:Key="Color.ToolbarBackground">#1F2238</Color>
+    <Color x:Key="Color.ToolSidebarBackground">#161828</Color>
+    <Color x:Key="Color.ToolSidebarActive">#33384E</Color>
+    <Color x:Key="Color.Separator">#2C3145</Color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         New semantic tokens
+         ═══════════════════════════════════════════════════════════ -->
+    <Color x:Key="Color.TextOnAccent">#FFFFFF</Color>
+    <Color x:Key="Color.BrandGradientStart">#4F46E5</Color>
+    <Color x:Key="Color.BrandGradientEnd">#7C3AED</Color>
+    <Color x:Key="Color.CrosshairStroke">#CCFFFFFF</Color>
+    <Color x:Key="Color.LassoFill">#40F2E94E</Color>
+    <Color x:Key="Color.InputBackground">#1C1F32</Color>
+    <Color x:Key="Color.ShadowColor">#000000</Color>
+    <Color x:Key="Color.SurfaceOverlay">#2A2D42</Color>
+    <Color x:Key="Color.Success">#6DA65B</Color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Brushes (all keys preserved, backed by refined colors)
+         ═══════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="Theme.InvertButtonBackgroundBrush"
+                     Color="{StaticResource Color.InvertButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.ClearButtonBackgroundBrush"
+                     Color="{StaticResource Color.ClearButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.CopyButtonBackgroundBrush"
+                     Color="{StaticResource Color.CopyButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.BackgroundBrush"
+                     Color="{StaticResource Color.Background}" />
+    <SolidColorBrush x:Key="Theme.PanelBackgroundBrush"
+                     Color="{StaticResource Color.PanelBackground}" />
+    <SolidColorBrush x:Key="Theme.PanelBorderBrush"
+                     Color="{StaticResource Color.PanelBorder}" />
+    <SolidColorBrush x:Key="Theme.CanvasBackgroundBrush"
+                     Color="{StaticResource Color.CanvasBackground}" />
+
+    <SolidColorBrush x:Key="Theme.TextMainBrush"
+                     Color="{StaticResource Color.TextMain}" />
+    <SolidColorBrush x:Key="Theme.TextMutedBrush"
+                     Color="{StaticResource Color.TextMuted}" />
+    <SolidColorBrush x:Key="Theme.TextInverseBrush"
+                     Color="{StaticResource Color.TextInverse}" />
+    <SolidColorBrush x:Key="Theme.CodeTxtBrush"
+                     Color="{StaticResource Color.CodeTxt}" />
+
+    <SolidColorBrush x:Key="Theme.ThumbBackgroundBrush"
+                     Color="{StaticResource Color.ThumbBackground}" />
+    <SolidColorBrush x:Key="Theme.ScrollBarBrush"
+                     Color="{StaticResource Color.ScrollBar}" />
+
+    <SolidColorBrush x:Key="Theme.PrimaryAccentBrush"
+                     Color="{StaticResource Color.PrimaryAccent}" />
+    <SolidColorBrush x:Key="Theme.SelectionBackgroundBrush"
+                     Color="{StaticResource Color.SelectionBackground}" />
+
+    <SolidColorBrush x:Key="Theme.DangerBrush"
+                     Color="{StaticResource Color.Danger}" />
+    <SolidColorBrush x:Key="Theme.WarningBrush"
+                     Color="{StaticResource Color.Warning}" />
+
+    <SolidColorBrush x:Key="Theme.OledOffBrush"
+                     Color="{StaticResource Color.OledBackground}" />
+    <SolidColorBrush x:Key="Theme.OledOnBrush"
+                     Color="{StaticResource Color.OledForeground}" />
+
+    <!-- UI shell brushes -->
+    <SolidColorBrush x:Key="Theme.MenuBarBackgroundBrush"
+                     Color="{StaticResource Color.MenuBarBackground}" />
+    <SolidColorBrush x:Key="Theme.MenuItemHoverBrush"
+                     Color="{StaticResource Color.MenuItemHover}" />
+    <SolidColorBrush x:Key="Theme.StatusBarBackgroundBrush"
+                     Color="{StaticResource Color.StatusBarBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolbarBackgroundBrush"
+                     Color="{StaticResource Color.ToolbarBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolSidebarBackgroundBrush"
+                     Color="{StaticResource Color.ToolSidebarBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolSidebarActiveBrush"
+                     Color="{StaticResource Color.ToolSidebarActive}" />
+    <SolidColorBrush x:Key="Theme.SeparatorBrush"
+                     Color="{StaticResource Color.Separator}" />
+
+    <!-- New semantic brushes -->
+    <SolidColorBrush x:Key="Theme.TextOnAccentBrush"
+                     Color="{StaticResource Color.TextOnAccent}" />
+    <SolidColorBrush x:Key="Theme.BrandGradientStartBrush"
+                     Color="{StaticResource Color.BrandGradientStart}" />
+    <SolidColorBrush x:Key="Theme.BrandGradientEndBrush"
+                     Color="{StaticResource Color.BrandGradientEnd}" />
+    <SolidColorBrush x:Key="Theme.CrosshairStrokeBrush"
+                     Color="{StaticResource Color.CrosshairStroke}" />
+    <SolidColorBrush x:Key="Theme.LassoFillBrush"
+                     Color="{StaticResource Color.LassoFill}" />
+    <SolidColorBrush x:Key="Theme.InputBackgroundBrush"
+                     Color="{StaticResource Color.InputBackground}" />
+    <SolidColorBrush x:Key="Theme.SurfaceOverlayBrush"
+                     Color="{StaticResource Color.SurfaceOverlay}" />
+    <SolidColorBrush x:Key="Theme.SuccessBrush"
+                     Color="{StaticResource Color.Success}" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Syntax highlighting (VS Code Dark palette)
+         ═══════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="Syntax.KeywordBrush"  Color="#569CD6"/>
+    <SolidColorBrush x:Key="Syntax.LiteralBrush"  Color="#B5CEA8"/>
+    <SolidColorBrush x:Key="Syntax.CommentBrush"  Color="#6A9955"/>
+    <SolidColorBrush x:Key="Syntax.IdentifierBrush" Color="#9CDCFE"/>
+    <SolidColorBrush x:Key="Syntax.PunctuationBrush" Color="#D4D4D4"/>
+
+</ResourceDictionary>

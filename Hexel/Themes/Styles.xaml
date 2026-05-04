@@ -64,7 +64,7 @@
             <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                          Value="True">
                 <Setter Property="Stroke"
-                        Value="White" />
+                        Value="{DynamicResource Theme.TextOnAccentBrush}" />
             </DataTrigger>
             <Trigger Property="IsMouseOver"
                      Value="True">
@@ -98,9 +98,9 @@
             <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                          Value="True">
                 <Setter Property="Stroke"
-                        Value="White" />
+                        Value="{DynamicResource Theme.TextOnAccentBrush}" />
                 <Setter Property="Fill"
-                        Value="White" />
+                        Value="{DynamicResource Theme.TextOnAccentBrush}" />
             </DataTrigger>
             <Trigger Property="IsMouseOver"
                      Value="True">
@@ -963,7 +963,7 @@
                                     Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
                             <Setter TargetName="Dot"
                                     Property="Fill"
-                                    Value="White" />
+                                    Value="{DynamicResource Theme.TextOnAccentBrush}" />
                             <Setter TargetName="Dot"
                                     Property="Width"
                                     Value="6" />
@@ -976,15 +976,6 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <!-- ═══════════════════════════════════════════════════════════════
-         Syntax highlighting brush resources (VS Code dark theme palette)
-         ═══════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="Syntax.KeywordBrush"  Color="#569CD6"/>  <!-- blue  — const, uint8_t, PROGMEM -->
-    <SolidColorBrush x:Key="Syntax.LiteralBrush"  Color="#B5CEA8"/>  <!-- green — 0xFF values             -->
-    <SolidColorBrush x:Key="Syntax.CommentBrush"  Color="#6A9955"/>  <!-- muted green — // comments       -->
-    <SolidColorBrush x:Key="Syntax.IdentifierBrush" Color="#9CDCFE"/> <!-- light blue — variable name      -->
-    <SolidColorBrush x:Key="Syntax.PunctuationBrush" Color="#D4D4D4"/><!-- white-grey — braces, commas     -->
 
     <!-- ═══════════════════════════════════════════════════════════════
          Chip / segmented RadioButton — used for bytes-per-line & case
@@ -1036,7 +1027,7 @@
     <!-- Small accent button — copy, parse etc. -->
     <Style x:Key="AccentButtonStyle" TargetType="Button">
         <Setter Property="Background"  Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
-        <Setter Property="Foreground"  Value="White"/>
+        <Setter Property="Foreground"  Value="{DynamicResource Theme.TextOnAccentBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding"     Value="14,6"/>
         <Setter Property="Cursor"      Value="Hand"/>
@@ -1130,7 +1121,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bg" Property="Background" Value="{DynamicResource Theme.DangerBrush}"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.TextOnAccentBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

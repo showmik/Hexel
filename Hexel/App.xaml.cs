@@ -18,6 +18,10 @@ namespace Hexel
             ConfigureServices(services);
             _serviceProvider = services.BuildServiceProvider();
 
+            // Apply the persisted theme before showing any UI
+            var themeService = (ThemeService)_serviceProvider.GetRequiredService<IThemeService>();
+            themeService.Initialize();
+
             _serviceProvider.GetRequiredService<MainWindow>().Show();
         }
 
@@ -28,6 +32,7 @@ namespace Hexel
             services.AddSingleton<IDrawingService, DrawingService>();
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton<IThemeService, ThemeService>();
 
             // ShellViewModel is the app-level VM that manages tabs
             services.AddSingleton<ShellViewModel>();

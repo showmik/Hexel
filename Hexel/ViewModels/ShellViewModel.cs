@@ -23,6 +23,7 @@ namespace Hexel.ViewModels
         private readonly IClipboardService _clipboardService;
         private readonly IPixelClipboardService _pixelClipboard;
         private readonly IDialogService _dialogService;
+        private readonly IThemeService _themeService;
 
         private const string FileFilter = "Hexel Sprite (*.hexel)|*.hexel|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
 
@@ -62,6 +63,8 @@ namespace Hexel.ViewModels
         public IRelayCommand ImportFromCodeMenuCommand { get; }
         /// <summary>Copies the active document's exported code to the clipboard.</summary>
         public IRelayCommand CopyExportCodeMenuCommand { get; }
+        /// <summary>Switches the theme between Dark and Light.</summary>
+        public IRelayCommand<string> SwitchThemeCommand { get; }
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>Raised when a tab is added so the View can wire events.</summary>
@@ -71,17 +74,29 @@ namespace Hexel.ViewModels
         /// <summary>Raised when the active tab changes.</summary>
         public event EventHandler? ActiveTabChanged;
 
+        /// <summary>
+        /// Gets whether the current theme is Dark. Used for menu radio-button binding.
+        /// </summary>
+        public bool IsDarkTheme => _themeService.CurrentTheme == "Dark";
+
+        /// <summary>
+        /// Gets whether the current theme is Light. Used for menu radio-button binding.
+        /// </summary>
+        public bool IsLightTheme => _themeService.CurrentTheme == "Light";
+
         public ShellViewModel(
             ICodeGeneratorService codeGen,
             IDrawingService drawingService,
             IClipboardService clipboardService,
-            IDialogService dialogService)
+            IDialogService dialogService,
+            IThemeService themeService)
         {
             _codeGen = codeGen;
             _drawingService = drawingService;
             _clipboardService = clipboardService;
             _pixelClipboard = new PixelClipboardService();
             _dialogService = dialogService;
+            _themeService = themeService;
 
             NewCanvasCommand = new RelayCommand<object?>(ExecuteNewCanvas);
             OpenCommand = new RelayCommand(ExecuteOpen);
@@ -95,6 +110,13 @@ namespace Hexel.ViewModels
             CopyExportCodeMenuCommand = new RelayCommand(
                 () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
                 () => HasOpenDocument);
+            SwitchThemeCommand = new RelayCommand<string>(ExecuteSwitchTheme);
+
+            _themeService.ThemeChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(IsDarkTheme));
+                OnPropertyChanged(nameof(IsLightTheme));
+            };
 
             // No auto-created document — the welcome screen is shown instead
         }
@@ -329,6 +351,14 @@ namespace Hexel.ViewModels
         private void ExecuteShowAbout()
         {
             _dialogService.ShowAboutDialog();
+        }
+
+        // ── Theme ─────────────────────────────────────────────────────────
+
+        private void ExecuteSwitchTheme(string? themeName)
+        {
+            if (themeName != null)
+                _themeService.ApplyTheme(themeName);
         }
 
         // ── Helpers ───────────────────────────────────────────────────────
