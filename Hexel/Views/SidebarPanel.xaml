@@ -111,6 +111,11 @@
                                     <CheckBox Content="Comma separator"
                                               IsChecked="{Binding UseCommaSeparator}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              FontSize="12"
+                                              Margin="0,0,16,0"/>
+                                    <CheckBox Content="Array size"
+                                              IsChecked="{Binding IncludeArraySize}"
+                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
                                               FontSize="12"/>
                                 </StackPanel>
 

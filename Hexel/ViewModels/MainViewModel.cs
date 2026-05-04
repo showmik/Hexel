@@ -253,6 +253,12 @@ namespace Hexel.ViewModels
             set { if (_exportSettings.IncludeRowComments != value) { _exportSettings.IncludeRowComments = value; OnPropertyChanged(); UpdateTextOutputs(); } }
         }
 
+        public bool IncludeArraySize
+        {
+            get => _exportSettings.IncludeArraySize;
+            set { if (_exportSettings.IncludeArraySize != value) { _exportSettings.IncludeArraySize = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+        }
+
         // ── Export output ────────────────────────────────────────────────────
         private volatile bool _isUpdatingProgrammatically;
 
@@ -750,6 +756,7 @@ namespace Hexel.ViewModels
                 BytesPerLine             = _exportSettings.BytesPerLine,
                 UppercaseHex             = _exportSettings.UppercaseHex,
                 IncludeRowComments       = _exportSettings.IncludeRowComments,
+                IncludeArraySize         = _exportSettings.IncludeArraySize,
             };
 
             try
@@ -806,6 +813,7 @@ namespace Hexel.ViewModels
             OnPropertyChanged(nameof(BytesPerLine));
             OnPropertyChanged(nameof(UppercaseHex));
             OnPropertyChanged(nameof(IncludeRowComments));
+            OnPropertyChanged(nameof(IncludeArraySize));
             UpdateTextOutputs();
         }
 

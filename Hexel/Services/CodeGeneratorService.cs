@@ -79,7 +79,8 @@ namespace Hexel.Services
                 sb.AppendLine($"const uint8_t {name.ToUpperInvariant()}_HEIGHT = {s.Height};");
             }
 
-            sb.AppendLine($"const uint8_t PROGMEM {name}[] = {{");
+            string arraySize = cfg.IncludeArraySize ? data.Length.ToString() : "";
+            sb.AppendLine($"const uint8_t PROGMEM {name}[{arraySize}] = {{");
             AppendByteBody(sb, data, s, cfg, hexFmt, rowPrefix: "  ");
             sb.Append("};");
 
@@ -104,7 +105,8 @@ namespace Hexel.Services
                 sb.AppendLine($"const uint8_t {name.ToUpperInvariant()}_HEIGHT = {s.Height};");
             }
 
-            sb.AppendLine($"const uint8_t U8X8_PROGMEM {name}[] = {{");
+            string arraySize = cfg.IncludeArraySize ? data.Length.ToString() : "";
+            sb.AppendLine($"const uint8_t U8X8_PROGMEM {name}[{arraySize}] = {{");
             AppendByteBody(sb, data, s, cfg, hexFmt, rowPrefix: "  ");
             sb.Append("};");
 
@@ -130,7 +132,8 @@ namespace Hexel.Services
                 sb.AppendLine($"const uint8_t {name.ToUpperInvariant()}_HEIGHT = {s.Height};");
             }
 
-            sb.AppendLine($"const uint8_t PROGMEM {name}[] = {{");
+            string arraySize = cfg.IncludeArraySize ? data.Length.ToString() : "";
+            sb.AppendLine($"const uint8_t PROGMEM {name}[{arraySize}] = {{");
             AppendByteBody(sb, data, s, cfg, hexFmt, rowPrefix: "  ");
             sb.Append("};");
 
@@ -155,7 +158,8 @@ namespace Hexel.Services
                 sb.AppendLine($"const uint8_t {name.ToUpperInvariant()}_HEIGHT = {s.Height};");
             }
 
-            sb.AppendLine($"const uint8_t {name}[] = {{");
+            string arraySize = cfg.IncludeArraySize ? data.Length.ToString() : "";
+            sb.AppendLine($"const uint8_t {name}[{arraySize}] = {{");
             AppendByteBody(sb, data, s, cfg, hexFmt, rowPrefix: "  ");
             sb.Append("};");
 

@@ -51,5 +51,8 @@ namespace Hexel.Core
 
         /// <summary>Append a <c>// row N</c> comment at the end of each data line.</summary>
         public bool IncludeRowComments { get; set; } = false;
+
+        /// <summary>Include the byte count inside the array brackets (e.g. name[32]).</summary>
+        public bool IncludeArraySize { get; set; } = false;
     }
 }
