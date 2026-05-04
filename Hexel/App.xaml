@@ -9,7 +9,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!-- ═══════════════════════════════════════════════════════════
-                 Core palette — refined for a deeper, cohesive slate look
+                 Core palette
                  ═══════════════════════════════════════════════════════════ -->
             <Color x:Key="Color.Background">#2B2D42</Color>
             <Color x:Key="Color.PanelBackground">#1A1E2E</Color>

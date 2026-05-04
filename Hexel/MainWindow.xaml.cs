@@ -171,6 +171,11 @@ namespace Hexel
             // Do NOT clear the selection overlay here — selection persists across tool switches.
             // Only refresh it so it stays visually current.
             _selectionOverlay.Update();
+
+            // Sync the sidebar radio buttons so shortcut-triggered tool switches
+            // are reflected visually (SyncToTool suppresses SelectToolCommand re-entry).
+            if (ViewModel != null)
+                ToolSidebar.SyncToTool(ViewModel.CurrentTool);
         }
 
         private void OnSelectionChanged(object? s, EventArgs e) => _selectionOverlay.Update();
