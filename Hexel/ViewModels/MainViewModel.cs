@@ -276,6 +276,17 @@ namespace Hexel.ViewModels
             private set => SetProperty(ref _exportStats, value);
         }
 
+        /// <summary>
+        /// Indicates that the canvas has changed since the last code generation.
+        /// Bound to a stale indicator in the sidebar.
+        /// </summary>
+        private bool _isCodeStale;
+        public bool IsCodeStale
+        {
+            get => _isCodeStale;
+            private set => SetProperty(ref _isCodeStale, value);
+        }
+
         // ── Import paste buffer ──────────────────────────────────────────────
         private string _importCode = string.Empty;
         public string ImportCode
@@ -374,6 +385,7 @@ namespace Hexel.ViewModels
         public IRelayCommand InvertCommand { get; }
         public IRelayCommand DeleteSelectionCommand { get; }
         public IRelayCommand CopyExportedCodeCommand { get; }
+        public IRelayCommand GenerateCodeCommand { get; }
         public IRelayCommand ImportFromCodeCommand { get; }
         public IRelayCommand CopySelectionCommand { get; }
         public IRelayCommand CutSelectionCommand { get; }
@@ -406,6 +418,11 @@ namespace Hexel.ViewModels
             {
                 _clipboardService.SetText(ExportedCode);
                 ShowStatus("✓ Copied to clipboard");
+            });
+
+            GenerateCodeCommand = new RelayCommand(() =>
+            {
+                UpdateTextOutputs();
             });
 
             ImportFromCodeCommand = new RelayCommand(() =>
@@ -442,7 +459,7 @@ namespace Hexel.ViewModels
                 IsDirty = true;
                 Array.Clear(SpriteState.Pixels, 0, SpriteState.Pixels.Length);
                 RedrawGridFromMemory();
-                UpdateTextOutputs();
+                MarkCodeStale();
             });
 
             InvertCommand = new RelayCommand(() =>
@@ -452,7 +469,7 @@ namespace Hexel.ViewModels
                 _drawingService.InvertGrid(SpriteState);
                 IsDisplayInverted = !IsDisplayInverted;
                 RedrawGridFromMemory();
-                UpdateTextOutputs();
+                MarkCodeStale();
             });
 
             CopySelectionCommand = new RelayCommand(() =>
@@ -476,7 +493,7 @@ namespace Hexel.ViewModels
                     SaveStateForUndo();
                     _selectionService.DeleteSelection(SpriteState);
                     RedrawGridFromMemory();
-                    UpdateTextOutputs();
+                    MarkCodeStale();
                     ShowStatus("Selection cut");
                 }
             });
@@ -501,7 +518,7 @@ namespace Hexel.ViewModels
                 SaveStateForUndo();
                 _selectionService.DeleteSelection(SpriteState);
                 RedrawGridFromMemory();
-                UpdateTextOutputs();
+                MarkCodeStale();
             });
 
             DeselectCommand = new RelayCommand(() =>
@@ -525,7 +542,7 @@ namespace Hexel.ViewModels
             SpriteState = new SpriteState(width, height);
             RebuildBitmaps(width, height);
 
-            UpdateTextOutputs();
+            MarkCodeStale();
             RedrawGridFromMemory();
             NotifyCanvasLayoutChanged();
         }
@@ -576,7 +593,7 @@ namespace Hexel.ViewModels
             RebuildBitmaps(newW, newH);
 
             RedrawGridFromMemory();
-            UpdateTextOutputs();
+            MarkCodeStale();
             NotifyCanvasLayoutChanged();
         }
 
@@ -733,10 +750,16 @@ namespace Hexel.ViewModels
             _historyService.SaveState(SpriteState);
             _drawingService.ShiftGrid(SpriteState, offsetX, offsetY);
             RedrawGridFromMemory();
-            UpdateTextOutputs();
+            MarkCodeStale();
         }
 
         // ── Export output ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// Marks the code output as stale after a canvas-modifying operation.
+        /// Does NOT regenerate — the user must click "Generate Code" to update.
+        /// </summary>
+        public void MarkCodeStale() => IsCodeStale = true;
 
         public void UpdateTextOutputs() => _ = UpdateTextOutputsAsync();
 
@@ -791,6 +814,7 @@ namespace Hexel.ViewModels
                     _exportStats = stats;
                     OnPropertyChanged(nameof(ExportStats));
 
+                    IsCodeStale = false;
                     _isUpdatingProgrammatically = false;
                 }, null);
             }
@@ -899,7 +923,7 @@ namespace Hexel.ViewModels
             SpriteState = state;
             IsDisplayInverted = state.IsDisplayInverted; // restores the visual invert flag
             RedrawGridFromMemory();
-            UpdateTextOutputs();
+            MarkCodeStale();
             HistoryRestored?.Invoke(this, EventArgs.Empty);
         }
 
@@ -930,7 +954,6 @@ namespace Hexel.ViewModels
         {
             InitializeBrushColors();
             RedrawGridFromMemory();
-            UpdateTextOutputs();
         }
 
         // ── Private: bitmap lifecycle helpers ─────────────────────────────

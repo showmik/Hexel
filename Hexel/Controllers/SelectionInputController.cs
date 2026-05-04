@@ -59,7 +59,7 @@ namespace Hexel.Controllers
             if (!_selection.HasActiveSelection) return false;
             _selection.CommitSelection(_vm.SpriteState);
             _vm.RedrawGridFromMemory();
-            _vm.UpdateTextOutputs();
+            _vm.MarkCodeStale();
             return true;
         }
 

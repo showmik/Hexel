@@ -156,13 +156,6 @@ namespace Hexel.Views
 
         // ── Syntax highlighting ──────────────────────────────────────────────
 
-        /// <summary>
-        /// Maximum code length for full per-token syntax highlighting.
-        /// Above this threshold we show plain monospace text to avoid
-        /// stalling the UI thread with thousands of Run objects.
-        /// </summary>
-        private const int SyntaxHighlightCharLimit = 2000;
-
         private void UpdateSyntaxOutput(string code)
         {
             // Resolve brushes from theme resources (so they respect theme switches)
@@ -178,19 +171,6 @@ namespace Hexel.Views
             if (string.IsNullOrEmpty(code))
             {
                 doc.Blocks.Add(new Paragraph(new Run("(no output)") { Foreground = _commentBrush }));
-                RtbOutput.Document = doc;
-                return;
-            }
-
-            // For large code outputs (high-res canvases), skip per-token
-            // highlighting — a single Run is near-instant vs thousands of Runs.
-            if (code.Length > SyntaxHighlightCharLimit)
-            {
-                doc.Blocks.Add(new Paragraph(new Run(code) { Foreground = _defaultBrush })
-                {
-                    Margin = new Thickness(0),
-                    LineHeight = 18
-                });
                 RtbOutput.Document = doc;
                 return;
             }

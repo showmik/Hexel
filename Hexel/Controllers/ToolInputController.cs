@@ -164,7 +164,7 @@ namespace Hexel.Controllers
                     _lastClickedX = x;
                     _lastClickedY = y;
                     _vm.RedrawGridFromMemory();
-                    _vm.UpdateTextOutputs();
+                    _vm.MarkCodeStale();
                     break;
 
                 case ToolMode.Pencil:
@@ -267,7 +267,7 @@ namespace Hexel.Controllers
                 }
 
                 ResetLineTracking();
-                _vm.UpdateTextOutputs();
+                _vm.MarkCodeStale();
                 return;
             }
 
@@ -275,7 +275,7 @@ namespace Hexel.Controllers
             if (_vm.CurrentTool == ToolMode.Pencil && _pendingTextUpdateDuringDrag)
             {
                 _pendingTextUpdateDuringDrag = false;
-                _vm.UpdateTextOutputs();
+                _vm.MarkCodeStale();
             }
         }
 

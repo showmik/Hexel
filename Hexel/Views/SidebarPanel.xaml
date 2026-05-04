@@ -20,25 +20,10 @@
                     Margin="0,0,0,12">
                 <StackPanel>
 
-                    <!-- Header row -->
-                    <Grid Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="EXPORT"
-                                   Style="{StaticResource HeaderStyle}"
-                                   Margin="0"
-                                   VerticalAlignment="Center"/>
-                        <Button Grid.Column="1"
-                                Content="⎘  Copy"
-                                Style="{StaticResource AccentButtonStyle}"
-                                Padding="12,5"
-                                FontSize="11"
-                                Command="{Binding CopyExportedCodeCommand}"
-                                ToolTip="Copy generated code to clipboard"/>
-                    </Grid>
+                    <!-- Header -->
+                    <TextBlock Text="EXPORT"
+                               Style="{StaticResource HeaderStyle}"
+                               Margin="0,0,0,12"/>
 
                     <!-- Format selector -->
                     <TextBlock Text="Format"
@@ -197,25 +182,69 @@
                                      AcceptsReturn="False"/>
                     </Border>
 
-                    <!-- Stats + copy row -->
-                    <Grid Margin="0,6,0,0">
+                    <!-- Generate Code + stale indicator -->
+                    <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding ExportStats}"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   FontSize="11"
-                                   VerticalAlignment="Center"
-                                   FontFamily="{DynamicResource Theme.CodeFont}"/>
+
+                        <!-- Generate Code button -->
+                        <Button Grid.Column="0"
+                                Content="⟳  Generate Code"
+                                Style="{StaticResource AccentButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                Padding="8,6"
+                                FontSize="11"
+                                Margin="0,0,6,0"
+                                Command="{Binding GenerateCodeCommand}"
+                                ToolTip="Generate code from current canvas data"/>
+
+                        <!-- Copy button -->
                         <Button Grid.Column="1"
-                                Content="Copy"
+                                Content="⎘ Copy"
                                 Style="{StaticResource ModernButtonStyle}"
-                                Padding="12,5"
+                                Padding="12,6"
                                 FontSize="11"
                                 Command="{Binding CopyExportedCodeCommand}"
                                 ToolTip="Copy generated code to clipboard"/>
+                    </Grid>
+
+                    <!-- Stale indicator + stats row -->
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Stale hint (visible only when code is outdated) -->
+                        <TextBlock Grid.Column="0"
+                                   Text="⟳ Code is outdated"
+                                   Foreground="#E0A030"
+                                   FontSize="10.5"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0"
+                                   Opacity="0.85">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCodeStale}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Stats (right-aligned) -->
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding ExportStats}"
+                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   FontSize="10.5"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Right"
+                                   FontFamily="{DynamicResource Theme.CodeFont}"/>
                     </Grid>
 
                 </StackPanel>
