@@ -116,6 +116,10 @@ namespace Hexel.ViewModels
             {
                 OnPropertyChanged(nameof(IsDarkTheme));
                 OnPropertyChanged(nameof(IsLightTheme));
+
+                // Re-read pixel colors from the new theme and redraw all open canvases
+                foreach (var doc in OpenDocuments)
+                    doc.RefreshCanvasColors();
             };
 
             // No auto-created document — the welcome screen is shown instead

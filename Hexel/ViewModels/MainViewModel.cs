@@ -902,7 +902,11 @@ namespace Hexel.ViewModels
 
         // ── Private: color initialization ─────────────────────────────────
 
-        private void InitializeBrushColors()
+        /// <summary>
+        /// Reads the canvas pixel colors from the current theme resources.
+        /// Called once at construction and again whenever the theme changes.
+        /// </summary>
+        public void InitializeBrushColors()
         {
             var res = Application.Current.Resources;
             var colorOff = ((SolidColorBrush)res["Theme.PanelBackgroundBrush"]).Color;
@@ -914,6 +918,16 @@ namespace Hexel.ViewModels
             _colorOnUint = ToBgra32(colorOn);
             _previewOffUint = ToBgra32(prevOff);
             _previewOnUint = ToBgra32(prevOn);
+        }
+
+        /// <summary>
+        /// Re-reads theme colors and redraws the canvas. Call after a theme switch.
+        /// </summary>
+        public void RefreshCanvasColors()
+        {
+            InitializeBrushColors();
+            RedrawGridFromMemory();
+            UpdateTextOutputs();
         }
 
         // ── Private: bitmap lifecycle helpers ─────────────────────────────
