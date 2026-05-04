@@ -332,7 +332,7 @@ namespace Hexel.Services
             if (x0 == x1 && y0 == y1)
             {
                 // Degenerate case: single pixel
-                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height)
+                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height && !IsClipped(x0, y0))
                     state.Pixels[(y0 * state.Width) + x0] = newState;
                 return;
             }
@@ -388,7 +388,7 @@ namespace Hexel.Services
 
             if (x0 == x1 && y0 == y1)
             {
-                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height && !IsClipped(x0, y0))
                     state.Pixels[(y0 * width) + x0] = newState;
                 return;
             }
@@ -437,7 +437,7 @@ namespace Hexel.Services
 
             if (x0 == x1 && y0 == y1)
             {
-                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height && !IsClipped(x0, y0))
                     state.Pixels[(y0 * width) + x0] = newState;
                 return;
             }
