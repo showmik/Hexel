@@ -5,27 +5,40 @@ namespace Hexel.Services
 {
     public interface ICodeGeneratorService
     {
-        /// <summary>
-        /// Synchronously generates binary and hex export strings from the current sprite state.
-        /// Prefer the async overload for any call made from the UI thread.
-        /// </summary>
-        (string Binary, string Hex) GenerateExportStrings(
-            SpriteState state,
-            bool isFloating, bool[,]? floatingPixels,
-            int floatX, int floatY, int floatW, int floatH,
-            bool binaryUseComma, bool hexUseComma);
+        // ── Export ────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Async wrapper — runs the generation on a thread-pool thread so the UI
-        /// thread is never blocked during export.
+        /// Generates formatted export code from the current sprite state.
+        /// All options (format, name, structure flags) are taken from <paramref name="settings"/>.
         /// </summary>
-        Task<(string Binary, string Hex)> GenerateExportStringsAsync(
+        string GenerateCode(
             SpriteState state,
+            ExportSettings settings,
             bool isFloating, bool[,]? floatingPixels,
-            int floatX, int floatY, int floatW, int floatH,
-            bool binaryUseComma, bool hexUseComma);
+            int floatX, int floatY, int floatW, int floatH);
 
-        void ParseBinaryToState(string binaryText, SpriteState state);
+        /// <summary>
+        /// Async wrapper — runs generation on a thread-pool thread so the UI
+        /// thread is never blocked, even for 256×256 canvases.
+        /// </summary>
+        Task<string> GenerateCodeAsync(
+            SpriteState state,
+            ExportSettings settings,
+            bool isFloating, bool[,]? floatingPixels,
+            int floatX, int floatY, int floatW, int floatH);
+
+        // ── Import ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Parses an Adafruit GFX / plain C array block back into the canvas.
+        /// Handles both <c>0xFF</c> and <c>0xff</c> hex literals.
+        /// </summary>
+        void ParseAdafruitGfxToState(string code, SpriteState state);
+
+        /// <summary>
+        /// Parses raw hex output (space- or comma-separated 0xNN tokens)
+        /// back into the canvas. Kept from original implementation.
+        /// </summary>
         void ParseHexToState(string hexText, SpriteState state);
     }
 }

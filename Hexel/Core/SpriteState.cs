@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Hexel.Core
 {
@@ -18,6 +18,14 @@ namespace Hexel.Core
         public bool IsDisplayInverted { get; set; }
 
         /// <summary>
+        /// Last-used export settings for this document.
+        /// Nullable so that existing .hexel files (which lack this field) still
+        /// deserialise cleanly; the ViewModel falls back to default settings when null.
+        /// Not cloned into undo snapshots — settings changes are never undoable.
+        /// </summary>
+        public ExportSettings? ExportSettings { get; set; }
+
+        /// <summary>
         /// [JsonConstructor] tells System.Text.Json to use this constructor when
         /// deserializing. Parameter names must match property names (case-insensitive).
         /// Without this, get-only Width/Height come back as 0 and Pixels is null.
@@ -34,6 +42,8 @@ namespace Hexel.Core
         {
             Pixels = (bool[])Pixels.Clone(),
             IsDisplayInverted = IsDisplayInverted
+            // ExportSettings intentionally NOT cloned: settings tweaks
+            // should not be undone when the user hits Ctrl+Z.
         };
     }
 }

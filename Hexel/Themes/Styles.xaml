@@ -928,4 +928,93 @@
         </Setter>
     </Style>
 
+    <!-- ═══════════════════════════════════════════════════════════════
+         Syntax highlighting brush resources (VS Code dark theme palette)
+         ═══════════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="Syntax.KeywordBrush"  Color="#569CD6"/>  <!-- blue  — const, uint8_t, PROGMEM -->
+    <SolidColorBrush x:Key="Syntax.LiteralBrush"  Color="#B5CEA8"/>  <!-- green — 0xFF values             -->
+    <SolidColorBrush x:Key="Syntax.CommentBrush"  Color="#6A9955"/>  <!-- muted green — // comments       -->
+    <SolidColorBrush x:Key="Syntax.IdentifierBrush" Color="#9CDCFE"/> <!-- light blue — variable name      -->
+    <SolidColorBrush x:Key="Syntax.PunctuationBrush" Color="#D4D4D4"/><!-- white-grey — braces, commas     -->
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Chip / segmented RadioButton — used for bytes-per-line & case
+         ═══════════════════════════════════════════════════════════════ -->
+    <Style x:Key="ChipButtonStyle"
+           TargetType="RadioButton">
+        <Setter Property="Background"  Value="{DynamicResource Theme.BackgroundBrush}"/>
+        <Setter Property="Foreground"  Value="{DynamicResource Theme.TextMutedBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Theme.PanelBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"     Value="8,4"/>
+        <Setter Property="Margin"      Value="0,0,4,0"/>
+        <Setter Property="Cursor"      Value="Hand"/>
+        <Setter Property="FontSize"    Value="11"/>
+        <Setter Property="FontFamily"  Value="{DynamicResource Theme.CodeFont}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource Theme.PanelBorderBrush}"/>
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource Theme.TextMainBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource Theme.SelectionBackgroundBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush"
+                                    Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Small accent button — copy, parse etc. -->
+    <Style x:Key="AccentButtonStyle" TargetType="Button">
+        <Setter Property="Background"  Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
+        <Setter Property="Foreground"  Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding"     Value="14,6"/>
+        <Setter Property="Cursor"      Value="Hand"/>
+        <Setter Property="FontWeight"  Value="SemiBold"/>
+        <Setter Property="FontSize"    Value="12"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Opacity" Value="0.65"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+
 </ResourceDictionary>

@@ -58,6 +58,9 @@
         <KeyBinding Key="D"
                     Modifiers="Ctrl"
                     Command="{Binding ActiveDocument.DeselectCommand}" />
+        <KeyBinding Key="I"
+                    Modifiers="Ctrl+Shift"
+                    Command="{Binding ImportFromCodeMenuCommand}" />
     </Window.InputBindings>
 
     <Grid>
@@ -107,8 +110,11 @@
                 <MenuItem Header="_Clear Canvas"
                           Command="{Binding ActiveDocument.ClearCommand}" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="Copy _HEX"
-                          Command="{Binding ActiveDocument.CopyHexCommand}" />
+                <MenuItem Header="Copy _Export Code"
+                          Command="{Binding ActiveDocument.CopyExportedCodeCommand}" />
+                <MenuItem Header="_Import from Code…"
+                          Command="{Binding ImportFromCodeMenuCommand}"
+                          InputGestureText="Ctrl+Shift+I" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Cu_t"
                           Command="{Binding ActiveDocument.CutSelectionCommand}"

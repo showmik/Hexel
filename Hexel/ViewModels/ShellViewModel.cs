@@ -58,6 +58,8 @@ namespace Hexel.ViewModels
         public IRelayCommand ResizeCanvasCommand { get; }
         public IRelayCommand OpenDocumentationCommand { get; }
         public IRelayCommand ShowAboutCommand { get; }
+        /// <summary>Proxies the active document's ImportFromCodeCommand for the Edit menu.</summary>
+        public IRelayCommand ImportFromCodeMenuCommand { get; }
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>Raised when a tab is added so the View can wire events.</summary>
@@ -87,6 +89,9 @@ namespace Hexel.ViewModels
             ResizeCanvasCommand = new RelayCommand(ExecuteResizeCanvas, () => HasOpenDocument);
             OpenDocumentationCommand = new RelayCommand(ExecuteOpenDocumentation);
             ShowAboutCommand = new RelayCommand(ExecuteShowAbout);
+            ImportFromCodeMenuCommand = new RelayCommand(
+                () => ActiveDocument?.ImportFromCodeCommand.Execute(null),
+                () => HasOpenDocument);
 
             // Start with one blank document
             AddNewDocument(16, 16);
@@ -133,7 +138,9 @@ namespace Hexel.ViewModels
                 doc.FilePath = path;
                 doc.IsDirty = false;
                 doc.RedrawGridFromMemory();
-                doc.UpdateTextOutputs();
+
+                // Restore last-used export settings (null-safe for old files)
+                doc.ApplyExportSettings(loaded.ExportSettings);
 
                 OpenDocuments.Add(doc);
                 ActiveDocument = doc;
@@ -171,11 +178,17 @@ namespace Hexel.ViewModels
         {
             try
             {
+                // Persist the current export settings alongside the pixel data
+                doc.SpriteState.ExportSettings = doc.ExportSettings;
+
                 string json = JsonSerializer.Serialize(doc.SpriteState,
                     new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json);
                 doc.FilePath = path;
                 doc.IsDirty = false;
+
+                // Offer a sensible default sprite name derived from the filename
+                doc.UpdateSpriteNameFromFile();
             }
             catch (Exception ex)
             {
@@ -294,6 +307,7 @@ namespace Hexel.ViewModels
             ((RelayCommand)SaveCommand).NotifyCanExecuteChanged();
             ((RelayCommand)SaveAsCommand).NotifyCanExecuteChanged();
             ((RelayCommand)ResizeCanvasCommand).NotifyCanExecuteChanged();
+            ((RelayCommand)ImportFromCodeMenuCommand).NotifyCanExecuteChanged();
             ActiveTabChanged?.Invoke(this, EventArgs.Empty);
         }
     }

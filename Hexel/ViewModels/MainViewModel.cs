@@ -188,75 +188,94 @@ namespace Hexel.ViewModels
                 StatusMessage = string.Empty;
         }
 
-        // ── Export format options ─────────────────────────────────────────
-        private bool _binaryUseComma = false;
-        public bool BinaryUseComma
+        // ── Export settings ───────────────────────────────────────────────
+        private ExportSettings _exportSettings = new();
+        public ExportSettings ExportSettings
         {
-            get => _binaryUseComma;
-            set { if (SetProperty(ref _binaryUseComma, value)) UpdateTextOutputs(); }
+            get => _exportSettings;
+            private set => SetProperty(ref _exportSettings, value);
         }
 
-        private bool _hexUseComma = true;
-        public bool HexUseComma
+        // Convenience proxy: binds directly in the sidebar without deep binding paths
+        public ExportFormat ExportFormat
         {
-            get => _hexUseComma;
-            set { if (SetProperty(ref _hexUseComma, value)) UpdateTextOutputs(); }
+            get => _exportSettings.Format;
+            set { if (_exportSettings.Format != value) { _exportSettings.Format = value; OnPropertyChanged(); UpdateTextOutputs(); } }
         }
 
-        // ── Text output properties ────────────────────────────────────────
-        // volatile so the flag is visible across threads without a full lock
+        public string SpriteName
+        {
+            get => _exportSettings.SpriteName;
+            set
+            {
+                if (_exportSettings.SpriteName != value)
+                {
+                    _exportSettings.SpriteName = value;
+                    OnPropertyChanged();
+                    UpdateTextOutputs();
+                }
+            }
+        }
+
+        public bool IncludeUsageComment
+        {
+            get => _exportSettings.IncludeUsageComment;
+            set { if (_exportSettings.IncludeUsageComment != value) { _exportSettings.IncludeUsageComment = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+        }
+
+        public bool IncludeDimensionConstants
+        {
+            get => _exportSettings.IncludeDimensionConstants;
+            set { if (_exportSettings.IncludeDimensionConstants != value) { _exportSettings.IncludeDimensionConstants = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+        }
+
+        public bool UseCommaSeparator
+        {
+            get => _exportSettings.UseCommaSeparator;
+            set { if (_exportSettings.UseCommaSeparator != value) { _exportSettings.UseCommaSeparator = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+        }
+
+        public int BytesPerLine
+        {
+            get => _exportSettings.BytesPerLine;
+            set { if (_exportSettings.BytesPerLine != value) { _exportSettings.BytesPerLine = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+        }
+
+        public bool UppercaseHex
+        {
+            get => _exportSettings.UppercaseHex;
+            set { if (_exportSettings.UppercaseHex != value) { _exportSettings.UppercaseHex = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+        }
+
+        public bool IncludeRowComments
+        {
+            get => _exportSettings.IncludeRowComments;
+            set { if (_exportSettings.IncludeRowComments != value) { _exportSettings.IncludeRowComments = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+        }
+
+        // ── Export output ────────────────────────────────────────────────────
         private volatile bool _isUpdatingProgrammatically;
 
-        private string _txtBinary = string.Empty;
-        public string TxtBinary
+        private string _exportedCode = string.Empty;
+        public string ExportedCode
         {
-            get => _txtBinary;
-            set
-            {
-                if (_isUpdatingProgrammatically) return;
-                SetProperty(ref _txtBinary, value);
-                var backup = SpriteState.Clone();
-                try
-                {
-                    _codeGen.ParseBinaryToState(value, SpriteState);
-                    RedrawGridFromMemory();
-                }
-                catch
-                {
-                    SpriteState = backup;
-                    RedrawGridFromMemory();
-                }
-                finally
-                {
-                    UpdateTextOutputs();
-                }
-            }
+            get => _exportedCode;
+            private set => SetProperty(ref _exportedCode, value);
         }
 
-        private string _txtHex = string.Empty;
-        public string TxtHex
+        private string _exportStats = string.Empty;
+        public string ExportStats
         {
-            get => _txtHex;
-            set
-            {
-                if (_isUpdatingProgrammatically) return;
-                SetProperty(ref _txtHex, value);
-                var backup = SpriteState.Clone();
-                try
-                {
-                    _codeGen.ParseHexToState(value, SpriteState);
-                    RedrawGridFromMemory();
-                }
-                catch
-                {
-                    SpriteState = backup;
-                    RedrawGridFromMemory();
-                }
-                finally
-                {
-                    UpdateTextOutputs();
-                }
-            }
+            get => _exportStats;
+            private set => SetProperty(ref _exportStats, value);
+        }
+
+        // ── Import paste buffer ──────────────────────────────────────────────
+        private string _importCode = string.Empty;
+        public string ImportCode
+        {
+            get => _importCode;
+            set => SetProperty(ref _importCode, value);
         }
 
         // ── Canvas display helpers ────────────────────────────────────────
@@ -348,7 +367,8 @@ namespace Hexel.ViewModels
         public IRelayCommand ClearCommand { get; }
         public IRelayCommand InvertCommand { get; }
         public IRelayCommand DeleteSelectionCommand { get; }
-        public IRelayCommand CopyHexCommand { get; }
+        public IRelayCommand CopyExportedCodeCommand { get; }
+        public IRelayCommand ImportFromCodeCommand { get; }
         public IRelayCommand CopySelectionCommand { get; }
         public IRelayCommand CutSelectionCommand { get; }
         public IRelayCommand PasteCommand { get; }
@@ -376,10 +396,35 @@ namespace Hexel.ViewModels
 
             // ── Commands ──────────────────────────────────────────────────
 
-            CopyHexCommand = new RelayCommand(() =>
+            CopyExportedCodeCommand = new RelayCommand(() =>
             {
-                _clipboardService.SetText(TxtHex);
-                ShowStatus("Copied to clipboard");
+                _clipboardService.SetText(ExportedCode);
+                ShowStatus("✓ Copied to clipboard");
+            });
+
+            ImportFromCodeCommand = new RelayCommand(() =>
+            {
+                if (string.IsNullOrWhiteSpace(ImportCode)) return;
+                var backup = SpriteState.Clone();
+                try
+                {
+                    if (ExportFormat == ExportFormat.RawBinary)
+                        ParseBinaryToCanvas(ImportCode);
+                    else
+                        _codeGen.ParseHexToState(ImportCode, SpriteState);
+
+                    RedrawGridFromMemory();
+                    UpdateTextOutputs();
+                    ShowStatus("✓ Canvas updated from import");
+                    ImportCode = string.Empty;
+                }
+                catch
+                {
+                    SpriteState = backup;
+                    RedrawGridFromMemory();
+                    UpdateTextOutputs();
+                    ShowStatus("⚠ Could not parse the pasted code");
+                }
             });
 
             UndoCommand = new RelayCommand(() => RestoreState(_historyService.Undo(SpriteState)));
@@ -685,7 +730,7 @@ namespace Hexel.ViewModels
             UpdateTextOutputs();
         }
 
-        // ── Text output ───────────────────────────────────────────────────
+        // ── Export output ─────────────────────────────────────────────────
 
         public void UpdateTextOutputs() => _ = UpdateTextOutputsAsync();
 
@@ -694,35 +739,104 @@ namespace Hexel.ViewModels
             if (_isUpdatingProgrammatically) return;
             _isUpdatingProgrammatically = true;
 
+            // Snapshot settings to avoid reading them from a different thread
+            var settingsSnapshot = new ExportSettings
+            {
+                Format                   = _exportSettings.Format,
+                SpriteName               = _exportSettings.SpriteName,
+                IncludeUsageComment      = _exportSettings.IncludeUsageComment,
+                IncludeDimensionConstants = _exportSettings.IncludeDimensionConstants,
+                UseCommaSeparator        = _exportSettings.UseCommaSeparator,
+                BytesPerLine             = _exportSettings.BytesPerLine,
+                UppercaseHex             = _exportSettings.UppercaseHex,
+                IncludeRowComments       = _exportSettings.IncludeRowComments,
+            };
+
             try
             {
-                var (binary, hex) = await _codeGen.GenerateExportStringsAsync(
+                string code = await _codeGen.GenerateCodeAsync(
                     SpriteState,
+                    settingsSnapshot,
                     _selectionService.IsFloating,
                     _selectionService.FloatingPixels,
                     _selectionService.FloatingX,
                     _selectionService.FloatingY,
                     _selectionService.FloatingWidth,
-                    _selectionService.FloatingHeight,
-                    BinaryUseComma,
-                    HexUseComma);
+                    _selectionService.FloatingHeight);
 
-                // Only reset the flag inside the Post callback — resetting it earlier
-                // (before the callback runs) allowed a second async call to start
-                // before the UI had actually been updated, causing a race condition.
                 _uiContext.Post(_ =>
                 {
-                    _txtBinary = binary;
-                    _txtHex = hex;
-                    OnPropertyChanged(nameof(TxtBinary));
-                    OnPropertyChanged(nameof(TxtHex));
+                    _exportedCode = code;
+                    OnPropertyChanged(nameof(ExportedCode));
+
+                    // Update stats: count unique 0xNN tokens as byte count
+                    int byteCount = System.Text.RegularExpressions.Regex
+                        .Matches(code, @"0[xX][0-9a-fA-F]{1,2}").Count;
+                    // For raw binary / raw hex, count differently
+                    if (settingsSnapshot.Format == ExportFormat.RawBinary)
+                        byteCount = SpriteState != null
+                            ? SpriteState.Height * (int)Math.Ceiling(SpriteState.Width / 8.0)
+                            : 0;
+
+                    _exportStats = $"{byteCount} byte{(byteCount != 1 ? "s" : "")}  ·  {code.Length:N0} chars";
+                    OnPropertyChanged(nameof(ExportStats));
+
                     _isUpdatingProgrammatically = false;
                 }, null);
             }
             catch
             {
-                // Always release the flag if the async work itself throws
                 _isUpdatingProgrammatically = false;
+            }
+        }
+
+        /// <summary>
+        /// Applies export settings loaded from a .hexel file.
+        /// Call after InitializeGrid so the VM proxy properties broadcast correctly.
+        /// </summary>
+        public void ApplyExportSettings(ExportSettings? saved)
+        {
+            if (saved == null) return;
+            _exportSettings = saved;
+            OnPropertyChanged(nameof(ExportFormat));
+            OnPropertyChanged(nameof(SpriteName));
+            OnPropertyChanged(nameof(IncludeUsageComment));
+            OnPropertyChanged(nameof(IncludeDimensionConstants));
+            OnPropertyChanged(nameof(UseCommaSeparator));
+            OnPropertyChanged(nameof(BytesPerLine));
+            OnPropertyChanged(nameof(UppercaseHex));
+            OnPropertyChanged(nameof(IncludeRowComments));
+            UpdateTextOutputs();
+        }
+
+        /// <summary>
+        /// Sets the sprite name from the filename (without extension).
+        /// Called after Save So As to update the default name.
+        /// </summary>
+        public void UpdateSpriteNameFromFile()
+        {
+            if (FilePath == null) return;
+            string baseName = System.IO.Path.GetFileNameWithoutExtension(FilePath);
+            string sanitised = Services.CodeGeneratorService.SanitiseName(baseName);
+            if (SpriteName == "mySprite" || SpriteName == "sprite")
+                SpriteName = sanitised;
+        }
+
+        // ── Private helpers ────────────────────────────────────────────────
+
+        private void ParseBinaryToCanvas(string text)
+        {
+            Array.Clear(SpriteState.Pixels, 0, SpriteState.Pixels.Length);
+            string[] lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            int row = 0;
+            foreach (string line in lines)
+            {
+                if (row >= SpriteState.Height) break;
+                string data = line.Contains(':') ? line[(line.IndexOf(':') + 1)..] : line;
+                data = data.Replace(" ", "").Replace(",", "");
+                for (int col = 0; col < SpriteState.Width; col++)
+                    SpriteState.Pixels[(row * SpriteState.Width) + col] = col < data.Length && data[col] == '1';
+                row++;
             }
         }
 
