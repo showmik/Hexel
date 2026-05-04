@@ -3,9 +3,11 @@ using Hexel.Core;
 using Hexel.Rendering;
 using Hexel.Services;
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 
 namespace Hexel
@@ -45,6 +47,13 @@ namespace Hexel
             InitializeComponent();
             _shell = shell ?? throw new ArgumentNullException(nameof(shell));
             DataContext = _shell;
+
+            // Hook Win32 for proper maximize behavior with custom chrome
+            SourceInitialized += (_, _) =>
+            {
+                var handle = new WindowInteropHelper(this).Handle;
+                HwndSource.FromHwnd(handle)?.AddHook(WndProc);
+            };
 
             // Initialize extracted subsystems
             _zoomPan = new ZoomPanController(Canvas.ZoomSlider, () => Canvas.CanvasImage, () => _shell);
@@ -534,5 +543,84 @@ namespace Hexel
         // ── Brush cursor (delegated) ──────────────────────────────────────
 
         private void CanvasImage_MouseLeave(object sender, MouseEventArgs e) => _brushCursor.OnMouseLeave();
+
+        // ── Custom chrome caption buttons ─────────────────────────────────
+
+        private void CaptionMinimize_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState.Minimized;
+
+        private void CaptionMaximize_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                WindowState = WindowState.Normal;
+                MaximizeIcon.Text = "\uE922"; // maximize glyph
+            }
+            else
+            {
+                WindowState = WindowState.Maximized;
+                MaximizeIcon.Text = "\uE923"; // restore glyph
+            }
+        }
+
+        private void CaptionClose_Click(object sender, RoutedEventArgs e)
+            => Close();
+
+        // ── Win32 interop for proper maximize with WindowStyle=None ────────
+
+        private const int WM_GETMINMAXINFO = 0x0024;
+        private const int MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT { public int x, y; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMinTrackSize;
+            public POINT ptMaxTrackSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT { public int left, top, right, bottom; }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_GETMINMAXINFO)
+            {
+                var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+                var monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                if (monitor != IntPtr.Zero)
+                {
+                    var mi = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+                    GetMonitorInfo(monitor, ref mi);
+                    var work = mi.rcWork;
+                    var mon = mi.rcMonitor;
+                    mmi.ptMaxPosition = new POINT { x = work.left - mon.left, y = work.top - mon.top };
+                    mmi.ptMaxSize = new POINT { x = work.right - work.left, y = work.bottom - work.top };
+                }
+                Marshal.StructureToPtr(mmi, lParam, true);
+                handled = true;
+            }
+            return IntPtr.Zero;
+        }
     }
 }

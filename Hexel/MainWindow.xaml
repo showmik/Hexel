@@ -11,7 +11,17 @@
         Width="1150"
         Background="{DynamicResource Theme.BackgroundBrush}"
         FontFamily="{DynamicResource Theme.MainFont}"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="False">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="34"
+                      CornerRadius="0"
+                      GlassFrameThickness="0"
+                      ResizeBorderThickness="5"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
 
     <Window.InputBindings>
         <KeyBinding Key="Z"
@@ -72,114 +82,109 @@
         </Grid.RowDefinitions>
 
         <!-- ═══════════════════════════════════════════════════════════════
-             MENU BAR
+             CUSTOM TITLE BAR (menu + caption buttons)
              ═══════════════════════════════════════════════════════════════ -->
-        <Menu Grid.Row="0">
-            <!-- ── File ── -->
-            <MenuItem Header="_File">
-                <MenuItem Header="_New Canvas"
-                          Command="{Binding NewCanvasCommand}"
-                          InputGestureText="Ctrl+N" />
-                <MenuItem Header="_Open"
-                          Command="{Binding OpenCommand}"
-                          InputGestureText="Ctrl+O" />
-                <MenuItem Header="_Import from Code…"
-                          Command="{Binding ImportFromCodeMenuCommand}"
-                          InputGestureText="Ctrl+Shift+I" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="_Save"
-                          Command="{Binding SaveCommand}"
-                          InputGestureText="Ctrl+S" />
-                <MenuItem Header="Save _As..."
-                          Command="{Binding SaveAsCommand}"
-                          InputGestureText="Ctrl+Shift+S" />
-                <MenuItem Header="Copy _Export Code"
-                          Command="{Binding CopyExportCodeMenuCommand}" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="_Close Tab"
-                          Command="{Binding CloseTabCommand}"
-                          InputGestureText="Ctrl+W" />
-            </MenuItem>
+        <Border Grid.Row="0"
+                Background="{DynamicResource Theme.MenuBarBackgroundBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- ── Edit ── -->
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo"
-                          Command="{Binding ActiveDocument.UndoCommand}"
-                          InputGestureText="Ctrl+Z" />
-                <MenuItem Header="_Redo"
-                          Command="{Binding ActiveDocument.RedoCommand}"
-                          InputGestureText="Ctrl+Y" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="_Invert"
-                          Command="{Binding ActiveDocument.InvertCommand}" />
-                <MenuItem Header="_Clear Canvas"
-                          Command="{Binding ActiveDocument.ClearCommand}" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="Cu_t"
-                          Command="{Binding ActiveDocument.CutSelectionCommand}"
-                          InputGestureText="Ctrl+X" />
-                <MenuItem Header="_Copy"
-                          Command="{Binding ActiveDocument.CopySelectionCommand}"
-                          InputGestureText="Ctrl+C" />
-                <MenuItem Header="_Paste"
-                          Command="{Binding ActiveDocument.PasteCommand}"
-                          InputGestureText="Ctrl+V" />
-            </MenuItem>
+                <!-- App icon -->
+                <Border Grid.Column="0" Margin="8,0,4,0"
+                        Width="22" Height="22" CornerRadius="5"
+                        VerticalAlignment="Center"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4F46E5" Offset="0"/>
+                            <GradientStop Color="#7C3AED" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <TextBlock Text="&#xE131;" FontFamily="Segoe MDL2 Assets"
+                               FontSize="11" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
 
-            <!-- ── Image ── -->
-            <MenuItem Header="_Image">
-                <MenuItem Header="Canvas _Size..."
-                          Command="{Binding ResizeCanvasCommand}" />
-            </MenuItem>
+                <!-- Menu bar -->
+                <Menu Grid.Column="1" WindowChrome.IsHitTestVisibleInChrome="True"
+                      VerticalAlignment="Center">
+                    <MenuItem Header="_File">
+                        <MenuItem Header="_New Canvas" Command="{Binding NewCanvasCommand}" InputGestureText="Ctrl+N"/>
+                        <MenuItem Header="_Open" Command="{Binding OpenCommand}" InputGestureText="Ctrl+O"/>
+                        <MenuItem Header="_Import from Code…" Command="{Binding ImportFromCodeMenuCommand}" InputGestureText="Ctrl+Shift+I"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_Save" Command="{Binding SaveCommand}" InputGestureText="Ctrl+S"/>
+                        <MenuItem Header="Save _As..." Command="{Binding SaveAsCommand}" InputGestureText="Ctrl+Shift+S"/>
+                        <MenuItem Header="Copy _Export Code" Command="{Binding CopyExportCodeMenuCommand}"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_Close Tab" Command="{Binding CloseTabCommand}" InputGestureText="Ctrl+W"/>
+                    </MenuItem>
+                    <MenuItem Header="_Edit">
+                        <MenuItem Header="_Undo" Command="{Binding ActiveDocument.UndoCommand}" InputGestureText="Ctrl+Z"/>
+                        <MenuItem Header="_Redo" Command="{Binding ActiveDocument.RedoCommand}" InputGestureText="Ctrl+Y"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_Invert" Command="{Binding ActiveDocument.InvertCommand}"/>
+                        <MenuItem Header="_Clear Canvas" Command="{Binding ActiveDocument.ClearCommand}"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="Cu_t" Command="{Binding ActiveDocument.CutSelectionCommand}" InputGestureText="Ctrl+X"/>
+                        <MenuItem Header="_Copy" Command="{Binding ActiveDocument.CopySelectionCommand}" InputGestureText="Ctrl+C"/>
+                        <MenuItem Header="_Paste" Command="{Binding ActiveDocument.PasteCommand}" InputGestureText="Ctrl+V"/>
+                    </MenuItem>
+                    <MenuItem Header="_Image">
+                        <MenuItem Header="Canvas _Size..." Command="{Binding ResizeCanvasCommand}"/>
+                    </MenuItem>
+                    <MenuItem Header="_View">
+                        <MenuItem Header="Show _Grid" IsCheckable="True" IsChecked="{Binding ActiveDocument.ShowGridLines}"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="Zoom _In" Command="{x:Static NavigationCommands.IncreaseZoom}" InputGestureText="Ctrl++"/>
+                        <MenuItem Header="Zoom _Out" Command="{x:Static NavigationCommands.DecreaseZoom}" InputGestureText="Ctrl+-"/>
+                        <MenuItem Header="_Reset Zoom" Command="{x:Static NavigationCommands.Zoom}" InputGestureText="Ctrl+0"/>
+                    </MenuItem>
+                    <MenuItem Header="_Selection">
+                        <MenuItem Header="Cu_t" Command="{Binding ActiveDocument.CutSelectionCommand}" InputGestureText="Ctrl+X"/>
+                        <MenuItem Header="_Copy" Command="{Binding ActiveDocument.CopySelectionCommand}" InputGestureText="Ctrl+C"/>
+                        <MenuItem Header="_Paste" Command="{Binding ActiveDocument.PasteCommand}" InputGestureText="Ctrl+V"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_Delete Selection" Command="{Binding ActiveDocument.DeleteSelectionCommand}" InputGestureText="Del"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="D_eselect" Command="{Binding ActiveDocument.DeselectCommand}" InputGestureText="Ctrl+D"/>
+                    </MenuItem>
+                    <MenuItem Header="_Help">
+                        <MenuItem Header="_Documentation" Command="{Binding OpenDocumentationCommand}" InputGestureText="F1"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_About Hexel" Command="{Binding ShowAboutCommand}"/>
+                    </MenuItem>
+                </Menu>
 
-            <!-- ── View ── -->
-            <MenuItem Header="_View">
-                <MenuItem Header="Show _Grid"
-                          IsCheckable="True"
-                          IsChecked="{Binding ActiveDocument.ShowGridLines}" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="Zoom _In"
-                          Command="{x:Static NavigationCommands.IncreaseZoom}"
-                          InputGestureText="Ctrl++" />
-                <MenuItem Header="Zoom _Out"
-                          Command="{x:Static NavigationCommands.DecreaseZoom}"
-                          InputGestureText="Ctrl+-" />
-                <MenuItem Header="_Reset Zoom"
-                          Command="{x:Static NavigationCommands.Zoom}"
-                          InputGestureText="Ctrl+0" />
-            </MenuItem>
+                <!-- Title -->
+                <TextBlock Grid.Column="2" Text="Hexel"
+                           Foreground="{DynamicResource Theme.TextMutedBrush}"
+                           FontSize="12" VerticalAlignment="Center"
+                           HorizontalAlignment="Center" IsHitTestVisible="False"/>
 
-            <!-- ── Selection ── -->
-            <MenuItem Header="_Selection">
-                <MenuItem Header="Cu_t"
-                          Command="{Binding ActiveDocument.CutSelectionCommand}"
-                          InputGestureText="Ctrl+X" />
-                <MenuItem Header="_Copy"
-                          Command="{Binding ActiveDocument.CopySelectionCommand}"
-                          InputGestureText="Ctrl+C" />
-                <MenuItem Header="_Paste"
-                          Command="{Binding ActiveDocument.PasteCommand}"
-                          InputGestureText="Ctrl+V" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="_Delete Selection"
-                          Command="{Binding ActiveDocument.DeleteSelectionCommand}"
-                          InputGestureText="Del" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="D_eselect"
-                          Command="{Binding ActiveDocument.DeselectCommand}"
-                          InputGestureText="Ctrl+D" />
-            </MenuItem>
-
-            <!-- ── Help ── -->
-            <MenuItem Header="_Help">
-                <MenuItem Header="_Documentation"
-                          Command="{Binding OpenDocumentationCommand}"
-                          InputGestureText="F1" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="_About Hexel"
-                          Command="{Binding ShowAboutCommand}" />
-            </MenuItem>
-        </Menu>
+                <!-- Caption buttons -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Click="CaptionMinimize_Click" ToolTip="Minimize" Width="46" Height="34"
+                            Style="{StaticResource CaptionButtonStyle}">
+                        <TextBlock Text="&#xE921;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
+                    </Button>
+                    <Button Click="CaptionMaximize_Click" ToolTip="Maximize" Width="46" Height="34"
+                            Style="{StaticResource CaptionButtonStyle}">
+                        <TextBlock x:Name="MaximizeIcon" Text="&#xE922;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
+                    </Button>
+                    <Button Click="CaptionClose_Click" ToolTip="Close" Width="46" Height="34"
+                            Style="{StaticResource CaptionCloseButtonStyle}">
+                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- ═══════════════════════════════════════════════════════════════
              TAB BAR
@@ -199,7 +204,6 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border x:Name="TabBorder"
-                                    Padding="10,6"
                                     Margin="0,4,2,4"
                                     CornerRadius="6"
                                     Cursor="Hand"
@@ -220,48 +224,71 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Title}"
-                                               Foreground="{DynamicResource Theme.TextMainBrush}"
-                                               VerticalAlignment="Center"
-                                               FontSize="12"
-                                               Margin="0,0,8,0" />
-                                    <Button Content="✕"
-                                            FontSize="10"
-                                            Padding="2,0"
-                                            MinWidth="16" MinHeight="16"
-                                            VerticalAlignment="Center"
-                                            Cursor="Hand"
-                                            Click="TabClose_Click"
-                                            Tag="{Binding}">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="{DynamicResource Theme.TextMutedBrush}" />
-                                                <Setter Property="BorderThickness" Value="0" />
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="{TemplateBinding Background}"
-                                                                    CornerRadius="3"
-                                                                    Padding="{TemplateBinding Padding}">
-                                                                <ContentPresenter HorizontalAlignment="Center"
-                                                                                  VerticalAlignment="Center" />
-                                                            </Border>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource Theme.DangerBrush}" />
-                                                        <Setter Property="Foreground" Value="White" />
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,6,10,4">
+                                        <TextBlock Text="{Binding Title}"
+                                                   Foreground="{DynamicResource Theme.TextMainBrush}"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="12"
+                                                   Margin="0,0,8,0" />
+                                        <Button x:Name="CloseBtn"
+                                                Content="✕"
+                                                FontSize="10"
+                                                Padding="2,0"
+                                                MinWidth="16" MinHeight="16"
+                                                VerticalAlignment="Center"
+                                                Cursor="Hand"
+                                                Click="TabClose_Click"
+                                                Tag="{Binding}"
+                                                Opacity="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Theme.TextMutedBrush}" />
+                                                    <Setter Property="BorderThickness" Value="0" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}"
+                                                                        CornerRadius="3"
+                                                                        Padding="{TemplateBinding Padding}">
+                                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                                                      VerticalAlignment="Center" />
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="{DynamicResource Theme.DangerBrush}" />
+                                                            <Setter Property="Foreground" Value="White" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </StackPanel>
+                                    <!-- Active tab accent indicator -->
+                                    <Border x:Name="ActiveIndicator" Grid.Row="1"
+                                            Height="2" CornerRadius="1"
+                                            Margin="6,0,6,2"
+                                            Opacity="0"
+                                            Background="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                                </Grid>
                             </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                    <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1"/>
+                                    <Setter TargetName="CloseBtn" Property="Opacity" Value="1"/>
+                                </DataTrigger>
+                                <Trigger SourceName="TabBorder" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CloseBtn" Property="Opacity" Value="1"/>
+                                </Trigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -349,7 +376,7 @@
         <views:StatusBarPanel Grid.Row="3" DataContext="{Binding ActiveDocument}" />
 
         <!-- ═══════════════════════════════════════════════════════════════
-             EMPTY WORKSPACE STATE
+             WELCOME SCREEN (shown when no documents are open)
              ═══════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="2" Grid.RowSpan="2">
             <Grid.Style>
@@ -363,28 +390,120 @@
                 </Style>
             </Grid.Style>
             
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="&#xE131;" 
-                           FontFamily="Segoe MDL2 Assets" 
-                           FontSize="48" 
-                           Foreground="{DynamicResource Theme.TextMutedBrush}" 
-                           HorizontalAlignment="Center" 
-                           Margin="0,0,0,16" />
-                <TextBlock Text="No Document Open" 
-                           FontSize="20" 
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        MaxWidth="460">
+                <!-- App branding -->
+                <Border Width="72" Height="72"
+                        CornerRadius="18"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,20">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4F46E5" Offset="0"/>
+                            <GradientStop Color="#7C3AED" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.Effect>
+                        <DropShadowEffect Color="#4F46E5" BlurRadius="20" Opacity="0.3"
+                                          Direction="270" ShadowDepth="4"/>
+                    </Border.Effect>
+                    <TextBlock Text="&#xE131;" 
+                               FontFamily="Segoe MDL2 Assets" 
+                               FontSize="32" 
+                               Foreground="White" 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Text="Welcome to Hexel" 
+                           FontSize="26" 
                            FontWeight="Bold" 
                            Foreground="{DynamicResource Theme.TextMainBrush}" 
                            HorizontalAlignment="Center" 
-                           Margin="0,0,0,8" />
-                <TextBlock Text="Press Ctrl+N to create a new canvas, or Ctrl+O to open a file." 
+                           Margin="0,0,0,6" />
+                <TextBlock Text="Monochrome pixel art editor for embedded displays" 
+                           FontSize="13"
                            Foreground="{DynamicResource Theme.TextMutedBrush}" 
-                           HorizontalAlignment="Center" />
-                <Button Content="New Canvas" 
-                        Command="{Binding NewCanvasCommand}" 
-                        Margin="0,24,0,0" 
-                        HorizontalAlignment="Center" 
-                        Padding="24,10" 
-                        Style="{StaticResource ModernButtonStyle}" />
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,32" />
+
+                <!-- Quick-start presets -->
+                <TextBlock Text="QUICK START"
+                           Style="{StaticResource HeaderStyle}"
+                           HorizontalAlignment="Center"
+                           FontSize="11"
+                           Margin="0,0,0,12"/>
+                <WrapPanel HorizontalAlignment="Center" Margin="0,0,0,10">
+                    <Button Content="8 × 8" 
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="8x8"
+                            Margin="4" Padding="20,10" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            ToolTip="Create 8×8 canvas" />
+                    <Button Content="16 × 16" 
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="16x16"
+                            Margin="4" Padding="20,10" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            ToolTip="Create 16×16 canvas" />
+                    <Button Content="32 × 32" 
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="32x32"
+                            Margin="4" Padding="20,10" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            ToolTip="Create 32×32 canvas" />
+                    <Button Content="64 × 64" 
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="64x64"
+                            Margin="4" Padding="20,10" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            ToolTip="Create 64×64 canvas" />
+                    <Button Content="128 × 64" 
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="128x64"
+                            Margin="4" Padding="20,10" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            ToolTip="Create 128×64 canvas (SSD1306)" />
+                </WrapPanel>
+                
+                <!-- Divider -->
+                <Border Height="1" 
+                        Background="{DynamicResource Theme.SeparatorBrush}" 
+                        Margin="40,8,40,16"/>
+
+                <!-- Actions -->
+                <StackPanel HorizontalAlignment="Center">
+                    <Button Content="✦  Custom Size…" 
+                            Command="{Binding NewCanvasCommand}" 
+                            HorizontalAlignment="Center" 
+                            Padding="28,10" 
+                            Style="{StaticResource AccentButtonStyle}"
+                            Margin="0,0,0,10" />
+                    <Button Content="Open File…" 
+                            Command="{Binding OpenCommand}" 
+                            HorizontalAlignment="Center" 
+                            Padding="28,10" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="0,0,0,20" />
+                </StackPanel>
+
+                <!-- Shortcut hints -->
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                               FontSize="11" Margin="0,0,16,0">
+                        <Run Text="Ctrl+N" FontWeight="SemiBold" Foreground="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                        <Run Text=" New"/>
+                    </TextBlock>
+                    <TextBlock Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                               FontSize="11" Margin="0,0,16,0">
+                        <Run Text="Ctrl+O" FontWeight="SemiBold" Foreground="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                        <Run Text=" Open"/>
+                    </TextBlock>
+                    <TextBlock Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                               FontSize="11">
+                        <Run Text="Ctrl+Shift+I" FontWeight="SemiBold" Foreground="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                        <Run Text=" Import"/>
+                    </TextBlock>
+                </StackPanel>
             </StackPanel>
         </Grid>
 

@@ -50,7 +50,7 @@ namespace Hexel.ViewModels
         public bool HasOpenDocument => ActiveDocument != null;
 
         // ── Commands ──────────────────────────────────────────────────────
-        public IRelayCommand NewCanvasCommand { get; }
+        public IRelayCommand NewCanvasCommand { get; }  // accepts optional "WxH" string param
         public IRelayCommand OpenCommand { get; }
         public IRelayCommand SaveCommand { get; }
         public IRelayCommand SaveAsCommand { get; }
@@ -83,7 +83,7 @@ namespace Hexel.ViewModels
             _pixelClipboard = new PixelClipboardService();
             _dialogService = dialogService;
 
-            NewCanvasCommand = new RelayCommand(ExecuteNewCanvas);
+            NewCanvasCommand = new RelayCommand<object?>(ExecuteNewCanvas);
             OpenCommand = new RelayCommand(ExecuteOpen);
             SaveCommand = new RelayCommand(ExecuteSave, () => HasOpenDocument);
             SaveAsCommand = new RelayCommand(ExecuteSaveAs, () => HasOpenDocument);
@@ -96,18 +96,31 @@ namespace Hexel.ViewModels
                 () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
                 () => HasOpenDocument);
 
-            // Start with one blank document
-            AddNewDocument(16, 16);
+            // No auto-created document — the welcome screen is shown instead
         }
 
         // ── New Canvas ────────────────────────────────────────────────────
 
-        private void ExecuteNewCanvas()
+        private void ExecuteNewCanvas(object? parameter)
         {
             if (OpenDocuments.Count >= MaxTabs)
             {
                 _dialogService.ShowMessage($"Maximum of {MaxTabs} tabs reached. Close a tab first.");
                 return;
+            }
+
+            // Quick-start: parameter is a "WxH" string (e.g. "16x16")
+            if (parameter is string sizeStr && sizeStr.Contains('x'))
+            {
+                var parts = sizeStr.Split('x');
+                if (parts.Length == 2 &&
+                    int.TryParse(parts[0], out int qw) &&
+                    int.TryParse(parts[1], out int qh) &&
+                    qw > 0 && qh > 0)
+                {
+                    AddNewDocument(qw, qh);
+                    return;
+                }
             }
 
             var result = _dialogService.ShowNewCanvasDialog();

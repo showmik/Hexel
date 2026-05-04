@@ -11,16 +11,16 @@
             <!-- ═══════════════════════════════════════════════════════════
                  Core palette
                  ═══════════════════════════════════════════════════════════ -->
-            <Color x:Key="Color.Background">#2B2D42</Color>
-            <Color x:Key="Color.PanelBackground">#1A1E2E</Color>
-            <Color x:Key="Color.PanelBorder">#2E3448</Color>
-            <Color x:Key="Color.CanvasBackground">#0A0E1A</Color>
+            <Color x:Key="Color.Background">#232536</Color>
+            <Color x:Key="Color.PanelBackground">#1A1C2E</Color>
+            <Color x:Key="Color.PanelBorder">#2C3145</Color>
+            <Color x:Key="Color.CanvasBackground">#080C18</Color>
             <Color x:Key="Color.TextMain">#EDF2F7</Color>
-            <Color x:Key="Color.TextMuted">#8A94A8</Color>
+            <Color x:Key="Color.TextMuted">#939DB5</Color>
             <Color x:Key="Color.TextInverse">#0F172A</Color>
             <Color x:Key="Color.CodeTxt">#8696AD</Color>
             <Color x:Key="Color.PrimaryAccent">#F0C4B8</Color>
-            <Color x:Key="Color.SelectionBackground">#E8675A</Color>
+            <Color x:Key="Color.SelectionBackground">#4F46E5</Color>
             <Color x:Key="Color.Danger">#E8675A</Color>
             <Color x:Key="Color.Warning">#F2E94E</Color>
             <Color x:Key="Color.OledBackground">#000000</Color>
@@ -28,20 +28,20 @@
             <Color x:Key="Color.InvertButtonBackground">#0088CC</Color>
             <Color x:Key="Color.ClearButtonBackground">#E04545</Color>
             <Color x:Key="Color.CopyButtonBackground">#6DA65B</Color>
-            <Color x:Key="Color.ThumbBackground">#1A1E2E</Color>
-            <Color x:Key="Color.ScrollBar">#3A4058</Color>
+            <Color x:Key="Color.ThumbBackground">#1A1C2E</Color>
+            <Color x:Key="Color.ScrollBar">#383D54</Color>
 
             <!-- ═══════════════════════════════════════════════════════════
-                 NEW — UI-shell palette for menu bar, sidebar, toolbar,
+                 UI-shell palette for menu bar, sidebar, toolbar,
                  status bar, and separators
                  ═══════════════════════════════════════════════════════════ -->
-            <Color x:Key="Color.MenuBarBackground">#1E2235</Color>
-            <Color x:Key="Color.MenuItemHover">#353A52</Color>
-            <Color x:Key="Color.StatusBarBackground">#181C2C</Color>
-            <Color x:Key="Color.ToolbarBackground">#222640</Color>
-            <Color x:Key="Color.ToolSidebarBackground">#181C2C</Color>
-            <Color x:Key="Color.ToolSidebarActive">#353A52</Color>
-            <Color x:Key="Color.Separator">#2E3448</Color>
+            <Color x:Key="Color.MenuBarBackground">#1A1C2E</Color>
+            <Color x:Key="Color.MenuItemHover">#33384E</Color>
+            <Color x:Key="Color.StatusBarBackground">#161828</Color>
+            <Color x:Key="Color.ToolbarBackground">#1F2238</Color>
+            <Color x:Key="Color.ToolSidebarBackground">#161828</Color>
+            <Color x:Key="Color.ToolSidebarActive">#33384E</Color>
+            <Color x:Key="Color.Separator">#2C3145</Color>
 
             <!-- ═══════════════════════════════════════════════════════════
                  Existing brushes (all keys preserved, backed by refined colors)
@@ -111,8 +111,8 @@
             <!-- ═══════════════════════════════════════════════════════════
                  Fonts
                  ═══════════════════════════════════════════════════════════ -->
-            <FontFamily x:Key="Theme.MainFont">Segoe UI, Helvetica Neue, sans-serif</FontFamily>
-            <FontFamily x:Key="Theme.CodeFont">Consolas, Courier New, monospace</FontFamily>
+            <FontFamily x:Key="Theme.MainFont">Inter, Segoe UI, Helvetica Neue, sans-serif</FontFamily>
+            <FontFamily x:Key="Theme.CodeFont">Cascadia Code, Consolas, Courier New, monospace</FontFamily>
 
 
         </ResourceDictionary>
