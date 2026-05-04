@@ -74,7 +74,7 @@ namespace Hexel.Services
             dlg.ShowDialog();
         }
 
-        public (int Width, int Height, string Code)? ShowImportFromCodeDialog()
+        public (int Width, int Height, string Code, string? SpriteName)? ShowImportFromCodeDialog()
         {
             var dlg = new ImportFromCodeDialog { Owner = Application.Current.MainWindow };
             if (dlg.ShowDialog() == true && dlg.Result.HasValue)

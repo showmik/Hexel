@@ -15,9 +15,12 @@ namespace Hexel.Views
         /// <summary>
         /// The result of a successful import.
         /// Width and Height are the resolved canvas dimensions;
-        /// Code is the raw pasted text for the service to parse.
+        /// Code is the raw pasted text for the service to parse;
+        /// SpriteName is the auto-detected variable name (may be null).
         /// </summary>
-        public (int Width, int Height, string Code)? Result { get; private set; }
+        public (int Width, int Height, string Code, string? SpriteName)? Result { get; private set; }
+
+        private string? _detectedSpriteName;
 
         private bool _dimensionsAutoDetected;
         private bool _suppressAutoDetect;
@@ -62,6 +65,9 @@ namespace Hexel.Views
                     TxtDetectionHint.Text = "";
                 }
             }
+
+            // Always try to detect the variable name
+            _detectedSpriteName = DetectVariableName(code);
 
             UpdateStats();
         }
@@ -190,6 +196,38 @@ namespace Hexel.Views
             }
         }
 
+        /// <summary>
+        /// Extracts the variable name from a C/C++ array declaration.
+        /// Matches patterns like:
+        ///   PROGMEM mySprite[] = {
+        ///   U8X8_PROGMEM name[32] = {
+        ///   uint8_t name[] = {
+        ///   static const uint8_t PROGMEM dinogame_icon[32] = {
+        /// </summary>
+        private static string? DetectVariableName(string code)
+        {
+            // Match: optional qualifiers ... identifier [ optional size ] = {
+            // We capture the last identifier before the brackets.
+            var match = Regex.Match(code,
+                @"(?:PROGMEM|U8X8_PROGMEM|uint8_t|const|static|unsigned|char)\s+" +
+                @"(?:(?:PROGMEM|U8X8_PROGMEM|uint8_t|const|static|unsigned|char)\s+)*" +
+                @"([a-zA-Z_][a-zA-Z0-9_]*)\s*\[",
+                RegexOptions.Multiline);
+
+            if (match.Success)
+                return match.Groups[1].Value;
+
+            // Python: name = bytearray(...)
+            var pyMatch = Regex.Match(code,
+                @"([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*bytearray\s*\(",
+                RegexOptions.Multiline);
+
+            if (pyMatch.Success)
+                return pyMatch.Groups[1].Value;
+
+            return null;
+        }
+
         private void Dimension_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (_suppressAutoDetect || TxtDetectionHint == null) return;
@@ -238,6 +276,10 @@ namespace Hexel.Views
                 TxtStats.Text = $"Found {byteCount} bytes — perfect match for {w}×{h}.";
                 BtnImport.IsEnabled = true;
             }
+
+            // Append detected name info
+            if (_detectedSpriteName != null)
+                TxtStats.Text += $"  Name: \"{_detectedSpriteName}\"";
         }
 
         // ── Input validation ─────────────────────────────────────────────
@@ -254,7 +296,7 @@ namespace Hexel.Views
             if (!int.TryParse(TxtWidth.Text, out int w) || w < 1 || w > 256) return;
             if (!int.TryParse(TxtHeight.Text, out int h) || h < 1 || h > 256) return;
 
-            Result = (w, h, TxtCode.Text);
+            Result = (w, h, TxtCode.Text, _detectedSpriteName);
             DialogResult = true;
         }
 
