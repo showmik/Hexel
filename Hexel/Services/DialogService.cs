@@ -73,5 +73,13 @@ namespace Hexel.Services
             var dlg = new AboutDialog { Owner = Application.Current.MainWindow };
             dlg.ShowDialog();
         }
+
+        public (int Width, int Height, string Code)? ShowImportFromCodeDialog()
+        {
+            var dlg = new ImportFromCodeDialog { Owner = Application.Current.MainWindow };
+            if (dlg.ShowDialog() == true && dlg.Result.HasValue)
+                return dlg.Result.Value;
+            return null;
+        }
     }
 }

@@ -83,6 +83,9 @@
                 <MenuItem Header="_Open"
                           Command="{Binding OpenCommand}"
                           InputGestureText="Ctrl+O" />
+                <MenuItem Header="_Import from Code…"
+                          Command="{Binding ImportFromCodeMenuCommand}"
+                          InputGestureText="Ctrl+Shift+I" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Save"
                           Command="{Binding SaveCommand}"
@@ -90,6 +93,8 @@
                 <MenuItem Header="Save _As..."
                           Command="{Binding SaveAsCommand}"
                           InputGestureText="Ctrl+Shift+S" />
+                <MenuItem Header="Copy _Export Code"
+                          Command="{Binding CopyExportCodeMenuCommand}" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Close Tab"
                           Command="{Binding CloseTabCommand}"
@@ -109,12 +114,6 @@
                           Command="{Binding ActiveDocument.InvertCommand}" />
                 <MenuItem Header="_Clear Canvas"
                           Command="{Binding ActiveDocument.ClearCommand}" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                <MenuItem Header="Copy _Export Code"
-                          Command="{Binding ActiveDocument.CopyExportedCodeCommand}" />
-                <MenuItem Header="_Import from Code…"
-                          Command="{Binding ImportFromCodeMenuCommand}"
-                          InputGestureText="Ctrl+Shift+I" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Cu_t"
                           Command="{Binding ActiveDocument.CutSelectionCommand}"

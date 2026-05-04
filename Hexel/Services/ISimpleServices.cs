@@ -43,6 +43,12 @@ namespace Hexel.Services
         /// Shows the "About Hexel" dialog.
         /// </summary>
         void ShowAboutDialog();
+
+        /// <summary>
+        /// Shows the "Import from Code" dialog.
+        /// Returns (width, height, code) if the user clicks Import, or null if cancelled.
+        /// </summary>
+        (int Width, int Height, string Code)? ShowImportFromCodeDialog();
     }
 
 }

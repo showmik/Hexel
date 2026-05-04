@@ -58,8 +58,10 @@ namespace Hexel.ViewModels
         public IRelayCommand ResizeCanvasCommand { get; }
         public IRelayCommand OpenDocumentationCommand { get; }
         public IRelayCommand ShowAboutCommand { get; }
-        /// <summary>Proxies the active document's ImportFromCodeCommand for the Edit menu.</summary>
+        /// <summary>Opens the Import from Code dialog and creates a new tab.</summary>
         public IRelayCommand ImportFromCodeMenuCommand { get; }
+        /// <summary>Copies the active document's exported code to the clipboard.</summary>
+        public IRelayCommand CopyExportCodeMenuCommand { get; }
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>Raised when a tab is added so the View can wire events.</summary>
@@ -89,8 +91,9 @@ namespace Hexel.ViewModels
             ResizeCanvasCommand = new RelayCommand(ExecuteResizeCanvas, () => HasOpenDocument);
             OpenDocumentationCommand = new RelayCommand(ExecuteOpenDocumentation);
             ShowAboutCommand = new RelayCommand(ExecuteShowAbout);
-            ImportFromCodeMenuCommand = new RelayCommand(
-                () => ActiveDocument?.ImportFromCodeCommand.Execute(null),
+            ImportFromCodeMenuCommand = new RelayCommand(ExecuteImportFromCode);
+            CopyExportCodeMenuCommand = new RelayCommand(
+                () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
                 () => HasOpenDocument);
 
             // Start with one blank document
@@ -265,6 +268,39 @@ namespace Hexel.ViewModels
             }
         }
 
+        // ── Import from Code ──────────────────────────────────────────────
+
+        private void ExecuteImportFromCode()
+        {
+            if (OpenDocuments.Count >= MaxTabs)
+            {
+                _dialogService.ShowMessage($"Maximum of {MaxTabs} tabs reached. Close a tab first.");
+                return;
+            }
+
+            var result = _dialogService.ShowImportFromCodeDialog();
+            if (result == null) return;
+
+            var (w, h, code) = result.Value;
+
+            try
+            {
+                var doc = CreateDocument(w, h);
+                _codeGen.ParseHexToState(code, doc.SpriteState);
+                doc.RedrawGridFromMemory();
+                doc.UpdateTextOutputs();
+
+                OpenDocuments.Add(doc);
+                ActiveDocument = doc;
+                TabAdded?.Invoke(this, doc);
+                RaiseActiveTabChanged();
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowMessage($"Error importing: {ex.Message}");
+            }
+        }
+
         // ── Help ──────────────────────────────────────────────────────────
 
         private void ExecuteOpenDocumentation()
@@ -307,7 +343,7 @@ namespace Hexel.ViewModels
             ((RelayCommand)SaveCommand).NotifyCanExecuteChanged();
             ((RelayCommand)SaveAsCommand).NotifyCanExecuteChanged();
             ((RelayCommand)ResizeCanvasCommand).NotifyCanExecuteChanged();
-            ((RelayCommand)ImportFromCodeMenuCommand).NotifyCanExecuteChanged();
+            ((RelayCommand)CopyExportCodeMenuCommand).NotifyCanExecuteChanged();
             ActiveTabChanged?.Invoke(this, EventArgs.Empty);
         }
     }
