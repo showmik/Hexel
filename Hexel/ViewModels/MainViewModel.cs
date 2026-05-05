@@ -935,6 +935,13 @@ namespace Hexel.ViewModels
         {
             if (toolName == null) return;
 
+            // Commit floating pixels before switching tool.
+            // Non-floating selections are preserved — they become the draw mask.
+            if (_selectionService.IsFloating)
+            {
+                _selectionInput.CommitIfActive();
+            }
+
             CurrentTool = toolName switch
             {
                 "Fill" => ToolMode.Fill,
