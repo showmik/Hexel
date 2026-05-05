@@ -39,24 +39,37 @@ namespace Hexprite.Services
             if (targetState == newState) return;
 
             int total = state.Width * state.Height;
-            var visited = new bool[total];
-            var queue = new Queue<int>();
+            // FIX: Rent a buffer from the shared pool to eliminate Garbage Collection spikes.
+            bool[] visited = System.Buffers.ArrayPool<bool>.Shared.Rent(total);
 
-            visited[startIndex] = true;
-            queue.Enqueue(startIndex);
-
-            while (queue.Count > 0)
+            try
             {
-                int current = queue.Dequeue();
-                state.Pixels[current] = newState;
+                // CRITICAL: Rented arrays can contain garbage data from previous operations.
+                Array.Clear(visited, 0, total);
 
-                int x = current % state.Width;
-                int y = current / state.Width;
+                var queue = new Queue<int>();
 
-                TryEnqueue(queue, visited, state, targetState, x - 1, y);
-                TryEnqueue(queue, visited, state, targetState, x + 1, y);
-                TryEnqueue(queue, visited, state, targetState, x, y - 1);
-                TryEnqueue(queue, visited, state, targetState, x, y + 1);
+                visited[startIndex] = true;
+                queue.Enqueue(startIndex);
+
+                while (queue.Count > 0)
+                {
+                    int current = queue.Dequeue();
+                    state.Pixels[current] = newState;
+
+                    int x = current % state.Width;
+                    int y = current / state.Width;
+
+                    TryEnqueue(queue, visited, state, targetState, x - 1, y);
+                    TryEnqueue(queue, visited, state, targetState, x + 1, y);
+                    TryEnqueue(queue, visited, state, targetState, x, y - 1);
+                    TryEnqueue(queue, visited, state, targetState, x, y + 1);
+                }
+            }
+            finally
+            {
+                // Guarantee the buffer is returned to the pool
+                System.Buffers.ArrayPool<bool>.Shared.Return(visited);
             }
         }
 
