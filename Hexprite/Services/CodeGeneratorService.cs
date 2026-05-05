@@ -501,7 +501,8 @@ namespace Hexprite.Services
             if (string.IsNullOrWhiteSpace(name)) return "sprite";
 
             // Replace spaces and invalid characters with underscores
-            string safe = Regex.Replace(name.Trim(), @"[^a-zA-Z0-9_]", "_");
+            // FIX: Added null-conditional and coalescing operators to prevent future regression
+            string safe = Regex.Replace(name?.Trim() ?? string.Empty, @"[^a-zA-Z0-9_]", "_");
 
             // C identifiers cannot start with a digit
             if (safe.Length > 0 && char.IsDigit(safe[0]))
