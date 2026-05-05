@@ -649,7 +649,8 @@ namespace Hexprite.ViewModels
             // Create the new state and copy pixels
             var newState = new SpriteState(newW, newH)
             {
-                IsDisplayInverted = oldState.IsDisplayInverted
+                IsDisplayInverted = oldState.IsDisplayInverted,
+                ExportSettings = oldState.ExportSettings
             };
 
             for (int y = 0; y < oldH; y++)
