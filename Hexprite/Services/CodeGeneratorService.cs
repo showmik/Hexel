@@ -6,8 +6,16 @@ using Hexprite.Core;
 
 namespace Hexprite.Services
 {
-    public class CodeGeneratorService : ICodeGeneratorService
+    public partial class CodeGeneratorService : ICodeGeneratorService
     {
+        [GeneratedRegex(@"//.*")]
+        private static partial Regex LineCommentRegex();
+
+        [GeneratedRegex(@"/\*.*?\*/", RegexOptions.Singleline)]
+        private static partial Regex BlockCommentRegex();
+
+        [GeneratedRegex(@"0[xX]([0-9a-fA-F]{1,2})")]
+        private static partial Regex HexByteRegex();
         // ═══════════════════════════════════════════════════════════════════════
         //  Public API
         // ═══════════════════════════════════════════════════════════════════════
@@ -264,10 +272,10 @@ namespace Hexprite.Services
 
         public void ParseHexToState(string hexText, SpriteState state)
         {
-            string cleanText = Regex.Replace(hexText, @"//.*", "");
-            cleanText = Regex.Replace(cleanText, @"/\*.*?\*/", "", RegexOptions.Singleline);
+            string cleanText = LineCommentRegex().Replace(hexText, "");
+            cleanText = BlockCommentRegex().Replace(cleanText, "");
 
-            var matches = Regex.Matches(cleanText, @"0[xX]([0-9a-fA-F]{1,2})");
+            var matches = HexByteRegex().Matches(cleanText);
             int bytesPerRow = BytesPerRow(state.Width);
             int matchIndex = 0;
 
@@ -302,10 +310,10 @@ namespace Hexprite.Services
                 code = code.Substring(start, end - start);
             }
 
-            string cleanText = Regex.Replace(code, @"//.*", "");
-            cleanText = Regex.Replace(cleanText, @"/\*.*?\*/", "", RegexOptions.Singleline);
+            string cleanText = LineCommentRegex().Replace(code, "");
+            cleanText = BlockCommentRegex().Replace(cleanText, "");
 
-            var matches = Regex.Matches(cleanText, @"0[xX]([0-9a-fA-F]{1,2})");
+            var matches = HexByteRegex().Matches(cleanText);
             int bytesPerRow = BytesPerRow(state.Width);
             int matchIndex = 0;
 
