@@ -17,6 +17,8 @@ namespace Hexprite.Controllers
         private readonly Func<Image> _getCanvasImage;
         private readonly Func<ShellViewModel> _getShell;
 
+        private bool _isInternalZoomUpdate;
+
         // ── Panning state ─────────────────────────────────────────────────
         private Point _panStartMouse;
         private Point _panStartScroll;
@@ -29,13 +31,56 @@ namespace Hexprite.Controllers
             _zoomSlider = zoomSlider ?? throw new ArgumentNullException(nameof(zoomSlider));
             _getCanvasImage = getCanvasImage;
             _getShell = getShell;
+
+            _zoomSlider.ValueChanged += ZoomSlider_ValueChanged;
+        }
+
+        private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_isInternalZoomUpdate) return;
+            ApplyAbsoluteZoomCentered(e.NewValue, e.OldValue);
         }
 
         // ── Button handlers ───────────────────────────────────────────────
 
         public void ZoomIn() => ApplyZoomCentered(ZoomFactor);
         public void ZoomOut() => ApplyZoomCentered(1.0 / ZoomFactor);
-        public void ZoomReset() => _zoomSlider.Value = 1.0;
+        
+        public void ZoomReset()
+        {
+            _isInternalZoomUpdate = true;
+            try
+            {
+                _zoomSlider.Value = 1.0;
+
+                var sv = FindScrollViewer();
+                if (sv != null)
+                {
+                    var image = _getCanvasImage();
+                    var border = image != null ? FindParent<Border>(image) : null;
+                    if (border != null && border.LayoutTransform is ScaleTransform scale)
+                    {
+                        scale.SetCurrentValue(ScaleTransform.ScaleXProperty, 1.0);
+                        scale.SetCurrentValue(ScaleTransform.ScaleYProperty, 1.0);
+                    }
+
+                    sv.UpdateLayout();
+
+                    double targetOffsetX = (sv.ExtentWidth - sv.ViewportWidth) / 2.0;
+                    double targetOffsetY = (sv.ExtentHeight - sv.ViewportHeight) / 2.0;
+
+                    if (targetOffsetX > 0) sv.ScrollToHorizontalOffset(targetOffsetX);
+                    else sv.ScrollToHorizontalOffset(0);
+
+                    if (targetOffsetY > 0) sv.ScrollToVerticalOffset(targetOffsetY);
+                    else sv.ScrollToVerticalOffset(0);
+                }
+            }
+            finally
+            {
+                _isInternalZoomUpdate = false;
+            }
+        }
 
         // ── Scroll wheel ──────────────────────────────────────────────────
 
@@ -64,24 +109,32 @@ namespace Hexprite.Controllers
             var mouseInSv = e.GetPosition(sv);
             var mouseInImage = e.GetPosition(image);
 
-            _zoomSlider.Value = newZoom;
-
-            var border = FindParent<Border>(image);
-            if (border != null && border.LayoutTransform is ScaleTransform scale)
+            _isInternalZoomUpdate = true;
+            try
             {
-                scale.SetCurrentValue(ScaleTransform.ScaleXProperty, newZoom);
-                scale.SetCurrentValue(ScaleTransform.ScaleYProperty, newZoom);
+                _zoomSlider.Value = newZoom;
+
+                var border = FindParent<Border>(image);
+                if (border != null && border.LayoutTransform is ScaleTransform scale)
+                {
+                    scale.SetCurrentValue(ScaleTransform.ScaleXProperty, newZoom);
+                    scale.SetCurrentValue(ScaleTransform.ScaleYProperty, newZoom);
+                }
+
+                sv.UpdateLayout();
+
+                var grid = sv.Content as UIElement;
+                if (grid == null) return;
+
+                var targetPointInGrid = image.TranslatePoint(mouseInImage, grid);
+
+                sv.ScrollToHorizontalOffset(targetPointInGrid.X - mouseInSv.X);
+                sv.ScrollToVerticalOffset(targetPointInGrid.Y - mouseInSv.Y);
             }
-
-            sv.UpdateLayout();
-
-            var grid = sv.Content as UIElement;
-            if (grid == null) return;
-
-            var targetPointInGrid = image.TranslatePoint(mouseInImage, grid);
-
-            sv.ScrollToHorizontalOffset(targetPointInGrid.X - mouseInSv.X);
-            sv.ScrollToVerticalOffset(targetPointInGrid.Y - mouseInSv.Y);
+            finally
+            {
+                _isInternalZoomUpdate = false;
+            }
         }
 
         // ── Pan start / move / end ────────────────────────────────────────
@@ -134,6 +187,15 @@ namespace Hexprite.Controllers
 
             double oldZoom = _zoomSlider.Value;
             double newZoom = SnapToTick(Math.Clamp(oldZoom * factor, _zoomSlider.Minimum, _zoomSlider.Maximum), factor > 1.0 ? 1 : -1);
+            
+            ApplyAbsoluteZoomCentered(newZoom, oldZoom);
+        }
+
+        public void ApplyAbsoluteZoomCentered(double newZoom, double oldZoom)
+        {
+            var sv = FindScrollViewer();
+            if (sv == null) return;
+
             if (Math.Abs(newZoom - oldZoom) < 0.001) return;
 
             double cx = sv.ViewportWidth / 2.0;
@@ -146,21 +208,29 @@ namespace Hexprite.Controllers
             Point centerInGrid = new Point(sv.HorizontalOffset + cx, sv.VerticalOffset + cy);
             Point centerInImage = grid.TranslatePoint(centerInGrid, image);
 
-            _zoomSlider.Value = newZoom;
-
-            var border = FindParent<Border>(image);
-            if (border != null && border.LayoutTransform is ScaleTransform scale)
+            _isInternalZoomUpdate = true;
+            try
             {
-                scale.SetCurrentValue(ScaleTransform.ScaleXProperty, newZoom);
-                scale.SetCurrentValue(ScaleTransform.ScaleYProperty, newZoom);
+                _zoomSlider.Value = newZoom;
+
+                var border = FindParent<Border>(image);
+                if (border != null && border.LayoutTransform is ScaleTransform scale)
+                {
+                    scale.SetCurrentValue(ScaleTransform.ScaleXProperty, newZoom);
+                    scale.SetCurrentValue(ScaleTransform.ScaleYProperty, newZoom);
+                }
+
+                sv.UpdateLayout();
+
+                Point targetPointInGrid = image.TranslatePoint(centerInImage, grid);
+
+                sv.ScrollToHorizontalOffset(targetPointInGrid.X - cx);
+                sv.ScrollToVerticalOffset(targetPointInGrid.Y - cy);
             }
-
-            sv.UpdateLayout();
-
-            Point targetPointInGrid = image.TranslatePoint(centerInImage, grid);
-
-            sv.ScrollToHorizontalOffset(targetPointInGrid.X - cx);
-            sv.ScrollToVerticalOffset(targetPointInGrid.Y - cy);
+            finally
+            {
+                _isInternalZoomUpdate = false;
+            }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────
