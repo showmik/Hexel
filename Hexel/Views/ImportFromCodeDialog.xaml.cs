@@ -381,5 +381,10 @@ namespace Hexel.Views
         {
             DialogResult = false;
         }
+
+        private void CaptionClose_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
     }
 }

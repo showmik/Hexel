@@ -66,6 +66,11 @@ namespace Hexel.Views
             DialogResult = false;
         }
 
+        private void CaptionClose_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
         private void NumberOnly(object sender, TextCompositionEventArgs e)
         {
             e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
