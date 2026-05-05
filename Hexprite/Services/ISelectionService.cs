@@ -107,5 +107,9 @@ namespace Hexprite.Services
         void BeginDrag();
         void MoveFloatingTo(int newX, int newY);
         void EndDrag();
+
+        // ── Snapshots ────────────────────────────────────────────────────
+        SelectionSnapshot CreateSnapshot();
+        void RestoreSnapshot(SelectionSnapshot snapshot);
     }
 }

@@ -496,13 +496,20 @@ namespace Hexprite.ViewModels
                 }
             });
 
-            UndoCommand = new RelayCommand(() => RestoreState(_historyService.Undo(SpriteState)));
-            RedoCommand = new RelayCommand(() => RestoreState(_historyService.Redo(SpriteState)));
+            UndoCommand = new RelayCommand(() => 
+            {
+                SpriteState.SelectionSnapshot = _selectionService.CreateSnapshot();
+                RestoreState(_historyService.Undo(SpriteState));
+            });
+            RedoCommand = new RelayCommand(() => 
+            {
+                SpriteState.SelectionSnapshot = _selectionService.CreateSnapshot();
+                RestoreState(_historyService.Redo(SpriteState));
+            });
 
             ClearCommand = new RelayCommand(() =>
             {
-                _historyService.SaveState(SpriteState);
-                IsDirty = true;
+                SaveStateForUndo();
                 // Drop floating layer explicitly (user intent is clear canvas = clear everything)
                 if (_selectionService.HasActiveSelection)
                     _selectionService.Cancel();
@@ -513,8 +520,7 @@ namespace Hexprite.ViewModels
 
             InvertCommand = new RelayCommand(() =>
             {
-                _historyService.SaveState(SpriteState);
-                IsDirty = true;
+                SaveStateForUndo();
                 _drawingService.InvertGrid(SpriteState);
                 IsDisplayInverted = !IsDisplayInverted;
                 RedrawGridFromMemory();
@@ -564,7 +570,12 @@ namespace Hexprite.ViewModels
             DeleteSelectionCommand = new RelayCommand(() =>
             {
                 if (!_selectionService.HasActiveSelection) return;
+
+                // SaveStateForUndo only captures SpriteState.Pixels, not FloatingPixels.
+                // This correctly matches Aseprite behavior: when undoing a deletion of a floating
+                // selection, it discards the floating pixels and restores the hole from the original lift.
                 SaveStateForUndo();
+
                 _selectionService.DeleteSelection(SpriteState);
                 RedrawGridFromMemory();
                 MarkCodeStale();
@@ -616,6 +627,7 @@ namespace Hexprite.ViewModels
             _selectionService.Cancel();
 
             // Push current state for undo
+            oldState.SelectionSnapshot = _selectionService.CreateSnapshot();
             _historyService.SaveState(oldState);
             IsDirty = true;
 
@@ -795,13 +807,14 @@ namespace Hexprite.ViewModels
 
         public void SaveStateForUndo()
         {
+            SpriteState.SelectionSnapshot = _selectionService.CreateSnapshot();
             _historyService.SaveState(SpriteState);
             IsDirty = true;
         }
 
         public void ShiftGrid(int offsetX, int offsetY)
         {
-            _historyService.SaveState(SpriteState);
+            SaveStateForUndo();
             _drawingService.ShiftGrid(SpriteState, offsetX, offsetY);
             RedrawGridFromMemory();
             MarkCodeStale();
@@ -973,13 +986,6 @@ namespace Hexprite.ViewModels
         {
             if (state == null || ReferenceEquals(state, SpriteState)) return;
 
-            // Commit floating pixels into the current state before overwriting it.
-            // This prevents silent pixel loss on undo while a floating selection is active.
-            if (_selectionService.IsFloating)
-                _selectionService.CommitSelection(SpriteState);
-            else
-                _selectionService.Cancel();
-
             if (SpriteState.Width != state.Width || SpriteState.Height != state.Height)
             {
                 InitializeGrid(state.Width, state.Height);
@@ -987,6 +993,11 @@ namespace Hexprite.ViewModels
 
             SpriteState = state;
             IsDisplayInverted = state.IsDisplayInverted; // restores the visual invert flag
+
+            if (state.SelectionSnapshot != null)
+                _selectionService.RestoreSnapshot(state.SelectionSnapshot);
+            else
+                _selectionService.Cancel();
             RedrawGridFromMemory();
             MarkCodeStale();
             HistoryRestored?.Invoke(this, EventArgs.Empty);

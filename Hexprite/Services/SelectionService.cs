@@ -491,6 +491,59 @@ namespace Hexprite.Services
 
             Notify();
         }
+        // ── Snapshots ────────────────────────────────────────────────────
+
+        public SelectionSnapshot CreateSnapshot()
+        {
+            return new SelectionSnapshot
+            {
+                HasActiveSelection = HasActiveSelection,
+                IsSelecting = IsSelecting,
+                IsFloating = IsFloating,
+                IsDragging = IsDragging,
+                MinX = MinX,
+                MaxX = MaxX,
+                MinY = MinY,
+                MaxY = MaxY,
+                Mask = Mask != null ? (bool[,])Mask.Clone() : null,
+                FloatingPixels = FloatingPixels != null ? (bool[,])FloatingPixels.Clone() : null,
+                FloatingX = FloatingX,
+                FloatingY = FloatingY,
+                FloatingWidth = FloatingWidth,
+                FloatingHeight = FloatingHeight,
+                LassoPoints = new List<PixelPoint>(_lassoPoints)
+            };
+        }
+
+        public void RestoreSnapshot(SelectionSnapshot snapshot)
+        {
+            HasActiveSelection = snapshot.HasActiveSelection;
+            IsSelecting = snapshot.IsSelecting;
+            IsFloating = snapshot.IsFloating;
+            IsDragging = snapshot.IsDragging;
+            MinX = snapshot.MinX;
+            MaxX = snapshot.MaxX;
+            MinY = snapshot.MinY;
+            MaxY = snapshot.MaxY;
+            Mask = snapshot.Mask != null ? (bool[,])snapshot.Mask.Clone() : null;
+            FloatingPixels = snapshot.FloatingPixels != null ? (bool[,])snapshot.FloatingPixels.Clone() : null;
+            FloatingX = snapshot.FloatingX;
+            FloatingY = snapshot.FloatingY;
+            FloatingWidth = snapshot.FloatingWidth;
+            FloatingHeight = snapshot.FloatingHeight;
+
+            _lassoPoints.Clear();
+            if (snapshot.LassoPoints != null)
+            {
+                _lassoPoints.AddRange(snapshot.LassoPoints);
+            }
+
+            // Clear intermediate boolean operation state
+            _baseMask = null;
+            _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
+
+            Notify();
+        }
 
         // ── Private helpers ───────────────────────────────────────────────
 

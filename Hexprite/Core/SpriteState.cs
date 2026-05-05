@@ -38,10 +38,14 @@ namespace Hexprite.Core
             Pixels = new bool[width * height];
         }
 
+        [JsonIgnore]
+        public SelectionSnapshot? SelectionSnapshot { get; set; }
+
         public SpriteState Clone() => new SpriteState(Width, Height)
         {
             Pixels = (bool[])Pixels.Clone(),
-            IsDisplayInverted = IsDisplayInverted
+            IsDisplayInverted = IsDisplayInverted,
+            SelectionSnapshot = SelectionSnapshot?.Clone()
             // ExportSettings intentionally NOT cloned: settings tweaks
             // should not be undone when the user hits Ctrl+Z.
         };
