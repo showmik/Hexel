@@ -146,9 +146,9 @@
                         <Trigger Property="IsChecked"
                                  Value="True">
                             <Setter Property="Background"
-                                    Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
+                                    Value="{DynamicResource Theme.ToolButtonCheckedBackgroundBrush}" />
                             <Setter Property="BorderBrush"
-                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                                    Value="{DynamicResource Theme.ToolButtonCheckedBorderBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -159,9 +159,9 @@
     <Style x:Key="ModernButtonStyle"
            TargetType="Button">
         <Setter Property="Background"
-                Value="{DynamicResource Theme.PanelBorderBrush}" />
+                Value="{DynamicResource Theme.ButtonBackgroundBrush}" />
         <Setter Property="Foreground"
-                Value="{DynamicResource Theme.TextMainBrush}" />
+                Value="{DynamicResource Theme.ButtonTextBrush}" />
         <Setter Property="BorderThickness"
                 Value="0" />
         <Setter Property="Padding"
@@ -227,11 +227,11 @@
     <Style x:Key="ModernTextBoxStyle"
            TargetType="TextBox">
         <Setter Property="Background"
-                Value="{DynamicResource Theme.BackgroundBrush}" />
+                Value="{DynamicResource Theme.TextBoxBackgroundBrush}" />
         <Setter Property="Foreground"
-                Value="{DynamicResource Theme.TextMainBrush}" />
+                Value="{DynamicResource Theme.TextBoxTextBrush}" />
         <Setter Property="BorderBrush"
-                Value="{DynamicResource Theme.PanelBorderBrush}" />
+                Value="{DynamicResource Theme.TextBoxBorderBrush}" />
         <Setter Property="BorderThickness"
                 Value="1" />
         <Setter Property="Padding"
@@ -265,7 +265,7 @@
                         <Trigger Property="IsFocused"
                                  Value="True">
                             <Setter Property="BorderBrush"
-                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                                    Value="{DynamicResource Theme.TextBoxFocusBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled"
                                  Value="False">
@@ -318,11 +318,11 @@
     <Style x:Key="ModernComboBoxStyle"
            TargetType="ComboBox">
         <Setter Property="Background"
-                Value="{DynamicResource Theme.BackgroundBrush}" />
+                Value="{DynamicResource Theme.ComboBoxBackgroundBrush}" />
         <Setter Property="Foreground"
-                Value="{DynamicResource Theme.TextMainBrush}" />
+                Value="{DynamicResource Theme.ComboBoxTextBrush}" />
         <Setter Property="BorderBrush"
-                Value="{DynamicResource Theme.PanelBorderBrush}" />
+                Value="{DynamicResource Theme.ComboBoxBorderBrush}" />
         <Setter Property="BorderThickness"
                 Value="1" />
         <Setter Property="Padding"
@@ -383,8 +383,8 @@
                                   MinWidth="{TemplateBinding ActualWidth}"
                                   MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                 <Border x:Name="DropDownBorder"
-                                        Background="{DynamicResource Theme.PanelBackgroundBrush}"
-                                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                        Background="{DynamicResource Theme.ComboBoxDropDownBackgroundBrush}"
+                                        BorderBrush="{DynamicResource Theme.ComboBoxDropDownBorderBrush}"
                                         BorderThickness="1"
                                         CornerRadius="4"
                                         Margin="0,4,0,0">
@@ -555,10 +555,10 @@
                                  Value="True">
                             <Setter TargetName="Bd"
                                     Property="Background"
-                                    Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
+                                    Value="{DynamicResource Theme.ToolButtonCheckedBackgroundBrush}" />
                             <Setter TargetName="Bd"
                                     Property="BorderBrush"
-                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                                    Value="{DynamicResource Theme.ToolButtonCheckedBorderBrush}" />
                             <Setter TargetName="Bd"
                                     Property="BorderThickness"
                                     Value="1" />
@@ -575,9 +575,9 @@
     <Style x:Key="StatusBarPanel"
            TargetType="Border">
         <Setter Property="Background"
-                Value="{DynamicResource Theme.PanelBackgroundBrush}" />
+                Value="{DynamicResource Theme.StatusBarBackgroundBrush}" />
         <Setter Property="BorderBrush"
-                Value="{DynamicResource Theme.PanelBorderBrush}" />
+                Value="{DynamicResource Theme.StatusBarBorderBrush}" />
         <Setter Property="BorderThickness"
                 Value="0,1,0,0" />
         <Setter Property="Padding"
@@ -1274,9 +1274,9 @@
          ToolTip (Modern Theme-Aware)
          ═══════════════════════════════════════════════════════════ -->
     <Style TargetType="ToolTip">
-        <Setter Property="Background" Value="{DynamicResource Theme.PanelBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Theme.TextMainBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Theme.PanelBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Theme.ToolTipBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Theme.ToolTipTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Theme.ToolTipBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8,6"/>
         <Setter Property="HasDropShadow" Value="True"/>
@@ -1304,9 +1304,9 @@
          ContextMenu
          ═══════════════════════════════════════════════════════════ -->
     <Style TargetType="ContextMenu">
-        <Setter Property="Background" Value="{DynamicResource Theme.PanelBackgroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Theme.ContextMenuBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource Theme.TextMainBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Theme.PanelBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Theme.ContextMenuBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="HasDropShadow" Value="True"/>

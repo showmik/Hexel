@@ -36,6 +36,32 @@
     <Color x:Key="Color.Separator">#DDD8D0</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
+         Control specific palette
+         ═══════════════════════════════════════════════════════════ -->
+    <Color x:Key="Color.ButtonBackground">#E2DDD6</Color>
+    <Color x:Key="Color.ButtonText">#1E1E2E</Color>
+    <Color x:Key="Color.TextBoxBackground">#F5F3EF</Color>
+    <Color x:Key="Color.TextBoxBorder">#E2DDD6</Color>
+    <Color x:Key="Color.TextBoxText">#1E1E2E</Color>
+    <Color x:Key="Color.TextBoxFocusBorder">#7C5CFC</Color>
+    <Color x:Key="Color.ComboBoxBackground">#F5F3EF</Color>
+    <Color x:Key="Color.ComboBoxBorder">#E2DDD6</Color>
+    <Color x:Key="Color.ComboBoxText">#1E1E2E</Color>
+    <Color x:Key="Color.ComboBoxDropDownBackground">#FFFFFF</Color>
+    <Color x:Key="Color.ComboBoxDropDownBorder">#E2DDD6</Color>
+    <Color x:Key="Color.ContextMenuBackground">#FFFFFF</Color>
+    <Color x:Key="Color.ContextMenuBorder">#E2DDD6</Color>
+    <Color x:Key="Color.ToolTipBackground">#FFFFFF</Color>
+    <Color x:Key="Color.ToolTipBorder">#E2DDD6</Color>
+    <Color x:Key="Color.ToolTipText">#1E1E2E</Color>
+    <Color x:Key="Color.MenuPopupBackground">#FFFFFF</Color>
+    <Color x:Key="Color.MenuPopupBorder">#E2DDD6</Color>
+    <Color x:Key="Color.ToolButtonHover">#E2DDD6</Color>
+    <Color x:Key="Color.ToolButtonCheckedBackground">#6366F1</Color>
+    <Color x:Key="Color.ToolButtonCheckedBorder">#7C5CFC</Color>
+    <Color x:Key="Color.StatusBarBorder">#E2DDD6</Color>
+
+    <!-- ═══════════════════════════════════════════════════════════
          New semantic tokens
          ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.TextOnAccent">#FFFFFF</Color>
@@ -116,6 +142,30 @@
                      Color="{StaticResource Color.ToolSidebarActive}" />
     <SolidColorBrush x:Key="Theme.SeparatorBrush"
                      Color="{StaticResource Color.Separator}" />
+
+    <!-- Control specific brushes -->
+    <SolidColorBrush x:Key="Theme.ButtonBackgroundBrush" Color="{StaticResource Color.ButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.ButtonTextBrush" Color="{StaticResource Color.ButtonText}" />
+    <SolidColorBrush x:Key="Theme.TextBoxBackgroundBrush" Color="{StaticResource Color.TextBoxBackground}" />
+    <SolidColorBrush x:Key="Theme.TextBoxBorderBrush" Color="{StaticResource Color.TextBoxBorder}" />
+    <SolidColorBrush x:Key="Theme.TextBoxTextBrush" Color="{StaticResource Color.TextBoxText}" />
+    <SolidColorBrush x:Key="Theme.TextBoxFocusBorderBrush" Color="{StaticResource Color.TextBoxFocusBorder}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxBackgroundBrush" Color="{StaticResource Color.ComboBoxBackground}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxBorderBrush" Color="{StaticResource Color.ComboBoxBorder}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxTextBrush" Color="{StaticResource Color.ComboBoxText}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxDropDownBackgroundBrush" Color="{StaticResource Color.ComboBoxDropDownBackground}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxDropDownBorderBrush" Color="{StaticResource Color.ComboBoxDropDownBorder}" />
+    <SolidColorBrush x:Key="Theme.ContextMenuBackgroundBrush" Color="{StaticResource Color.ContextMenuBackground}" />
+    <SolidColorBrush x:Key="Theme.ContextMenuBorderBrush" Color="{StaticResource Color.ContextMenuBorder}" />
+    <SolidColorBrush x:Key="Theme.ToolTipBackgroundBrush" Color="{StaticResource Color.ToolTipBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolTipBorderBrush" Color="{StaticResource Color.ToolTipBorder}" />
+    <SolidColorBrush x:Key="Theme.ToolTipTextBrush" Color="{StaticResource Color.ToolTipText}" />
+    <SolidColorBrush x:Key="Theme.MenuPopupBackgroundBrush" Color="{StaticResource Color.MenuPopupBackground}" />
+    <SolidColorBrush x:Key="Theme.MenuPopupBorderBrush" Color="{StaticResource Color.MenuPopupBorder}" />
+    <SolidColorBrush x:Key="Theme.ToolButtonHoverBrush" Color="{StaticResource Color.ToolButtonHover}" />
+    <SolidColorBrush x:Key="Theme.ToolButtonCheckedBackgroundBrush" Color="{StaticResource Color.ToolButtonCheckedBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolButtonCheckedBorderBrush" Color="{StaticResource Color.ToolButtonCheckedBorder}" />
+    <SolidColorBrush x:Key="Theme.StatusBarBorderBrush" Color="{StaticResource Color.StatusBarBorder}" />
 
     <!-- New semantic brushes -->
     <SolidColorBrush x:Key="Theme.TextOnAccentBrush"
