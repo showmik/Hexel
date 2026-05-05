@@ -80,36 +80,45 @@
                             </Expander.Header>
                             <StackPanel Margin="0,16,0,0">
 
-                                <!-- Checkboxes row 1 -->
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <CheckBox Content="Usage comment"
+                                <!-- Checkbox Grid for perfect alignment -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="135"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <CheckBox Grid.Row="0" Grid.Column="0" Content="Usage comment"
                                               IsChecked="{Binding IncludeUsageComment}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
                                               FontSize="12"
-                                              Margin="0,0,16,0"/>
-                                    <CheckBox Content="Width/height constants"
+                                              Margin="0,0,0,8"/>
+                                    <CheckBox Grid.Row="0" Grid.Column="1" Content="Width/height constants"
                                               IsChecked="{Binding IncludeDimensionConstants}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                              FontSize="12"/>
-                                </StackPanel>
+                                              FontSize="12"
+                                              Margin="0,0,0,8"/>
 
-                                <!-- Checkboxes row 2 -->
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                    <CheckBox Content="Row comments"
+                                    <CheckBox Grid.Row="1" Grid.Column="0" Content="Row comments"
                                               IsChecked="{Binding IncludeRowComments}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
                                               FontSize="12"
-                                              Margin="0,0,16,0"/>
-                                    <CheckBox Content="Comma separator"
+                                              Margin="0,0,0,8"/>
+                                    <CheckBox Grid.Row="1" Grid.Column="1" Content="Comma separator"
                                               IsChecked="{Binding UseCommaSeparator}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
                                               FontSize="12"
-                                              Margin="0,0,16,0"/>
-                                    <CheckBox Content="Array size"
+                                              Margin="0,0,0,8"/>
+
+                                    <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Array size"
                                               IsChecked="{Binding IncludeArraySize}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
                                               FontSize="12"/>
-                                </StackPanel>
+                                </Grid>
 
                                 <!-- Bytes per line -->
                                 <TextBlock Text="Bytes per line"
