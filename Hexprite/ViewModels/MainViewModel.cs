@@ -485,7 +485,7 @@ namespace Hexprite.ViewModels
                 try
                 {
                     if (ExportFormat == ExportFormat.RawBinary)
-                        ParseBinaryToCanvas(ImportCode);
+                        _codeGen.ParseBinaryToState(ImportCode, SpriteState);
                     else if (ExportFormat == ExportFormat.U8g2DrawXBM)
                         _codeGen.ParseXbmToState(ImportCode, SpriteState);
                     else if (ExportFormat == ExportFormat.AdafruitGfx)
@@ -938,21 +938,6 @@ namespace Hexprite.ViewModels
 
         // ── Private helpers ────────────────────────────────────────────────
 
-        private void ParseBinaryToCanvas(string text)
-        {
-            Array.Clear(SpriteState.Pixels, 0, SpriteState.Pixels.Length);
-            string[] lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            int row = 0;
-            foreach (string line in lines)
-            {
-                if (row >= SpriteState.Height) break;
-                string data = line.Contains(':') ? line[(line.IndexOf(':') + 1)..] : line;
-                data = data.Replace(" ", "").Replace(",", "");
-                for (int col = 0; col < SpriteState.Width; col++)
-                    SpriteState.Pixels[(row * SpriteState.Width) + col] = col < data.Length && data[col] == '1';
-                row++;
-            }
-        }
 
         /// <summary>
         /// Cancels any in-progress shape drawing and resets tracking state.

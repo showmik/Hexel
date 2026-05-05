@@ -331,6 +331,22 @@ namespace Hexprite.Services
             }
         }
 
+        public void ParseBinaryToState(string text, SpriteState state)
+        {
+            Array.Clear(state.Pixels, 0, state.Pixels.Length);
+            string[] lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            int row = 0;
+            foreach (string line in lines)
+            {
+                if (row >= state.Height) break;
+                string data = line.Contains(':') ? line[(line.IndexOf(':') + 1)..] : line;
+                data = data.Replace(" ", "").Replace(",", "");
+                for (int col = 0; col < state.Width; col++)
+                    state.Pixels[(row * state.Width) + col] = col < data.Length && data[col] == '1';
+                row++;
+            }
+        }
+
         // ═══════════════════════════════════════════════════════════════════════
         //  Helpers
         // ═══════════════════════════════════════════════════════════════════════

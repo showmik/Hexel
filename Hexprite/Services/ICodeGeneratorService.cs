@@ -45,5 +45,10 @@ namespace Hexprite.Services
         /// Parses an XBM array back into the canvas (LSB-first, bit-reversed).
         /// </summary>
         void ParseXbmToState(string code, SpriteState state);
+
+        /// <summary>
+        /// Parses a raw binary string back into the canvas.
+        /// </summary>
+        void ParseBinaryToState(string code, SpriteState state);
     }
 }
