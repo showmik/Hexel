@@ -173,6 +173,35 @@ namespace Hexprite
 
         private void OnToolChanged(object? s, EventArgs e)
         {
+            if (ViewModel != null && _selection != null)
+            {
+                if (_selection.IsSelecting)
+                {
+                    _selection.Cancel();
+                }
+
+                if (_selection.IsFloating)
+                {
+                    var oldMask = _selection.Mask;
+                    var oldMinX = _selection.MinX;
+                    var oldMinY = _selection.MinY;
+                    var oldMaxX = _selection.MaxX;
+                    var oldMaxY = _selection.MaxY;
+
+                    ViewModel.SaveStateForUndo();
+                    _selection.CommitSelection(ViewModel.SpriteState);
+                    ViewModel.RedrawGridFromMemory();
+                    ViewModel.MarkCodeStale();
+
+                    if (oldMinX != -1 && oldMask != null)
+                    {
+                        _selection.ApplyMask(oldMask, oldMinX, oldMinY, oldMaxX, oldMaxY, Hexprite.Core.SelectionMode.Replace);
+                    }
+                }
+
+                ViewModel.CancelInProgressDrawing();
+            }
+
             // Pure View concern: hide brush cursor when tool isn't Pencil
             if (ViewModel != null && ViewModel.CurrentTool != ToolMode.Pencil)
                 _brushCursor.Hide();

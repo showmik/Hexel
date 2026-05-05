@@ -60,7 +60,7 @@ namespace Hexprite.Rendering
 
             // Clip preview to the active selection (if any)
             var sel = _ctx.SelectionService;
-            if (sel.HasActiveSelection && !sel.IsFloating && !sel.IsPixelInSelection(x, y))
+            if (sel.HasActiveSelection && !sel.IsPixelInSelection(x, y))
                 return;
 
             int i = (y * w) + x;

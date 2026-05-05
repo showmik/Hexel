@@ -22,7 +22,6 @@ namespace Hexprite.Services
         {
             return _activeClip != null
                 && _activeClip.HasActiveSelection
-                && !_activeClip.IsFloating
                 && !_activeClip.IsPixelInSelection(x, y);
         }
 

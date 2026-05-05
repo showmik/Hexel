@@ -19,6 +19,7 @@ namespace Hexprite.Controllers
 
         private int _selectionAnchorX = -1;
         private int _selectionAnchorY = -1;
+        private bool _wasSelectionActiveOnDown;
 
         public SelectionInputController(
             MainViewModel vm,
@@ -102,9 +103,14 @@ namespace Hexprite.Controllers
                 return;
             }
 
+            // Capture if a selection exists BEFORE we potentially commit it in Replace mode
+            _wasSelectionActiveOnDown = _selection.HasActiveSelection;
+
             if (mode == SelectionMode.Replace)
             {
                 CommitIfActive();
+                // If we committed, the new selection is starting fresh, so we allow constraint
+                _wasSelectionActiveOnDown = false;
             }
             else if (_selection.IsFloating)
             {
@@ -171,8 +177,9 @@ namespace Hexprite.Controllers
             }
             else
             {
-                // Constrain to square when Shift is held
-                if (isShiftDown && _selectionAnchorX != -1 && _selectionAnchorY != -1)
+                // Constrain to square when Shift is held, but only if we didn't start 
+                // with an existing selection (in which case Shift is purely for 'Add' mode)
+                if (isShiftDown && !_wasSelectionActiveOnDown && _selectionAnchorX != -1 && _selectionAnchorY != -1)
                 {
                     int dx = x - _selectionAnchorX;
                     int dy = y - _selectionAnchorY;
