@@ -73,13 +73,14 @@
                     Command="{Binding ImportFromCodeMenuCommand}" />
     </Window.InputBindings>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Border BorderThickness="1" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
         <!-- ═══════════════════════════════════════════════════════════════
              CUSTOM TITLE BAR (menu + caption buttons)
@@ -514,5 +515,6 @@
             </StackPanel>
         </Grid>
 
-    </Grid>
+        </Grid>
+    </Border>
 </Window>

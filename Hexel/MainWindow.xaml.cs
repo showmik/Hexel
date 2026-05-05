@@ -554,14 +554,17 @@ namespace Hexel
         private void CaptionMaximize_Click(object sender, RoutedEventArgs e)
         {
             if (WindowState == WindowState.Maximized)
-            {
                 WindowState = WindowState.Normal;
-                MaximizeIcon.Text = "\uE922"; // maximize glyph
-            }
             else
-            {
                 WindowState = WindowState.Maximized;
-                MaximizeIcon.Text = "\uE923"; // restore glyph
+        }
+
+        protected override void OnStateChanged(EventArgs e)
+        {
+            base.OnStateChanged(e);
+            if (MaximizeIcon != null)
+            {
+                MaximizeIcon.Text = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
             }
         }
 
