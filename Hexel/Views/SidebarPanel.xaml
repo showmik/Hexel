@@ -365,9 +365,9 @@
                                         CornerRadius="4"
                                         Margin="8,0,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Content="-" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextBrush}" Command="{Binding DecreasePreviewScaleCommand}"/>
-                                        <TextBlock Text="{Binding PreviewScale}" VerticalAlignment="Center" Width="24" TextAlignment="Center" Foreground="{DynamicResource Theme.TextBrush}"/>
-                                        <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextBrush}" Command="{Binding IncreasePreviewScaleCommand}"/>
+                                        <Button Content="-" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextMainBrush}" Command="{Binding DecreasePreviewScaleCommand}"/>
+                                        <TextBlock Text="{Binding PreviewScale}" VerticalAlignment="Center" Width="24" TextAlignment="Center" Foreground="{DynamicResource Theme.TextMainBrush}"/>
+                                        <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextMainBrush}" Command="{Binding IncreasePreviewScaleCommand}"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
