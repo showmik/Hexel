@@ -105,79 +105,89 @@ namespace Hexprite.Services
             maxX = startX;
             maxY = startY;
 
-            var mask = new bool[state.Width, state.Height];
-
             if (startX < 0 || startX >= state.Width || startY < 0 || startY >= state.Height)
-                return mask;
+                return new bool[state.Width, state.Height];
 
-            int startIndex = (startY * state.Width) + startX;
-            bool targetState = state.Pixels[startIndex];
+            int total = state.Width * state.Height;
+            bool[] pooledMask = System.Buffers.ArrayPool<bool>.Shared.Rent(total);
 
-            var queue = new Queue<int>();
-            queue.Enqueue(startIndex);
-            mask[startX, startY] = true;
-
-            while (queue.Count > 0)
+            try
             {
-                int current = queue.Dequeue();
-                int x = current % state.Width;
-                int y = current / state.Width;
+                Array.Clear(pooledMask, 0, total);
 
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
+                int startIndex = (startY * state.Width) + startX;
+                bool targetState = state.Pixels[startIndex];
 
-                if (x > 0)
+                var queue = new Queue<int>();
+                queue.Enqueue(startIndex);
+                pooledMask[startIndex] = true;
+
+                while (queue.Count > 0)
                 {
-                    int idx = current - 1;
-                    if (state.Pixels[idx] == targetState && !mask[x - 1, y])
+                    int current = queue.Dequeue();
+                    int x = current % state.Width;
+                    int y = current / state.Width;
+
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+
+                    if (x > 0)
                     {
-                        mask[x - 1, y] = true;
-                        queue.Enqueue(idx);
+                        int idx = current - 1;
+                        if (state.Pixels[idx] == targetState && !pooledMask[idx])
+                        {
+                            pooledMask[idx] = true;
+                            queue.Enqueue(idx);
+                        }
+                    }
+                    if (x < state.Width - 1)
+                    {
+                        int idx = current + 1;
+                        if (state.Pixels[idx] == targetState && !pooledMask[idx])
+                        {
+                            pooledMask[idx] = true;
+                            queue.Enqueue(idx);
+                        }
+                    }
+                    if (y > 0)
+                    {
+                        int idx = current - state.Width;
+                        if (state.Pixels[idx] == targetState && !pooledMask[idx])
+                        {
+                            pooledMask[idx] = true;
+                            queue.Enqueue(idx);
+                        }
+                    }
+                    if (y < state.Height - 1)
+                    {
+                        int idx = current + state.Width;
+                        if (state.Pixels[idx] == targetState && !pooledMask[idx])
+                        {
+                            pooledMask[idx] = true;
+                            queue.Enqueue(idx);
+                        }
                     }
                 }
-                if (x < state.Width - 1)
+
+                int w = maxX - minX + 1;
+                int h = maxY - minY + 1;
+                var croppedMask = new bool[w, h];
+                for (int y = minY; y <= maxY; y++)
                 {
-                    int idx = current + 1;
-                    if (state.Pixels[idx] == targetState && !mask[x + 1, y])
+                    for (int x = minX; x <= maxX; x++)
                     {
-                        mask[x + 1, y] = true;
-                        queue.Enqueue(idx);
+                        croppedMask[x - minX, y - minY] = pooledMask[(y * state.Width) + x];
                     }
                 }
-                if (y > 0)
-                {
-                    int idx = current - state.Width;
-                    if (state.Pixels[idx] == targetState && !mask[x, y - 1])
-                    {
-                        mask[x, y - 1] = true;
-                        queue.Enqueue(idx);
-                    }
-                }
-                if (y < state.Height - 1)
-                {
-                    int idx = current + state.Width;
-                    if (state.Pixels[idx] == targetState && !mask[x, y + 1])
-                    {
-                        mask[x, y + 1] = true;
-                        queue.Enqueue(idx);
-                    }
-                }
+
+                return croppedMask;
             }
-
-            int w = maxX - minX + 1;
-            int h = maxY - minY + 1;
-            var croppedMask = new bool[w, h];
-            for (int y = minY; y <= maxY; y++)
+            finally
             {
-                for (int x = minX; x <= maxX; x++)
-                {
-                    croppedMask[x - minX, y - minY] = mask[x, y];
-                }
+                System.Buffers.ArrayPool<bool>.Shared.Return(pooledMask);
             }
-
-            return croppedMask;
         }
 
         // ── Brush stamp ───────────────────────────────────────────────────
