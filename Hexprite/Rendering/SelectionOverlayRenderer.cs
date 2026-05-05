@@ -157,13 +157,14 @@ namespace Hexprite.Rendering
 
             if (mask != null)
             {
-                var edgesByStart = new Dictionary<(int, int), List<(int, int)>>();
+                int estimatedEdges = (maskW + maskH) * 2;
+                var edgesByStart = new Dictionary<(int, int), List<(int, int)>>(estimatedEdges);
 
                 Action<int, int, int, int> addEdge = (x1, y1, x2, y2) =>
                 {
                     if (!edgesByStart.TryGetValue((x1, y1), out var list))
                     {
-                        list = new List<(int, int)>();
+                        list = new List<(int, int)>(2);
                         edgesByStart[(x1, y1)] = list;
                     }
                     list.Add((x2, y2));
