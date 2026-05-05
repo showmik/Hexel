@@ -416,7 +416,9 @@ namespace Hexprite.Services
             ExportSettings cfg, string hexFmt, string rowPrefix)
         {
             int bytesPerRow = BytesPerRow(s.Width);
-            string sep     = cfg.UseCommaSeparator ? ", " : " ";
+            bool useComma = cfg.UseCommaSeparator || 
+                            !(cfg.Format == ExportFormat.RawHex || cfg.Format == ExportFormat.RawBinary);
+            string sep     = useComma ? ", " : " ";
             int lineLen    = cfg.BytesPerLine <= 0 ? bytesPerRow : cfg.BytesPerLine;
             int totalBytes = data.Length;
 
@@ -455,7 +457,7 @@ namespace Hexprite.Services
                     // Trailing comma keeps C/Python syntax valid for all-but-last rows
                     bool emitComment = cfg.IncludeRowComments
                         && (cfg.BytesPerLine <= 0 || posInRow + 1 == bytesPerRow);
-                    string trail = cfg.UseCommaSeparator ? "," : "";
+                    string trail = useComma ? "," : "";
                     if (emitComment)
                         sb.Append($"{trail}  // row {rowIndex}");
                     else if (trail.Length > 0)

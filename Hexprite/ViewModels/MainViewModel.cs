@@ -208,8 +208,19 @@ namespace Hexprite.ViewModels
         public ExportFormat ExportFormat
         {
             get => _exportSettings.Format;
-            set { if (_exportSettings.Format != value) { _exportSettings.Format = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set 
+            { 
+                if (_exportSettings.Format != value) 
+                { 
+                    _exportSettings.Format = value; 
+                    OnPropertyChanged(); 
+                    OnPropertyChanged(nameof(IsCommaSeparatorEnabled));
+                    UpdateTextOutputs(); 
+                } 
+            }
         }
+
+        public bool IsCommaSeparatorEnabled => ExportFormat == ExportFormat.RawHex || ExportFormat == ExportFormat.RawBinary;
 
         public string SpriteName
         {
