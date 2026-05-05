@@ -220,9 +220,8 @@ namespace Hexprite.Rendering
             int stampW = maxDx - minDx + 1;
             int stampH = maxDy - minDy + 1;
 
-            const double shrink = 0.85;
-            _cachedOverlayW = stampW * cw * shrink;
-            _cachedOverlayH = stampH * ch * shrink;
+            _cachedOverlayW = stampW * cw;
+            _cachedOverlayH = stampH * ch;
             _cachedHalfW = _cachedOverlayW / 2.0;
             _cachedHalfH = _cachedOverlayH / 2.0;
 
