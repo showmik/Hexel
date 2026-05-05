@@ -1,0 +1,76 @@
+<UserControl x:Class="Hexprite.Views.StatusBarPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="30" d:DesignWidth="800">
+    <Border>
+        <Border.Style>
+            <Style TargetType="Border" BasedOn="{StaticResource StatusBarPanel}">
+                <Setter Property="Visibility" Value="Visible" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Tool Name -->
+            <TextBlock Grid.Column="0"
+                       Text="{Binding CurrentTool, StringFormat={}Tool: {0}}"
+                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       VerticalAlignment="Center"
+                       Margin="0,0,15,0" />
+
+            <!-- Coordinates -->
+            <TextBlock Grid.Column="1"
+                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       VerticalAlignment="Center"
+                       Margin="0,0,15,0">
+                <Run Text="X: " /><Run Text="{Binding CursorX}" /><Run Text=", Y: " /><Run Text="{Binding CursorY}" />
+            </TextBlock>
+
+            <!-- Canvas Dimensions -->
+            <TextBlock Grid.Column="2"
+                       Text="{Binding CanvasDimensionText}"
+                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       VerticalAlignment="Center"
+                       Margin="0,0,15,0" />
+
+            <!-- Zoom Level -->
+            <TextBlock Grid.Column="3"
+                       Text="{Binding ZoomLevel, StringFormat={}Zoom: {0:F1}x}"
+                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       VerticalAlignment="Center" />
+
+            <!-- Status message (right-aligned, data-bound) -->
+            <TextBlock Grid.Column="4"
+                       Text="{Binding StatusMessage}"
+                       Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Right"
+                       Padding="0">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusMessage}" Value="">
+                                <Setter Property="Visibility" Value="Hidden" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
+    </Border>
+</UserControl>
