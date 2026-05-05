@@ -25,7 +25,7 @@ namespace Hexprite.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IThemeService _themeService;
 
-        private const string FileFilter = "Hexprite Sprite (*.Hexprite)|*.Hexprite|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
+        private const string FileFilter = "Hexprite Sprite (*.hexprite)|*.hexprite|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
 
         public const int MaxTabs = 10;
 
@@ -213,7 +213,7 @@ namespace Hexprite.ViewModels
         {
             if (ActiveDocument == null) return;
 
-            var path = _dialogService.ShowSaveFileDialog(FileFilter, "Save Sprite", ".Hexprite");
+            var path = _dialogService.ShowSaveFileDialog(FileFilter, "Save Sprite", ".hexprite");
             if (path != null)
                 SaveToPath(ActiveDocument, path);
         }
@@ -262,8 +262,8 @@ namespace Hexprite.ViewModels
                     else
                     {
                         var path = _dialogService.ShowSaveFileDialog(
-                            "Hexprite Sprite (*.Hexprite)|*.Hexprite|All Files (*.*)|*.*",
-                            "Save Sprite", ".Hexprite");
+                            "Hexprite Sprite (*.hexprite)|*.hexprite|All Files (*.*)|*.*",
+                            "Save Sprite", ".hexprite");
                         if (path != null)
                             SaveToPath(doc, path);
                         else
