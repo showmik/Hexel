@@ -13,7 +13,8 @@
         FontFamily="{DynamicResource Theme.MainFont}"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        AllowsTransparency="False">
+        AllowsTransparency="False"
+        core:WindowChromeHelper.ForceRoundedCorners="True">
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="34"
@@ -73,7 +74,7 @@
                     Command="{Binding ImportFromCodeMenuCommand}" />
     </Window.InputBindings>
 
-    <Border BorderThickness="1" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
+    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

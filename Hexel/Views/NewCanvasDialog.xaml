@@ -1,6 +1,7 @@
 <Window x:Class="Hexel.Views.NewCanvasDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="clr-namespace:Hexel.Core"
         xmlns:vm="clr-namespace:Hexel.ViewModels"
         Title="New Canvas"
         Width="380" Height="320"
@@ -10,7 +11,8 @@
         FontFamily="{DynamicResource Theme.MainFont}"
         ShowInTaskbar="False"
         WindowStyle="None"
-        AllowsTransparency="False">
+        AllowsTransparency="False"
+        core:WindowChromeHelper.ForceRoundedCorners="True">
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="34"
@@ -20,7 +22,7 @@
                       UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
 
-    <Border BorderThickness="1" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
+    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
