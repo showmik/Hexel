@@ -13,16 +13,21 @@
             BorderThickness="1,0,0,0">
         <DockPanel LastChildFill="True">
 
-            <!-- ═══════════════════════════════════════════════════════
-                 OLED PREVIEW (collapsible, dynamic size)
-                 ═══════════════════════════════════════════════════════ -->
-            <Border DockPanel.Dock="Bottom"
-                    Background="{DynamicResource Theme.SurfaceOverlayBrush}"
-                    CornerRadius="8"
-                    BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
-                    BorderThickness="1"
-                    Margin="12,12,12,12"
-                    Padding="16,12,16,16">
+            <ScrollViewer x:Name="MainScroll"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Style="{StaticResource {x:Type ScrollViewer}}">
+                <StackPanel>
+
+                <!-- ═══════════════════════════════════════════════════════
+                     OLED PREVIEW (collapsible, dynamic size)
+                     ═══════════════════════════════════════════════════════ -->
+                <Border Background="{DynamicResource Theme.SurfaceOverlayBrush}"
+                        CornerRadius="8"
+                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                        BorderThickness="1"
+                        Margin="12,12,12,0"
+                        Padding="16,12,16,16">
                 <Border.Effect>
                     <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
                 </Border.Effect>
@@ -114,6 +119,7 @@
                             </Grid>
                             <TextBlock Margin="0,8,0,0"
                                        FontSize="10"
+                                       HorizontalAlignment="Center"
                                        Foreground="{DynamicResource Theme.TextMutedBrush}">
                                 <Run Text="Preview: "/>
                                 <Run Text="{Binding SpriteState.Width, Mode=OneWay}"/>
@@ -126,11 +132,6 @@
                     </Expander>
                 </StackPanel>
             </Border>
-
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Style="{StaticResource {x:Type ScrollViewer}}">
-                <StackPanel>
 
                 <!-- ═══════════════════════════════════════════════════════
                      EXPORT PANEL
@@ -157,7 +158,7 @@
                     <ComboBox x:Name="CboFormat"
                               Style="{StaticResource ModernComboBoxStyle}"
                               Height="30"
-                              Margin="0,0,0,10"
+                              Margin="0,0,0,16"
                               SelectedIndex="0"
                               SelectionChanged="CboFormat_SelectionChanged">
                         <ComboBoxItem Content="Adafruit GFX  (PROGMEM, MSB first)"    Tag="AdafruitGfx"/>
@@ -200,7 +201,7 @@
                                 <!-- Checkbox Grid for perfect alignment -->
                                 <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="135"/>
+                                        <ColumnDefinition Width="145"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
@@ -241,7 +242,7 @@
                                 <TextBlock Text="Bytes per line"
                                            Foreground="{DynamicResource Theme.TextMutedBrush}"
                                            FontSize="11"
-                                           Margin="0,0,0,5"/>
+                                           Margin="0,0,0,4"/>
                                 <WrapPanel Margin="0,0,0,12">
                                     <RadioButton x:Name="RbBpl0"
                                                  Content="canvas width"
@@ -249,19 +250,22 @@
                                                  Style="{StaticResource ChipButtonStyle}"
                                                  IsChecked="True"
                                                  Checked="BplChip_Checked"
-                                                 Tag="0"/>
+                                                 Tag="0"
+                                                 Margin="0,0,8,0"/>
                                     <RadioButton x:Name="RbBpl4"
                                                  Content="4"
                                                  GroupName="BytesPerLine"
                                                  Style="{StaticResource ChipButtonStyle}"
                                                  Checked="BplChip_Checked"
-                                                 Tag="4"/>
+                                                 Tag="4"
+                                                 Margin="0,0,8,0"/>
                                     <RadioButton x:Name="RbBpl8"
                                                  Content="8"
                                                  GroupName="BytesPerLine"
                                                  Style="{StaticResource ChipButtonStyle}"
                                                  Checked="BplChip_Checked"
-                                                 Tag="8"/>
+                                                 Tag="8"
+                                                 Margin="0,0,8,0"/>
                                     <RadioButton x:Name="RbBpl16"
                                                  Content="16"
                                                  GroupName="BytesPerLine"
@@ -274,7 +278,7 @@
                                 <TextBlock Text="Hex digits"
                                            Foreground="{DynamicResource Theme.TextMutedBrush}"
                                            FontSize="11"
-                                           Margin="0,0,0,5"/>
+                                           Margin="0,0,0,4"/>
                                 <StackPanel Orientation="Horizontal">
                                     <RadioButton x:Name="RbHexUpper"
                                                  Content="0xFF"
@@ -282,7 +286,8 @@
                                                  Style="{StaticResource ChipButtonStyle}"
                                                  IsChecked="True"
                                                  Checked="HexCase_Checked"
-                                                 Tag="upper"/>
+                                                 Tag="upper"
+                                                 Margin="0,0,8,0"/>
                                     <RadioButton x:Name="RbHexLower"
                                                  Content="0xff"
                                                  GroupName="HexCase"
@@ -327,11 +332,11 @@
                             <ScrollViewer Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Auto"
-                                          Background="Transparent"
-                                          Padding="8">
+                                          Background="Transparent">
                                 <rendering:SyntaxHighlightBox x:Name="CodeOutputBox"
                                                               FontFamily="{DynamicResource Theme.CodeFont}"
-                                                              FontSize="12"/>
+                                                              FontSize="12"
+                                                              Margin="8"/>
                             </ScrollViewer>
                         </Grid>
                     </Border>
@@ -408,7 +413,7 @@
                         CornerRadius="8"
                         BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
                         BorderThickness="1"
-                        Margin="12,12,12,0"
+                        Margin="12,12,12,12"
                         Padding="16,20,16,20">
                     <Border.Effect>
                         <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
