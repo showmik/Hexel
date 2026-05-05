@@ -215,9 +215,9 @@ namespace Hexprite.Services
                     double cos = Math.Cos(rad), sin = Math.Sin(rad);
                     var set = new HashSet<(int, int)>();
 
-                    for (int dy = -half; dy <= half + (brushSize % 2 == 0 ? 0 : 0); dy++)
+                    for (int dy = -half; dy <= half + (brushSize % 2 == 0 ? 1 : 0); dy++)
                     {
-                        for (int dx = -half; dx <= half; dx++)
+                        for (int dx = -half; dx <= half + (brushSize % 2 == 0 ? 1 : 0); dx++)
                         {
                             int rx = (int)Math.Round(dx * cos - dy * sin);
                             int ry = (int)Math.Round(dx * sin + dy * cos);
