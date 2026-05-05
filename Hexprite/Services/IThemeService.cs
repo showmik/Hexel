@@ -8,6 +8,9 @@ namespace Hexprite.Services
         /// <summary>Gets the name of the currently applied theme ("Dark" or "Light").</summary>
         string CurrentTheme { get; }
 
+        /// <summary>Loads the persisted theme (if any) and applies it immediately.</summary>
+        void Initialize();
+
         /// <summary>
         /// Switches the active theme by swapping the color ResourceDictionary.
         /// </summary>

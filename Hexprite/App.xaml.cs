@@ -19,7 +19,8 @@ namespace Hexprite
             _serviceProvider = services.BuildServiceProvider();
 
             // Apply the persisted theme before showing any UI
-            var themeService = (ThemeService)_serviceProvider.GetRequiredService<IThemeService>();
+            // FIX: Use the interface directly without downcasting to the concrete type.
+            var themeService = _serviceProvider.GetRequiredService<IThemeService>();
             themeService.Initialize();
 
             _serviceProvider.GetRequiredService<MainWindow>().Show();
