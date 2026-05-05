@@ -102,14 +102,8 @@
                         VerticalAlignment="Center"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="{DynamicResource Color.BrandGradientStart}" Offset="0"/>
-                            <GradientStop Color="{DynamicResource Color.BrandGradientEnd}" Offset="1"/>
-                        </LinearGradientBrush>
+                        <ImageBrush ImageSource="pack://application:,,,/Assets/AppIcon.png" Stretch="UniformToFill" />
                     </Border.Background>
-                    <TextBlock Text="&#xE131;" FontFamily="Segoe MDL2 Assets"
-                               FontSize="11" Foreground="{DynamicResource Theme.TextOnAccentBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
 
                 <!-- Menu bar -->
@@ -407,21 +401,12 @@
                         HorizontalAlignment="Center"
                         Margin="0,0,0,20">
                     <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="{DynamicResource Color.BrandGradientStart}" Offset="0"/>
-                            <GradientStop Color="{DynamicResource Color.BrandGradientEnd}" Offset="1"/>
-                        </LinearGradientBrush>
+                        <ImageBrush ImageSource="pack://application:,,,/Assets/AppIcon.png" Stretch="UniformToFill" />
                     </Border.Background>
                     <Border.Effect>
                         <DropShadowEffect Color="{DynamicResource Color.BrandGradientStart}" BlurRadius="20" Opacity="0.3"
                                           Direction="270" ShadowDepth="4"/>
                     </Border.Effect>
-                    <TextBlock Text="&#xE131;" 
-                               FontFamily="Segoe MDL2 Assets" 
-                               FontSize="32" 
-                               Foreground="{DynamicResource Theme.TextOnAccentBrush}" 
-                               HorizontalAlignment="Center" 
-                               VerticalAlignment="Center" />
                 </Border>
                 <TextBlock Text="Welcome to Hexprite" 
                            FontSize="26" 

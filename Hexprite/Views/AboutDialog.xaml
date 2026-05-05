@@ -62,14 +62,10 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
             <Border Width="48" Height="48"
                     CornerRadius="10"
-                    Background="{DynamicResource Theme.PrimaryAccentBrush}"
                     Margin="0,0,14,0">
-                <TextBlock Text="&#xE131;"
-                           FontFamily="Segoe MDL2 Assets"
-                           FontSize="24"
-                           Foreground="{DynamicResource Theme.TextInverseBrush}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
+                <Border.Background>
+                    <ImageBrush ImageSource="pack://application:,,,/Assets/AppIcon.png" Stretch="UniformToFill" />
+                </Border.Background>
             </Border>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="Hexprite"
@@ -135,20 +131,20 @@
                     <ColumnDefinition Width="100" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="GitHub"
+                <TextBlock Text="Website"
                            Foreground="{DynamicResource Theme.TextMutedBrush}"
                            FontSize="12" />
                 <TextBlock Grid.Column="1"
                            FontSize="12">
-                    <Hyperlink x:Name="GitHubLink"
-                               NavigateUri="https://github.com/showmik/Hexprite"
+                    <Hyperlink x:Name="WebsiteLink"
+                               NavigateUri="https://hexprite.com"
                                RequestNavigate="Hyperlink_RequestNavigate">
                         <Hyperlink.Style>
                             <Style TargetType="Hyperlink">
                                 <Setter Property="Foreground" Value="{DynamicResource Theme.PrimaryAccentBrush}" />
                             </Style>
                         </Hyperlink.Style>
-                        github.com/showmik/Hexprite
+                        https://hexprite.com
                     </Hyperlink>
                 </TextBlock>
             </Grid>
@@ -156,7 +152,7 @@
 
         <!-- Copyright -->
         <TextBlock Grid.Row="4"
-                   Text="© 2026 Showmik. All rights reserved."
+                           Text="© 2026 Intisar Bin Naim — All rights reserved."
                    Foreground="{DynamicResource Theme.TextMutedBrush}"
                    FontSize="11"
                    VerticalAlignment="Bottom"

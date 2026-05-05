@@ -355,7 +355,7 @@ namespace Hexprite.ViewModels
 
         private void ExecuteOpenDocumentation()
         {
-            Process.Start(new ProcessStartInfo("https://github.com/showmik/Hexprite") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo("https://hexprite.com") { UseShellExecute = true });
         }
 
         private void ExecuteShowAbout()
