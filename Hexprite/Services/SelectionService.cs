@@ -139,7 +139,6 @@ namespace Hexprite.Services
             _dragMinY = Math.Min(_dragMinY, y);
             _dragMaxY = Math.Max(_dragMaxY, y);
             
-            RecomputeCombinedSelection();
             Notify();
         }
 
@@ -303,6 +302,11 @@ namespace Hexprite.Services
 
         public void FinalizeSelection()
         {
+            if (_lassoPoints.Count > 0)
+            {
+                RecomputeCombinedSelection();
+            }
+
             if (MinX == -1 || MaxX == -1 || MinY == -1 || MaxY == -1)
             {
                 Cancel();

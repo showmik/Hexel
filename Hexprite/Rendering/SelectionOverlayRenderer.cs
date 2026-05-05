@@ -134,6 +134,27 @@ namespace Hexprite.Rendering
 
             var groupGeom = new GeometryGroup();
 
+            // NEW: Hardware-accelerated vector preview during lasso drag
+            // We removed the `mask == null` check because during Add/Subtract modes,
+            // or after the initial 1x1 point calculation, mask is not null, but we still need the preview.
+            if (sel.IsSelecting && sel.LassoPoints.Count > 1)
+            {
+                var dragGeom = new StreamGeometry();
+                using (var ctx = dragGeom.Open())
+                {
+                    // Start at the first point
+                    ctx.BeginFigure(new Point(sel.LassoPoints[0].X * cw, sel.LassoPoints[0].Y * ch), isFilled: true, isClosed: true);
+                    
+                    // Draw lines to all subsequent points
+                    for (int i = 1; i < sel.LassoPoints.Count; i++)
+                    {
+                        ctx.LineTo(new Point(sel.LassoPoints[i].X * cw, sel.LassoPoints[i].Y * ch), isStroked: true, isSmoothJoin: false);
+                    }
+                }
+                dragGeom.Freeze();
+                groupGeom.Children.Add(dragGeom);
+            }
+
             if (mask != null)
             {
                 var edgesByStart = new Dictionary<(int, int), List<(int, int)>>();
