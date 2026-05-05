@@ -191,12 +191,12 @@
                      Color="{StaticResource Color.Success}" />
 
     <!-- ═══════════════════════════════════════════════════════════
-         Syntax highlighting (VS Code Dark palette)
+         Syntax highlighting (High Contrast Dark palette)
          ═══════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="Syntax.KeywordBrush"  Color="#569CD6"/>
-    <SolidColorBrush x:Key="Syntax.LiteralBrush"  Color="#B5CEA8"/>
-    <SolidColorBrush x:Key="Syntax.CommentBrush"  Color="#6A9955"/>
-    <SolidColorBrush x:Key="Syntax.IdentifierBrush" Color="#9CDCFE"/>
-    <SolidColorBrush x:Key="Syntax.PunctuationBrush" Color="#D4D4D4"/>
+    <SolidColorBrush x:Key="Syntax.KeywordBrush"  Color="#82AAFF"/>
+    <SolidColorBrush x:Key="Syntax.LiteralBrush"  Color="#C3E88D"/>
+    <SolidColorBrush x:Key="Syntax.CommentBrush"  Color="#8993A4"/>
+    <SolidColorBrush x:Key="Syntax.IdentifierBrush" Color="#89DDFF"/>
+    <SolidColorBrush x:Key="Syntax.PunctuationBrush" Color="#BFC7D5"/>
 
 </ResourceDictionary>
