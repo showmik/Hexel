@@ -332,7 +332,7 @@
                     </Border.Effect>
                 <StackPanel>
                     <Expander Style="{StaticResource ModernExpanderStyle}"
-                              IsExpanded="False">
+                              IsExpanded="True">
                         <Expander.Header>
                             <TextBlock Text="DISPLAY PREVIEW"
                                        Style="{StaticResource HeaderStyle}"
@@ -340,6 +340,37 @@
                                        VerticalAlignment="Center"/>
                         </Expander.Header>
                         <StackPanel Margin="0,16,0,0">
+
+                            <!-- Display options -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ComboBox Grid.Column="0"
+                                          Height="26"
+                                          Style="{StaticResource ModernComboBoxStyle}"
+                                          SelectedIndex="{Binding PreviewDisplayTypeIndex}">
+                                    <ComboBoxItem Content="Generic (White)"/>
+                                    <ComboBoxItem Content="SSD1306 (Blue)"/>
+                                    <ComboBoxItem Content="SSD1306 (Green)"/>
+                                    <ComboBoxItem Content="e-Paper"/>
+                                </ComboBox>
+
+                                <Border Grid.Column="1"
+                                        Background="{DynamicResource Theme.BackgroundBrush}"
+                                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Margin="8,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="-" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextBrush}" Command="{Binding DecreasePreviewScaleCommand}"/>
+                                        <TextBlock Text="{Binding PreviewScale}" VerticalAlignment="Center" Width="24" TextAlignment="Center" Foreground="{DynamicResource Theme.TextBrush}"/>
+                                        <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextBrush}" Command="{Binding IncreasePreviewScaleCommand}"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
 
                             <!-- Dynamic canvas preview -->
                             <Border BorderBrush="{DynamicResource Theme.BackgroundBrush}"
@@ -389,7 +420,8 @@
                                 <Run Text="{Binding SpriteState.Width, Mode=OneWay}"/>
                                 <Run Text="×"/>
                                 <Run Text="{Binding SpriteState.Height, Mode=OneWay}"/>
-                                <Run Text=" px (2× scale)"/>
+                                <Run Text=" px "/>
+                                <Run Text="{Binding PreviewScaleText, Mode=OneWay}"/>
                             </TextBlock>
                         </StackPanel>
                     </Expander>

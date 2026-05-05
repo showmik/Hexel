@@ -14,6 +14,14 @@ using System.Windows.Media.Imaging;
 
 namespace Hexel.ViewModels
 {
+    public enum DisplayType
+    {
+        Generic_White,
+        SSD1306_Blue,
+        SSD1306_Green,
+        ePaper
+    }
+
     public class MainViewModel : ObservableObject, IBitmapBufferContext
     {
         // ── Services ──────────────────────────────────────────────────────
@@ -324,8 +332,40 @@ namespace Hexel.ViewModels
         public double SelectionStrokeThickness => SpriteState != null
             ? Math.Max(0.5, CellSize * 0.08)
             : 2.0;
-        public int PreviewWidth => (SpriteState?.Width ?? 16) * 2;
-        public int PreviewHeight => (SpriteState?.Height ?? 16) * 2;
+        public int PreviewWidth => (SpriteState?.Width ?? 16) * PreviewScale;
+        public int PreviewHeight => (SpriteState?.Height ?? 16) * PreviewScale;
+
+        private int _previewScale = 2;
+        public int PreviewScale
+        {
+            get => _previewScale;
+            set
+            {
+                if (SetProperty(ref _previewScale, Math.Max(1, value)))
+                {
+                    OnPropertyChanged(nameof(PreviewWidth));
+                    OnPropertyChanged(nameof(PreviewHeight));
+                    OnPropertyChanged(nameof(PreviewScaleText));
+                }
+            }
+        }
+
+        public string PreviewScaleText => $"({PreviewScale}× scale)";
+
+        private DisplayType _previewDisplayType = DisplayType.Generic_White;
+        public int PreviewDisplayTypeIndex
+        {
+            get => (int)_previewDisplayType;
+            set
+            {
+                if (_previewDisplayType != (DisplayType)value)
+                {
+                    _previewDisplayType = (DisplayType)value;
+                    OnPropertyChanged();
+                    RefreshCanvasColors();
+                }
+            }
+        }
 
         // ── WritableBitmaps ───────────────────────────────────────────────
         private WriteableBitmap _canvasBitmap = null!;
@@ -392,6 +432,8 @@ namespace Hexel.ViewModels
         public IRelayCommand PasteCommand { get; }
         public IRelayCommand DeselectCommand { get; }
         public IRelayCommand<string> SelectToolCommand { get; }
+        public IRelayCommand IncreasePreviewScaleCommand { get; }
+        public IRelayCommand DecreasePreviewScaleCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
@@ -531,6 +573,8 @@ namespace Hexel.ViewModels
             });
 
             SelectToolCommand = new RelayCommand<string>(ExecuteSelectTool);
+            IncreasePreviewScaleCommand = new RelayCommand(() => PreviewScale++);
+            DecreasePreviewScaleCommand = new RelayCommand(() => PreviewScale--);
 
             // ── Initialization ────────────────────────────────────────────
             InitializeBrushColors();
@@ -613,15 +657,15 @@ namespace Hexel.ViewModels
 
             return anchor switch
             {
-                ResizeAnchor.TopLeft      => (0,      0),
-                ResizeAnchor.TopCenter    => (dx / 2, 0),
-                ResizeAnchor.TopRight     => (dx,     0),
-                ResizeAnchor.CenterLeft   => (0,      dy / 2),
-                ResizeAnchor.Center       => (dx / 2, dy / 2),
-                ResizeAnchor.CenterRight  => (dx,     dy / 2),
-                ResizeAnchor.BottomLeft   => (0,      dy),
+                ResizeAnchor.TopLeft => (0, 0),
+                ResizeAnchor.TopCenter => (dx / 2, 0),
+                ResizeAnchor.TopRight => (dx, 0),
+                ResizeAnchor.CenterLeft => (0, dy / 2),
+                ResizeAnchor.Center => (dx / 2, dy / 2),
+                ResizeAnchor.CenterRight => (dx, dy / 2),
+                ResizeAnchor.BottomLeft => (0, dy),
                 ResizeAnchor.BottomCenter => (dx / 2, dy),
-                ResizeAnchor.BottomRight  => (dx,     dy),
+                ResizeAnchor.BottomRight => (dx, dy),
                 _ => (0, 0)
             };
         }
@@ -775,15 +819,15 @@ namespace Hexel.ViewModels
             // Snapshot settings to avoid reading them from a different thread
             var settingsSnapshot = new ExportSettings
             {
-                Format                   = _exportSettings.Format,
-                SpriteName               = _exportSettings.SpriteName,
-                IncludeUsageComment      = _exportSettings.IncludeUsageComment,
+                Format = _exportSettings.Format,
+                SpriteName = _exportSettings.SpriteName,
+                IncludeUsageComment = _exportSettings.IncludeUsageComment,
                 IncludeDimensionConstants = _exportSettings.IncludeDimensionConstants,
-                UseCommaSeparator        = _exportSettings.UseCommaSeparator,
-                BytesPerLine             = _exportSettings.BytesPerLine,
-                UppercaseHex             = _exportSettings.UppercaseHex,
-                IncludeRowComments       = _exportSettings.IncludeRowComments,
-                IncludeArraySize         = _exportSettings.IncludeArraySize,
+                UseCommaSeparator = _exportSettings.UseCommaSeparator,
+                BytesPerLine = _exportSettings.BytesPerLine,
+                UppercaseHex = _exportSettings.UppercaseHex,
+                IncludeRowComments = _exportSettings.IncludeRowComments,
+                IncludeArraySize = _exportSettings.IncludeArraySize,
             };
 
             try
@@ -956,8 +1000,37 @@ namespace Hexel.ViewModels
         /// </summary>
         public void RefreshCanvasColors()
         {
+            UpdatePreviewColors();
             InitializeBrushColors();
             RedrawGridFromMemory();
+        }
+
+        private void UpdatePreviewColors()
+        {
+            Color bg, fg;
+            switch (_previewDisplayType)
+            {
+                case DisplayType.SSD1306_Blue:
+                    bg = (Color)ColorConverter.ConvertFromString("#000A1A");
+                    fg = (Color)ColorConverter.ConvertFromString("#82C9FF");
+                    break;
+                case DisplayType.SSD1306_Green:
+                    bg = (Color)ColorConverter.ConvertFromString("#051105");
+                    fg = (Color)ColorConverter.ConvertFromString("#72FF72");
+                    break;
+                case DisplayType.ePaper:
+                    bg = (Color)ColorConverter.ConvertFromString("#D3D3D3");
+                    fg = (Color)ColorConverter.ConvertFromString("#1A1A1A");
+                    break;
+                case DisplayType.Generic_White:
+                default:
+                    Application.Current.Resources.Remove("Theme.PreviewBackgroundBrush");
+                    Application.Current.Resources.Remove("Theme.PreviewDrawingBrush");
+                    return;
+            }
+
+            Application.Current.Resources["Theme.PreviewBackgroundBrush"] = new SolidColorBrush(bg);
+            Application.Current.Resources["Theme.PreviewDrawingBrush"] = new SolidColorBrush(fg);
         }
 
         // ── Private: bitmap lifecycle helpers ─────────────────────────────
@@ -973,6 +1046,8 @@ namespace Hexel.ViewModels
             PreviewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
             _canvasBuffer = new uint[width * height];
             _previewBuffer = new uint[width * height];
+
+            PreviewScale = Math.Max(1, (int)Math.Floor(288.0 / width));
         }
 
         /// <summary>
