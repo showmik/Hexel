@@ -567,9 +567,10 @@ namespace Hexprite.ViewModels
             PasteCommand = new RelayCommand(() =>
             {
                 if (!_pixelClipboard.HasData || _pixelClipboard.Data == null) return;
-                // Commit any existing selection before pasting
+
+                SaveStateForUndo(); // Push state BEFORE flattening the current floating layer
                 _selectionInput.CommitIfActive();
-                SaveStateForUndo();
+
                 _selectionService.PasteAsFloating(
                     _pixelClipboard.Data,
                     SpriteState.Width,
