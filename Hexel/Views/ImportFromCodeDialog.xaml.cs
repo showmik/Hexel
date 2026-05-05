@@ -44,14 +44,62 @@ namespace Hexel.Views
             var widthMatch  = Regex.Match(code, @"(?:_WIDTH\s*=\s*|_WIDTH\s+)(\d+)", RegexOptions.IgnoreCase);
             var heightMatch = Regex.Match(code, @"(?:_HEIGHT\s*=\s*|_HEIGHT\s+)(\d+)", RegexOptions.IgnoreCase);
 
+            // Strategy 2: Extract from Hexel-generated usage comments
+            var adafruitMatch = Regex.Match(code, @"drawBitmap\([^,]+,\s*[^,]+,\s*[^,]+,\s*(\d+)\s*,\s*(\d+)");
+            var u8g2BitmapMatch = Regex.Match(code, @"u8g2\.drawBitmap\([^,]+,\s*[^,]+,\s*(\d+)\s*,\s*(\d+)");
+            var u8g2XbmMatch = Regex.Match(code, @"drawXBM\([^,]+,\s*[^,]+,\s*(\d+)\s*,\s*(\d+)");
+            var plainCMatch = Regex.Match(code, @"as a (\d+)[x×](\d+) bitmap");
+            var pythonMatch = Regex.Match(code, @"FrameBuffer\([^,]+,\s*(\d+)\s*,\s*(\d+)");
+
+            int parsedW = 0, parsedH = 0;
+            string detectionSource = "";
+
             if (widthMatch.Success && heightMatch.Success)
             {
+                parsedW = int.Parse(widthMatch.Groups[1].Value);
+                parsedH = int.Parse(heightMatch.Groups[1].Value);
+                detectionSource = "constants";
+            }
+            else if (adafruitMatch.Success)
+            {
+                parsedW = int.Parse(adafruitMatch.Groups[1].Value);
+                parsedH = int.Parse(adafruitMatch.Groups[2].Value);
+                detectionSource = "usage comment";
+            }
+            else if (u8g2XbmMatch.Success)
+            {
+                parsedW = int.Parse(u8g2XbmMatch.Groups[1].Value);
+                parsedH = int.Parse(u8g2XbmMatch.Groups[2].Value);
+                detectionSource = "usage comment";
+            }
+            else if (u8g2BitmapMatch.Success)
+            {
+                int bpr = int.Parse(u8g2BitmapMatch.Groups[1].Value);
+                parsedW = bpr * 8; // Approximation, will be refined by the user if needed
+                parsedH = int.Parse(u8g2BitmapMatch.Groups[2].Value);
+                detectionSource = "usage comment";
+            }
+            else if (plainCMatch.Success)
+            {
+                parsedW = int.Parse(plainCMatch.Groups[1].Value);
+                parsedH = int.Parse(plainCMatch.Groups[2].Value);
+                detectionSource = "usage comment";
+            }
+            else if (pythonMatch.Success)
+            {
+                parsedW = int.Parse(pythonMatch.Groups[1].Value);
+                parsedH = int.Parse(pythonMatch.Groups[2].Value);
+                detectionSource = "usage comment";
+            }
+
+            if (parsedW > 0 && parsedH > 0)
+            {
                 _suppressAutoDetect = true;
-                TxtWidth.Text  = widthMatch.Groups[1].Value;
-                TxtHeight.Text = heightMatch.Groups[1].Value;
+                TxtWidth.Text  = parsedW.ToString();
+                TxtHeight.Text = parsedH.ToString();
                 _suppressAutoDetect = false;
                 _dimensionsAutoDetected = true;
-                TxtDetectionHint.Text = "(auto-detected from constants)";
+                TxtDetectionHint.Text = $"(auto-detected from {detectionSource})";
             }
             else
             {
@@ -101,17 +149,28 @@ namespace Hexel.Views
 
             if (detectedBpr > 0)
             {
-                // Line structure gives us bytes-per-row → width
-                int w = detectedBpr * 8;
-                int h = byteCount / detectedBpr;
-
-                if (w > 0 && w <= 256 && h > 0 && h <= 256)
+                // Cross-validate against total byte count
+                if (byteCount % detectedBpr == 0)
                 {
-                    _suppressAutoDetect = true;
-                    TxtWidth.Text  = w.ToString();
-                    TxtHeight.Text = h.ToString();
-                    _suppressAutoDetect = false;
-                    TxtDetectionHint.Text = $"(detected from code structure — {byteCount} bytes)";
+                    // Line structure gives us bytes-per-row → width
+                    int w = detectedBpr * 8;
+                    int h = byteCount / detectedBpr;
+
+                    if (w > 0 && w <= 256 && h > 0 && h <= 256)
+                    {
+                        _suppressAutoDetect = true;
+                        TxtWidth.Text  = w.ToString();
+                        TxtHeight.Text = h.ToString();
+                        _suppressAutoDetect = false;
+                        TxtDetectionHint.Text = $"(detected from code structure — {byteCount} bytes)";
+                        return;
+                    }
+                }
+                else
+                {
+                    // The line-structure guess is wrong — fall back to the square/common-width guesser
+                    GuessFromByteCount(byteCount);
+                    TxtDetectionHint.Text = "(line structure ambiguous — guessed from byte count)";
                     return;
                 }
             }
