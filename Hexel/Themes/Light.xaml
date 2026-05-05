@@ -27,12 +27,12 @@
     <!-- ═══════════════════════════════════════════════════════════
          UI-shell palette
          ═══════════════════════════════════════════════════════════ -->
-    <Color x:Key="Color.MenuBarBackground">#FFFCF8</Color>
-    <Color x:Key="Color.MenuItemHover">#EDE9E3</Color>
-    <Color x:Key="Color.StatusBarBackground">#F0ECE6</Color>
-    <Color x:Key="Color.ToolbarBackground">#FAF8F5</Color>
-    <Color x:Key="Color.ToolSidebarBackground">#F0ECE6</Color>
-    <Color x:Key="Color.ToolSidebarActive">#E2DDD6</Color>
+    <Color x:Key="Color.MenuBarBackground">#FFFFFF</Color>
+    <Color x:Key="Color.MenuItemHover">#F5F3EF</Color>
+    <Color x:Key="Color.StatusBarBackground">#FFFFFF</Color>
+    <Color x:Key="Color.ToolbarBackground">#FFFFFF</Color>
+    <Color x:Key="Color.ToolSidebarBackground">#FFFFFF</Color>
+    <Color x:Key="Color.ToolSidebarActive">#EBE7E0</Color>
     <Color x:Key="Color.Separator">#DDD8D0</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -75,7 +75,7 @@
     <Color x:Key="Color.BrushCursorFill">#40333333</Color>
     <Color x:Key="Color.InputBackground">#F8F6F2</Color>
     <Color x:Key="Color.ShadowColor">#3D3D3D</Color>
-    <Color x:Key="Color.SurfaceOverlay">#E8E4DE</Color>
+    <Color x:Key="Color.SurfaceOverlay">#FFFFFF</Color>
     <Color x:Key="Color.Success">#16A34A</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -92,8 +92,8 @@
     <SolidColorBrush x:Key="Theme.PanelBackgroundBrush"
                      Color="{StaticResource Color.PanelBackground}" />
     <LinearGradientBrush x:Key="Theme.RightSidebarBackgroundBrush" StartPoint="0,0" EndPoint="0.8,1">
-        <GradientStop Color="#F7F5F0" Offset="0" />
-        <GradientStop Color="#F7F5F0" Offset="1" />
+        <GradientStop Color="#F5F3EF" Offset="0" />
+        <GradientStop Color="#F5F3EF" Offset="1" />
     </LinearGradientBrush>
     <SolidColorBrush x:Key="Theme.PanelBorderBrush"
                      Color="{StaticResource Color.PanelBorder}" />
