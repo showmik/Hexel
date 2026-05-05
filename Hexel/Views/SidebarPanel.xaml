@@ -249,7 +249,7 @@
                         <!-- Stale indicator -->
                         <TextBlock Grid.Column="0"
                                    Text="⟳ Code is outdated"
-                                   Foreground="#E0A030"
+                                   Foreground="{DynamicResource Theme.WarningBrush}"
                                    FontSize="10.5"
                                    Opacity="0.85">
                             <TextBlock.Style>

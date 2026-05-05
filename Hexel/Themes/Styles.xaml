@@ -239,7 +239,7 @@
         <Setter Property="CaretBrush"
                 Value="{DynamicResource Theme.TextMainBrush}" />
         <Setter Property="SelectionBrush"
-                Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
         <Setter Property="VerticalContentAlignment"
                 Value="Center" />
         <Setter Property="HorizontalContentAlignment"
@@ -307,7 +307,7 @@
                             <Setter Property="Background"
                                     Value="{DynamicResource Theme.SelectionBackgroundBrush}" />
                             <Setter Property="Foreground"
-                                    Value="{DynamicResource Theme.PrimaryAccentBrush}" />
+                                    Value="{DynamicResource Theme.TextOnAccentBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1016,7 +1016,7 @@
                             <Setter TargetName="Bd" Property="BorderBrush"
                                     Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
                             <Setter Property="Foreground"
-                                    Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                                    Value="{DynamicResource Theme.TextOnAccentBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1229,7 +1229,7 @@
                                 Width="16" Height="16" CornerRadius="4">
                             <Path x:Name="optionMark"
                                   Data="M 3 8 L 6 11 L 12 4"
-                                  Stroke="{DynamicResource Theme.TextOnAccentBrush}"
+                                  Stroke="{DynamicResource Theme.TextInverseBrush}"
                                   StrokeThickness="2"
                                   StrokeStartLineCap="Round"
                                   StrokeEndLineCap="Round"
