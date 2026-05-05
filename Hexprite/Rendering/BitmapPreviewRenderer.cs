@@ -155,7 +155,11 @@ namespace Hexprite.Rendering
 
             while (y0 - y1 < b)
             {
-                for (int px = x0 - 1; px <= x1 + 1; px++) { PlotPixel(px, y0, cc, pc); PlotPixel(px, y1, cc, pc); }
+                // FIX: Sort inline bounds to handle Bresenham variable crossover
+                int startX = Math.Min(x0 - 1, x1 + 1);
+                int endX = Math.Max(x0 - 1, x1 + 1);
+                
+                for (int px = startX; px <= endX; px++) { PlotPixel(px, y0, cc, pc); PlotPixel(px, y1, cc, pc); }
                 y0++; y1--;
             }
         }

@@ -456,8 +456,14 @@ namespace Hexprite.Services
             void FillRow(int lx, int rx, int py)
             {
                 if (py < 0 || py >= height) return;
-                int clampL = Math.Clamp(lx, 0, width - 1);
-                int clampR = Math.Clamp(rx, 0, width - 1);
+                
+                // FIX: Sort parameters to handle Bresenham variable crossover
+                int minX = Math.Min(lx, rx);
+                int maxX = Math.Max(lx, rx);
+                
+                int clampL = Math.Clamp(minX, 0, width - 1);
+                int clampR = Math.Clamp(maxX, 0, width - 1);
+                
                 for (int px = clampL; px <= clampR; px++)
                     if (!IsClipped(px, py))
                         state.Pixels[(py * width) + px] = newState;
