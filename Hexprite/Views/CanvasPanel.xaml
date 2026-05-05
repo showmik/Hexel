@@ -459,7 +459,7 @@
                                 VerticalAlignment="Stretch">
 
                             <Rectangle x:Name="MarqueeOverlay" x:FieldModifier="public"
-                                       Stroke="{DynamicResource Theme.WarningBrush}"
+                                       Stroke="{DynamicResource Theme.SelectionPreviewBorderBrush}"
                                        StrokeThickness="{Binding SelectionStrokeThickness}"
                                        StrokeDashArray="4,4"
                                        Visibility="Hidden"
@@ -467,7 +467,7 @@
 
                             <!-- Light transparent yellow fill shows the lasso interior -->
                             <Path x:Name="LassoOverlay" x:FieldModifier="public"
-                                  Stroke="{DynamicResource Theme.WarningBrush}"
+                                  Stroke="{DynamicResource Theme.SelectionPreviewBorderBrush}"
                                   StrokeThickness="{Binding SelectionStrokeThickness}"
                                   StrokeDashArray="4,4"
                                   Fill="{DynamicResource Theme.LassoFillBrush}"

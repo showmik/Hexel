@@ -18,6 +18,7 @@
     <Color x:Key="Color.SelectionBackground">#818CF8</Color>
     <Color x:Key="Color.Danger">#E8675A</Color>
     <Color x:Key="Color.Warning">#E8C93E</Color>
+    <Color x:Key="Color.SelectionPreviewBorder">#E8C93E</Color>
     <Color x:Key="Color.PreviewBackground">#0A0B12</Color>
     <Color x:Key="Color.PreviewDrawingColor">#74B3CE</Color>
     <Color x:Key="Color.CanvasGridLines">#181A27</Color>
@@ -130,6 +131,8 @@
                      Color="{StaticResource Color.Danger}" />
     <SolidColorBrush x:Key="Theme.WarningBrush"
                      Color="{StaticResource Color.Warning}" />
+    <SolidColorBrush x:Key="Theme.SelectionPreviewBorderBrush"
+                     Color="{StaticResource Color.SelectionPreviewBorder}" />
 
     <SolidColorBrush x:Key="Theme.PreviewBackgroundBrush"
                      Color="{StaticResource Color.PreviewBackground}" />
@@ -208,3 +211,4 @@
     <SolidColorBrush x:Key="Syntax.PunctuationBrush" Color="#BFC7D5"/>
 
 </ResourceDictionary>
+
