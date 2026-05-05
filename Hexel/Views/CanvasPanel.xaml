@@ -63,7 +63,7 @@
                                  Margin="0,0,2,0"
                                  Style="{StaticResource VerticalToolButtonStyle}">
                         <Ellipse Width="10" Height="10"
-                                 Fill="{DynamicResource Theme.TextMainBrush}" />
+                                 Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
 
                     <!-- Square shape button -->
@@ -76,7 +76,7 @@
                                  Margin="0,0,2,0"
                                  Style="{StaticResource VerticalToolButtonStyle}">
                         <Rectangle Width="10" Height="10"
-                                   Fill="{DynamicResource Theme.TextMainBrush}" />
+                                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
 
                     <!-- Line shape button -->
@@ -89,7 +89,7 @@
                                  Margin="0,0,8,0"
                                  Style="{StaticResource VerticalToolButtonStyle}">
                         <Rectangle Width="14" Height="2"
-                                   Fill="{DynamicResource Theme.TextMainBrush}" />
+                                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
 
                     <!-- Separator -->

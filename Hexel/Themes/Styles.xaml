@@ -162,8 +162,10 @@
                 Value="{DynamicResource Theme.ButtonBackgroundBrush}" />
         <Setter Property="Foreground"
                 Value="{DynamicResource Theme.ButtonTextBrush}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource Theme.PanelBorderBrush}" />
         <Setter Property="BorderThickness"
-                Value="0" />
+                Value="1" />
         <Setter Property="Padding"
                 Value="16,8" />
         <Setter Property="Cursor"
@@ -175,6 +177,8 @@
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6"
                             Padding="{TemplateBinding Padding}"
                             RenderTransformOrigin="0.5,0.5">

@@ -38,7 +38,7 @@
     <!-- ═══════════════════════════════════════════════════════════
          Control specific palette
          ═══════════════════════════════════════════════════════════ -->
-    <Color x:Key="Color.ButtonBackground">#E2DDD6</Color>
+    <Color x:Key="Color.ButtonBackground">#FFFFFF</Color>
     <Color x:Key="Color.ButtonText">#1E1E2E</Color>
     <Color x:Key="Color.TextBoxBackground">#F5F3EF</Color>
     <Color x:Key="Color.TextBoxBorder">#E2DDD6</Color>
