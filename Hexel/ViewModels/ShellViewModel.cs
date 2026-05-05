@@ -322,12 +322,16 @@ namespace Hexel.ViewModels
             var result = _dialogService.ShowImportFromCodeDialog();
             if (result == null) return;
 
-            var (w, h, code, spriteName) = result.Value;
+            var (w, h, code, spriteName, isXbm) = result.Value;
 
             try
             {
                 var doc = CreateDocument(w, h);
-                _codeGen.ParseHexToState(code, doc.SpriteState);
+                if (isXbm)
+                    _codeGen.ParseXbmToState(code, doc.SpriteState);
+                else
+                    _codeGen.ParseAdafruitGfxToState(code, doc.SpriteState);
+                
                 doc.RedrawGridFromMemory();
 
                 // Set the detected sprite name so the export panel picks it up

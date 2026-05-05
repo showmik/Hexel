@@ -40,5 +40,10 @@ namespace Hexel.Services
         /// back into the canvas. Kept from original implementation.
         /// </summary>
         void ParseHexToState(string hexText, SpriteState state);
+
+        /// <summary>
+        /// Parses an XBM array back into the canvas (LSB-first, bit-reversed).
+        /// </summary>
+        void ParseXbmToState(string code, SpriteState state);
     }
 }

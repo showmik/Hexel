@@ -46,9 +46,9 @@ namespace Hexel.Services
 
         /// <summary>
         /// Shows the "Import from Code" dialog.
-        /// Returns (width, height, code, spriteName) if the user clicks Import, or null if cancelled.
+        /// Returns (width, height, code, spriteName, isXbm) if the user clicks Import, or null if cancelled.
         /// </summary>
-        (int Width, int Height, string Code, string? SpriteName)? ShowImportFromCodeDialog();
+        (int Width, int Height, string Code, string? SpriteName, bool IsXbm)? ShowImportFromCodeDialog();
     }
 
 }

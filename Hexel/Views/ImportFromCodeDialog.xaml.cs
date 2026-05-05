@@ -18,7 +18,9 @@ namespace Hexel.Views
         /// Code is the raw pasted text for the service to parse;
         /// SpriteName is the auto-detected variable name (may be null).
         /// </summary>
-        public (int Width, int Height, string Code, string? SpriteName)? Result { get; private set; }
+        public (int Width, int Height, string Code, string? SpriteName, bool IsXbm)? Result { get; private set; }
+
+        private bool _isXbm;
 
         private string? _detectedSpriteName;
 
@@ -53,7 +55,9 @@ namespace Hexel.Views
             }
             else
             {
-                var hexMatches = Regex.Matches(code, @"0[xX][0-9a-fA-F]{1,2}");
+                string cleanCode = Regex.Replace(code, @"//.*", "");
+                cleanCode = Regex.Replace(cleanCode, @"/\*.*?\*/", "", RegexOptions.Singleline);
+                var hexMatches = Regex.Matches(cleanCode, @"0[xX][0-9a-fA-F]{1,2}");
                 int byteCount = hexMatches.Count;
 
                 if (byteCount > 0 && !_dimensionsAutoDetected)
@@ -69,7 +73,19 @@ namespace Hexel.Views
             // Always try to detect the variable name
             _detectedSpriteName = DetectVariableName(code);
 
+            // Detect XBM format
+            _isXbm = code.Contains("drawXBM", StringComparison.OrdinalIgnoreCase) || 
+                     code.Contains("XBM", StringComparison.OrdinalIgnoreCase);
+
             UpdateStats();
+
+            if (_isXbm && TxtDetectionHint != null)
+            {
+                if (string.IsNullOrWhiteSpace(TxtDetectionHint.Text) || TxtDetectionHint.Text.StartsWith("(auto-detected") || TxtDetectionHint.Text.StartsWith("(guessed"))
+                {
+                    TxtDetectionHint.Text = "XBM (LSB-first) detected — bytes will be bit-reversed";
+                }
+            }
         }
 
         /// <summary>
@@ -241,7 +257,9 @@ namespace Hexel.Views
             if (TxtCode == null || TxtStats == null || BtnImport == null) return;
 
             string code = TxtCode.Text;
-            var hexMatches = Regex.Matches(code, @"0[xX][0-9a-fA-F]{1,2}");
+            string cleanCode = Regex.Replace(code, @"//.*", "");
+            cleanCode = Regex.Replace(cleanCode, @"/\*.*?\*/", "", RegexOptions.Singleline);
+            var hexMatches = Regex.Matches(cleanCode, @"0[xX][0-9a-fA-F]{1,2}");
             int byteCount = hexMatches.Count;
 
             bool validWidth  = int.TryParse(TxtWidth.Text, out int w) && w > 0 && w <= 256;
@@ -296,7 +314,7 @@ namespace Hexel.Views
             if (!int.TryParse(TxtWidth.Text, out int w) || w < 1 || w > 256) return;
             if (!int.TryParse(TxtHeight.Text, out int h) || h < 1 || h > 256) return;
 
-            Result = (w, h, TxtCode.Text, _detectedSpriteName);
+            Result = (w, h, TxtCode.Text, _detectedSpriteName, _isXbm);
             DialogResult = true;
         }
 

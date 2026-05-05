@@ -252,14 +252,22 @@ namespace Hexel.Services
 
         public void ParseAdafruitGfxToState(string code, SpriteState state)
         {
-            // Extract all 0xNN / 0XNN hex tokens from the pasted code, ignoring
-            // surrounding C syntax, comments and whitespace.
+            // Extract the array body between { and } to avoid misreading dimension constants
+            int start = code.IndexOf('{');
+            int end = code.LastIndexOf('}');
+            if (start >= 0 && end > start)
+            {
+                code = code.Substring(start, end - start);
+            }
             ParseHexToState(code, state);
         }
 
         public void ParseHexToState(string hexText, SpriteState state)
         {
-            var matches = Regex.Matches(hexText, @"0[xX]([0-9a-fA-F]{1,2})");
+            string cleanText = Regex.Replace(hexText, @"//.*", "");
+            cleanText = Regex.Replace(cleanText, @"/\*.*?\*/", "", RegexOptions.Singleline);
+
+            var matches = Regex.Matches(cleanText, @"0[xX]([0-9a-fA-F]{1,2})");
             int bytesPerRow = BytesPerRow(state.Width);
             int matchIndex = 0;
 
@@ -277,6 +285,45 @@ namespace Hexel.Services
                     for (int bit = 7; bit >= 0; bit--)
                     {
                         int col = (chunk * 8) + (7 - bit);
+                        if (col < state.Width)
+                            state.Pixels[(row * state.Width) + col] = ((b >> bit) & 1) == 1;
+                    }
+                }
+            }
+        }
+
+        public void ParseXbmToState(string code, SpriteState state)
+        {
+            // Extract the array body between { and }
+            int start = code.IndexOf('{');
+            int end = code.LastIndexOf('}');
+            if (start >= 0 && end > start)
+            {
+                code = code.Substring(start, end - start);
+            }
+
+            string cleanText = Regex.Replace(code, @"//.*", "");
+            cleanText = Regex.Replace(cleanText, @"/\*.*?\*/", "", RegexOptions.Singleline);
+
+            var matches = Regex.Matches(cleanText, @"0[xX]([0-9a-fA-F]{1,2})");
+            int bytesPerRow = BytesPerRow(state.Width);
+            int matchIndex = 0;
+
+            Array.Clear(state.Pixels, 0, state.Pixels.Length);
+
+            for (int row = 0; row < state.Height; row++)
+            {
+                for (int chunk = 0; chunk < bytesPerRow; chunk++)
+                {
+                    if (matchIndex >= matches.Count) return;
+
+                    byte b = Convert.ToByte(matches[matchIndex].Groups[1].Value, 16);
+                    matchIndex++;
+
+                    // XBM is LSB-first: bit 0 maps to the leftmost pixel
+                    for (int bit = 0; bit < 8; bit++)
+                    {
+                        int col = (chunk * 8) + bit;
                         if (col < state.Width)
                             state.Pixels[(row * state.Width) + col] = ((b >> bit) & 1) == 1;
                     }

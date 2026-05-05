@@ -433,6 +433,10 @@ namespace Hexel.ViewModels
                 {
                     if (ExportFormat == ExportFormat.RawBinary)
                         ParseBinaryToCanvas(ImportCode);
+                    else if (ExportFormat == ExportFormat.U8g2DrawXBM)
+                        _codeGen.ParseXbmToState(ImportCode, SpriteState);
+                    else if (ExportFormat == ExportFormat.AdafruitGfx)
+                        _codeGen.ParseAdafruitGfxToState(ImportCode, SpriteState);
                     else
                         _codeGen.ParseHexToState(ImportCode, SpriteState);
 
