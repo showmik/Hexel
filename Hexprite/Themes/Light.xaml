@@ -2,13 +2,13 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ═══════════════════════════════════════════════════════════
-         Core palette — warm paper feel
-         ═══════════════════════════════════════════════════════════ -->
+     Core palette  (changes from original marked with ★)
+     ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.Background">#F8F6F2</Color>
     <Color x:Key="Color.PanelBackground">#FFFFFF</Color>
-    <Color x:Key="Color.PanelBorder">#E5E0D8</Color>
-    <Color x:Key="Color.CanvasBackground">#363645</Color>
-    <Color x:Key="Color.CanvasPixelBackground">#363645</Color>
+    <Color x:Key="Color.PanelBorder">#DDD8CF</Color>
+    <Color x:Key="Color.CanvasBackground">#2C2C42</Color>
+    <Color x:Key="Color.CanvasPixelBackground">#2C2C42</Color>
     <Color x:Key="Color.CanvasDrawingColor">#FFFFFF</Color>
     <Color x:Key="Color.TextMain">#1A1A24</Color>
     <Color x:Key="Color.TextMuted">#717182</Color>
@@ -20,55 +20,55 @@
     <Color x:Key="Color.Warning">#D97706</Color>
     <Color x:Key="Color.PreviewBackground">#2D6A8A</Color>
     <Color x:Key="Color.PreviewDrawingColor">#ffffff</Color>
-    <Color x:Key="Color.CanvasGridLines">#717182</Color>
+    <Color x:Key="Color.CanvasGridLines">#555568</Color>
     <Color x:Key="Color.InvertButtonBackground">#2563EB</Color>
     <Color x:Key="Color.ClearButtonBackground">#DC4A3D</Color>
     <Color x:Key="Color.CopyButtonBackground">#16A34A</Color>
-    <Color x:Key="Color.ThumbBackground">#D8D3CC</Color>
-    <Color x:Key="Color.ScrollBar">#EBE7E0</Color>
+    <Color x:Key="Color.ThumbBackground">#C5C0B8</Color>
+    <Color x:Key="Color.ScrollBar">#E4DFD7</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
-         UI-shell palette
-         ═══════════════════════════════════════════════════════════ -->
+     UI-shell palette
+     ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.MenuBarBackground">#FFFFFF</Color>
     <Color x:Key="Color.MenuItemHover">#F8F6F2</Color>
     <Color x:Key="Color.StatusBarBackground">#FFFFFF</Color>
     <Color x:Key="Color.ToolbarBackground">#FFFFFF</Color>
     <Color x:Key="Color.ToolSidebarBackground">#FFFFFF</Color>
-    <Color x:Key="Color.ToolSidebarActive">#EFEBE4</Color>
-    <Color x:Key="Color.Separator">#E5E0D8</Color>
+    <Color x:Key="Color.ToolSidebarActive">#E8E2D8</Color>
+    <Color x:Key="Color.Separator">#DDD8CF</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
-         Control specific palette
-         ═══════════════════════════════════════════════════════════ -->
+     Control specific palette
+     ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.ButtonBackground">#FFFFFF</Color>
     <Color x:Key="Color.ButtonText">#1A1A24</Color>
     <Color x:Key="Color.TextBoxBackground">#F8F6F2</Color>
-    <Color x:Key="Color.TextBoxBorder">#E5E0D8</Color>
+    <Color x:Key="Color.TextBoxBorder">#DDD8CF</Color>
     <Color x:Key="Color.TextBoxText">#1A1A24</Color>
     <Color x:Key="Color.TextBoxFocusBorder">#5C60F5</Color>
     <Color x:Key="Color.ComboBoxBackground">#F8F6F2</Color>
-    <Color x:Key="Color.ComboBoxBorder">#E5E0D8</Color>
+    <Color x:Key="Color.ComboBoxBorder">#DDD8CF</Color>
     <Color x:Key="Color.ComboBoxText">#1A1A24</Color>
     <Color x:Key="Color.ComboBoxDropDownBackground">#FFFFFF</Color>
-    <Color x:Key="Color.ComboBoxDropDownBorder">#E5E0D8</Color>
+    <Color x:Key="Color.ComboBoxDropDownBorder">#DDD8CF</Color>
     <Color x:Key="Color.ContextMenuBackground">#FFFFFF</Color>
-    <Color x:Key="Color.ContextMenuBorder">#E5E0D8</Color>
+    <Color x:Key="Color.ContextMenuBorder">#DDD8CF</Color>
     <Color x:Key="Color.ToolTipBackground">#FFFFFF</Color>
-    <Color x:Key="Color.ToolTipBorder">#E5E0D8</Color>
+    <Color x:Key="Color.ToolTipBorder">#DDD8CF</Color>
     <Color x:Key="Color.ToolTipText">#1A1A24</Color>
     <Color x:Key="Color.MenuPopupBackground">#FFFFFF</Color>
-    <Color x:Key="Color.MenuPopupBorder">#E5E0D8</Color>
+    <Color x:Key="Color.MenuPopupBorder">#DDD8CF</Color>
     <Color x:Key="Color.ToolButtonHover">#EFEBE4</Color>
     <Color x:Key="Color.ToolButtonCheckedBackground">#5C60F5</Color>
     <Color x:Key="Color.ToolButtonCheckedBorder">#5C60F5</Color>
-    <Color x:Key="Color.StatusBarBorder">#E5E0D8</Color>
+    <Color x:Key="Color.StatusBarBorder">#DDD8CF</Color>
     <Color x:Key="Color.CheckBoxBackground">#F8F6F2</Color>
-    <Color x:Key="Color.CheckBoxBorder">#D8D3CC</Color>
+    <Color x:Key="Color.CheckBoxBorder">#C5C0B8</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
-         New semantic tokens
-         ═══════════════════════════════════════════════════════════ -->
+     Semantic tokens
+     ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.TextOnAccent">#FFFFFF</Color>
     <Color x:Key="Color.BrandGradientStart">#6366F1</Color>
     <Color x:Key="Color.BrandGradientEnd">#8B5CF6</Color>

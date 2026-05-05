@@ -2,14 +2,14 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ═══════════════════════════════════════════════════════════
-         Core palette - Dim/Nord inspired
-         ═══════════════════════════════════════════════════════════ -->
+     Core palette  (changes from original marked with ★)
+     ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.Background">#22272E</Color>
     <Color x:Key="Color.PanelBackground">#2D333B</Color>
     <Color x:Key="Color.PanelBorder">#444C56</Color>
     <Color x:Key="Color.CanvasBackground">#1C2128</Color>
     <Color x:Key="Color.CanvasPixelBackground">#1C2128</Color>
-    <Color x:Key="Color.CanvasDrawingColor">#539BF5</Color>
+    <Color x:Key="Color.CanvasDrawingColor">#58A6FF</Color>
     <Color x:Key="Color.TextMain">#CDD9E5</Color>
     <Color x:Key="Color.TextMuted">#768390</Color>
     <Color x:Key="Color.TextInverse">#22272E</Color>
@@ -19,23 +19,22 @@
     <Color x:Key="Color.Danger">#F47067</Color>
     <Color x:Key="Color.Warning">#D29922</Color>
     <Color x:Key="Color.PreviewBackground">#1C2128</Color>
-    <Color x:Key="Color.PreviewDrawingColor">#73ABFF</Color>
-    <Color x:Key="Color.CanvasGridLines">#22272E</Color>
+    <Color x:Key="Color.PreviewDrawingColor">#79B1FF</Color>
+    <Color x:Key="Color.CanvasGridLines">#1B2027</Color>
     <Color x:Key="Color.InvertButtonBackground">#316DCA</Color>
     <Color x:Key="Color.ClearButtonBackground">#DA3633</Color>
     <Color x:Key="Color.CopyButtonBackground">#46954A</Color>
-    <Color x:Key="Color.ThumbBackground">#444C56</Color>
-    <Color x:Key="Color.ScrollBar">#2D333B</Color>
+    <Color x:Key="Color.ThumbBackground">#4A5261</Color>
+    <Color x:Key="Color.ScrollBar">#252C34</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
-         UI-shell palette for menu bar, sidebar, toolbar,
-         status bar, and separators
-         ═══════════════════════════════════════════════════════════ -->
+     UI-shell palette
+     ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.MenuBarBackground">#2D333B</Color>
     <Color x:Key="Color.MenuItemHover">#373E47</Color>
-    <Color x:Key="Color.StatusBarBackground">#22272E</Color>
+    <Color x:Key="Color.StatusBarBackground">#161B22</Color>
     <Color x:Key="Color.ToolbarBackground">#2D333B</Color>
-    <Color x:Key="Color.ToolSidebarBackground">#22272E</Color>
+    <Color x:Key="Color.ToolSidebarBackground">#1C2128</Color>
     <Color x:Key="Color.ToolSidebarActive">#373E47</Color>
     <Color x:Key="Color.Separator">#444C56</Color>
 
@@ -68,8 +67,8 @@
     <Color x:Key="Color.CheckBoxBorder">#545D68</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
-         New semantic tokens
-         ═══════════════════════════════════════════════════════════ -->
+     Semantic tokens
+     ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.TextOnAccent">#1C2128</Color>
     <Color x:Key="Color.BrandGradientStart">#539BF5</Color>
     <Color x:Key="Color.BrandGradientEnd">#D2A8FF</Color>
