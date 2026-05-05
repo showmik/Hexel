@@ -176,8 +176,10 @@ namespace Hexprite.Controllers
                     int dx = x - _selectionAnchorX;
                     int dy = y - _selectionAnchorY;
                     int maxDist = Math.Max(Math.Abs(dx), Math.Abs(dy));
-                    x = _selectionAnchorX + Math.Sign(dx) * maxDist;
-                    y = _selectionAnchorY + Math.Sign(dy) * maxDist;
+                    int signX = dx == 0 ? 1 : Math.Sign(dx);
+                    int signY = dy == 0 ? 1 : Math.Sign(dy);
+                    x = _selectionAnchorX + signX * maxDist;
+                    y = _selectionAnchorY + signY * maxDist;
                 }
                 _selection.UpdateRectangleSelection(x, y);
             }
