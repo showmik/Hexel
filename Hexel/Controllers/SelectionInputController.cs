@@ -57,9 +57,17 @@ namespace Hexel.Controllers
         public bool CommitIfActive()
         {
             if (!_selection.HasActiveSelection) return false;
+            
+            bool wasFloating = _selection.IsFloating;
+            
             _selection.CommitSelection(_vm.SpriteState);
             _vm.RedrawGridFromMemory();
-            _vm.MarkCodeStale();
+            
+            if (wasFloating)
+            {
+                _vm.MarkCodeStale();
+            }
+            
             return true;
         }
 
