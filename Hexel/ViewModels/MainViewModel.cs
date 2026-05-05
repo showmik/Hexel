@@ -609,7 +609,10 @@ namespace Hexel.ViewModels
             int oldW = oldState.Width;
             int oldH = oldState.Height;
 
-            // Cancel any in-progress selection before resizing
+            // Commit any floating selection into the canvas before resizing.
+            // The committed result is then included in the undo snapshot below.
+            if (_selectionService.IsFloating)
+                _selectionService.CommitSelection(oldState);
             _selectionService.Cancel();
 
             // Push current state for undo
