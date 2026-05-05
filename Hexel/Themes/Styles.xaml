@@ -1206,8 +1206,8 @@
          ═══════════════════════════════════════════════════════════ -->
     <Style TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Theme.TextMainBrush}"/>
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Theme.PanelBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Theme.CheckBoxBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Theme.CheckBoxBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>

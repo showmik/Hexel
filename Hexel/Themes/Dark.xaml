@@ -61,6 +61,8 @@
     <Color x:Key="Color.ToolButtonCheckedBackground">#4F46E5</Color>
     <Color x:Key="Color.ToolButtonCheckedBorder">#F0C4B8</Color>
     <Color x:Key="Color.StatusBarBorder">#2C3145</Color>
+    <Color x:Key="Color.CheckBoxBackground">#232536</Color>
+    <Color x:Key="Color.CheckBoxBorder">#383D54</Color>
 
     <!-- ═══════════════════════════════════════════════════════════
          New semantic tokens
@@ -167,6 +169,8 @@
     <SolidColorBrush x:Key="Theme.ToolButtonCheckedBackgroundBrush" Color="{StaticResource Color.ToolButtonCheckedBackground}" />
     <SolidColorBrush x:Key="Theme.ToolButtonCheckedBorderBrush" Color="{StaticResource Color.ToolButtonCheckedBorder}" />
     <SolidColorBrush x:Key="Theme.StatusBarBorderBrush" Color="{StaticResource Color.StatusBarBorder}" />
+    <SolidColorBrush x:Key="Theme.CheckBoxBackgroundBrush" Color="{StaticResource Color.CheckBoxBackground}" />
+    <SolidColorBrush x:Key="Theme.CheckBoxBorderBrush" Color="{StaticResource Color.CheckBoxBorder}" />
 
     <!-- New semantic brushes -->
     <SolidColorBrush x:Key="Theme.TextOnAccentBrush"
