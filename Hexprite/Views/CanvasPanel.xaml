@@ -454,7 +454,7 @@
 
                         <!-- Selection overlays -->
                         <Canvas IsHitTestVisible="False"
-                                ClipToBounds="True"
+                                ClipToBounds="False"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch">
 

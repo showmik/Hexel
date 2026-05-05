@@ -445,14 +445,11 @@ namespace Hexprite
                     ViewModel.CurrentTool == ToolMode.Lasso ||
                     ViewModel.CurrentTool == ToolMode.MagicWand)
                 {
-                    int cx = Math.Clamp(x, 0, ViewModel.SpriteState.Width - 1);
-                    int cy = Math.Clamp(y, 0, ViewModel.SpriteState.Height - 1);
-
                     // Check if we should start a drag instead
                     bool isReplace = !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && !Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
-                    if (isReplace && _selection.HasActiveSelection && _selection.IsPixelInSelection(cx, cy))
+                    if (isReplace && _selection.HasActiveSelection && _selection.IsPixelInSelection(x, y))
                     {
-                        if (ViewModel.TryBeginSelectionDrag(cx, cy))
+                        if (ViewModel.TryBeginSelectionDrag(x, y))
                         {
                             _dragStartMousePos = e.GetPosition(Canvas.PixelGridContainer);
                             _dragStartFloatingX = _selection.FloatingX;
@@ -462,7 +459,7 @@ namespace Hexprite
                         }
                     }
 
-                    ViewModel.ProcessSelectionInput(cx, cy, ToolAction.Down,
+                    ViewModel.ProcessSelectionInput(x, y, ToolAction.Down,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Alt),
                         e.ChangedButton == MouseButton.Right);
@@ -525,9 +522,7 @@ namespace Hexprite
                      ViewModel.CurrentTool == ToolMode.MagicWand)
                     && e.LeftButton == MouseButtonState.Pressed)
                 {
-                    int cx = Math.Clamp(x, 0, ViewModel.SpriteState.Width - 1);
-                    int cy = Math.Clamp(y, 0, ViewModel.SpriteState.Height - 1);
-                    ViewModel.ProcessSelectionInput(cx, cy, ToolAction.Move,
+                    ViewModel.ProcessSelectionInput(x, y, ToolAction.Move,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                     return;

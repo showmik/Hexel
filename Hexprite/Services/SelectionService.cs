@@ -351,17 +351,21 @@ namespace Hexprite.Services
             FloatingPixels = new bool[FloatingWidth, FloatingHeight];
 
             int w = state.Width;
+            int h = state.Height;
             for (int y = MinY; y <= MaxY; y++)
             {
                 for (int x = MinX; x <= MaxX; x++)
                 {
                     if (IsPixelInSelection(x, y))
                     {
-                        int idx = (y * w) + x;
-                        if (state.Pixels[idx])
+                        if (x >= 0 && x < w && y >= 0 && y < h)
                         {
-                            FloatingPixels[x - MinX, y - MinY] = true;
-                            state.Pixels[idx] = false;
+                            int idx = (y * w) + x;
+                            if (state.Pixels[idx])
+                            {
+                                FloatingPixels[x - MinX, y - MinY] = true;
+                                state.Pixels[idx] = false;
+                            }
                         }
                     }
                 }
