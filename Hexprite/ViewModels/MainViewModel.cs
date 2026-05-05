@@ -948,11 +948,42 @@ namespace Hexprite.ViewModels
         {
             if (toolName == null) return;
 
-            // Commit floating pixels before switching tool.
-            // Non-floating selections are preserved — they become the draw mask.
+            // Commit floating pixels before switching tool, then re-apply the
+            // selection bounds as a non-floating mask so drawing stays clipped.
             if (_selectionService.IsFloating)
             {
+                // Snapshot BEFORE CommitIfActive wipes all state.
+                var mask = _selectionService.Mask;
+                var floatX = _selectionService.FloatingX;
+                var floatY = _selectionService.FloatingY;
+                var floatW = _selectionService.FloatingWidth;
+                var floatH = _selectionService.FloatingHeight;
+
                 _selectionInput.CommitIfActive();
+
+                // Rebuild a mask covering the former floating area so the
+                // user can only draw inside that region until they deselect.
+                int maxX = floatX + floatW - 1;
+                int maxY = floatY + floatH - 1;
+
+                bool[,] residualMask;
+                if (mask != null)
+                {
+                    residualMask = mask;
+                }
+                else
+                {
+                    residualMask = new bool[floatW, floatH];
+                    for (int ry = 0; ry < floatH; ry++)
+                        for (int rx = 0; rx < floatW; rx++)
+                            residualMask[rx, ry] = true;
+                }
+
+                _selectionService.ApplyMask(
+                    residualMask,
+                    floatX, floatY,
+                    maxX, maxY,
+                    Core.SelectionMode.Replace);
             }
 
             CurrentTool = toolName switch
@@ -970,7 +1001,6 @@ namespace Hexprite.ViewModels
             };
 
             _toolInput.CancelInProgressDrawing();
-
             ToolChanged?.Invoke(this, EventArgs.Empty);
         }
 

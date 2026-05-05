@@ -96,22 +96,23 @@ namespace Hexprite.Controllers
         /// </summary>
         public void ProcessToolInput(int x, int y, ToolAction action, DrawMode mode, bool isShiftDown, bool isAltDown = false)
         {
-            // Marquee and Lasso are handled entirely in the View via SelectionService
             if (_vm.CurrentTool == ToolMode.Marquee || _vm.CurrentTool == ToolMode.Lasso) return;
 
-            // Activate selection clipping so drawing only affects selected pixels
-            _drawingService.SetSelectionClip(_vm.SelectionService);
+            // Only clip to the selection when one is active and NOT floating.
+            // A floating layer has already been committed to the canvas by this point;
+            // the residual non-floating mask is what constrains drawing.
+            var sel = _vm.SelectionService;
+            bool hasClip = sel.HasActiveSelection && !sel.IsFloating;
+            _drawingService.SetSelectionClip(hasClip ? sel : null);
 
             switch (action)
             {
                 case ToolAction.Down:
                     HandleToolDown(x, y, mode, isShiftDown);
                     break;
-
                 case ToolAction.Move:
                     HandleToolMove(x, y, mode, isShiftDown, isAltDown);
                     break;
-
                 case ToolAction.Up:
                     HandleToolUp(isShiftDown, isAltDown);
                     break;
