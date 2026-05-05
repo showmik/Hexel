@@ -503,6 +503,9 @@ namespace Hexel.ViewModels
             {
                 _historyService.SaveState(SpriteState);
                 IsDirty = true;
+                // Drop floating layer explicitly (user intent is clear canvas = clear everything)
+                if (_selectionService.HasActiveSelection)
+                    _selectionService.Cancel();
                 Array.Clear(SpriteState.Pixels, 0, SpriteState.Pixels.Length);
                 RedrawGridFromMemory();
                 MarkCodeStale();
@@ -967,8 +970,12 @@ namespace Hexel.ViewModels
         {
             if (state == null || ReferenceEquals(state, SpriteState)) return;
 
-            // Cancel any in-progress selection or floating layer
-            _selectionService.Cancel();
+            // Commit floating pixels into the current state before overwriting it.
+            // This prevents silent pixel loss on undo while a floating selection is active.
+            if (_selectionService.IsFloating)
+                _selectionService.CommitSelection(SpriteState);
+            else
+                _selectionService.Cancel();
 
             if (SpriteState.Width != state.Width || SpriteState.Height != state.Height)
             {
