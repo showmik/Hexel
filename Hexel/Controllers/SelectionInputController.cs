@@ -34,12 +34,12 @@ namespace Hexel.Controllers
         /// Main entry point for selection tool input from the View.
         /// The View only provides pixel coordinates and modifier key state.
         /// </summary>
-        public void ProcessInput(int x, int y, ToolAction action, bool isShiftDown, bool isAltDown)
+        public void ProcessInput(int x, int y, ToolAction action, bool isShiftDown, bool isAltDown, bool isInverse = false)
         {
             switch (action)
             {
                 case ToolAction.Down:
-                    HandleDown(x, y, isShiftDown, isAltDown);
+                    HandleDown(x, y, isShiftDown, isAltDown, isInverse);
                     break;
                 case ToolAction.Move:
                     HandleMove(x, y, isShiftDown);
@@ -82,7 +82,7 @@ namespace Hexel.Controllers
 
         // ── Private: input dispatch ────────────────────────────────────────
 
-        private void HandleDown(int x, int y, bool isShiftDown, bool isAltDown)
+        private void HandleDown(int x, int y, bool isShiftDown, bool isAltDown, bool isInverse = false)
         {
             var mode = DetermineSelectionMode(isShiftDown, isAltDown);
 
@@ -112,10 +112,33 @@ namespace Hexel.Controllers
 
             if (_vm.CurrentTool == ToolMode.MagicWand)
             {
-                _vm.SaveStateForUndo();
                 var fillMask = _drawingService.GetFloodFillMask(_vm.SpriteState, x, y,
                     out int minX, out int minY, out int maxX, out int maxY);
-                _selection.ApplyMask(fillMask, minX, minY, maxX, maxY, mode);
+
+                if (isInverse)
+                {
+                    int w = _vm.SpriteState.Width;
+                    int h = _vm.SpriteState.Height;
+                    var inverseMask = new bool[w, h];
+                    int fw = fillMask.GetLength(0);
+                    int fh = fillMask.GetLength(1);
+
+                    for (int cy = 0; cy < h; cy++)
+                    {
+                        for (int cx = 0; cx < w; cx++)
+                        {
+                            int fx = cx - minX;
+                            int fy = cy - minY;
+                            bool isFilled = fx >= 0 && fx < fw && fy >= 0 && fy < fh && fillMask[fx, fy];
+                            inverseMask[cx, cy] = !isFilled;
+                        }
+                    }
+                    _selection.ApplyMask(inverseMask, 0, 0, w - 1, h - 1, mode);
+                }
+                else
+                {
+                    _selection.ApplyMask(fillMask, minX, minY, maxX, maxY, mode);
+                }
                 _vm.RedrawGridFromMemory();
             }
             else

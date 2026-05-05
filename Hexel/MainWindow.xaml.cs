@@ -439,7 +439,8 @@ namespace Hexel
 
                     ViewModel.ProcessSelectionInput(cx, cy, ToolAction.Down,
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
-                        Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Alt),
+                        e.ChangedButton == MouseButton.Right);
                     return;
                 }
 

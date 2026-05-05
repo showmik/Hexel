@@ -729,8 +729,8 @@ namespace Hexel.ViewModels
         /// Main entry point for selection tool input from the View.
         /// Delegates to the extracted SelectionInputController.
         /// </summary>
-        public void ProcessSelectionInput(int x, int y, ToolAction action, bool isShiftDown, bool isAltDown)
-            => _selectionInput.ProcessInput(x, y, action, isShiftDown, isAltDown);
+        public void ProcessSelectionInput(int x, int y, ToolAction action, bool isShiftDown, bool isAltDown, bool isInverse = false)
+            => _selectionInput.ProcessInput(x, y, action, isShiftDown, isAltDown, isInverse);
 
         /// <summary>
         /// Commits any active selection. Returns true if there was one to commit.
