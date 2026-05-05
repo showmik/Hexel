@@ -348,9 +348,15 @@ namespace Hexprite.Services
             {
                 if (row >= state.Height) break;
                 string data = line.Contains(':') ? line[(line.IndexOf(':') + 1)..] : line;
-                data = data.Replace(" ", "").Replace(",", "");
-                for (int col = 0; col < state.Width; col++)
-                    state.Pixels[(row * state.Width) + col] = col < data.Length && data[col] == '1';
+                int col = 0;
+                for (int i = 0; i < data.Length && col < state.Width; i++)
+                {
+                    char c = data[i];
+                    if (c == ' ' || c == ',') continue;
+                    
+                    state.Pixels[(row * state.Width) + col] = (c == '1');
+                    col++;
+                }
                 row++;
             }
         }
