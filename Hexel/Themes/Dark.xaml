@@ -12,8 +12,8 @@
     <Color x:Key="Color.TextMuted">#939DB5</Color>
     <Color x:Key="Color.TextInverse">#0F172A</Color>
     <Color x:Key="Color.CodeTxt">#8696AD</Color>
-    <Color x:Key="Color.PrimaryAccent">#F0C4B8</Color>
-    <Color x:Key="Color.SelectionBackground">#4F46E5</Color>
+    <Color x:Key="Color.PrimaryAccent">#6366F1</Color>
+    <Color x:Key="Color.SelectionBackground">#6366F1</Color>
     <Color x:Key="Color.Danger">#E8675A</Color>
     <Color x:Key="Color.Warning">#F2E94E</Color>
     <Color x:Key="Color.OledBackground">#000000</Color>
@@ -44,7 +44,7 @@
     <Color x:Key="Color.TextBoxBackground">#232536</Color>
     <Color x:Key="Color.TextBoxBorder">#2C3145</Color>
     <Color x:Key="Color.TextBoxText">#EDF2F7</Color>
-    <Color x:Key="Color.TextBoxFocusBorder">#F0C4B8</Color>
+    <Color x:Key="Color.TextBoxFocusBorder">#6366F1</Color>
     <Color x:Key="Color.ComboBoxBackground">#232536</Color>
     <Color x:Key="Color.ComboBoxBorder">#2C3145</Color>
     <Color x:Key="Color.ComboBoxText">#EDF2F7</Color>
@@ -58,8 +58,8 @@
     <Color x:Key="Color.MenuPopupBackground">#1A1C2E</Color>
     <Color x:Key="Color.MenuPopupBorder">#2C3145</Color>
     <Color x:Key="Color.ToolButtonHover">#2C3145</Color>
-    <Color x:Key="Color.ToolButtonCheckedBackground">#4F46E5</Color>
-    <Color x:Key="Color.ToolButtonCheckedBorder">#F0C4B8</Color>
+    <Color x:Key="Color.ToolButtonCheckedBackground">#6366F1</Color>
+    <Color x:Key="Color.ToolButtonCheckedBorder">#6366F1</Color>
     <Color x:Key="Color.StatusBarBorder">#2C3145</Color>
     <Color x:Key="Color.CheckBoxBackground">#232536</Color>
     <Color x:Key="Color.CheckBoxBorder">#383D54</Color>
@@ -68,7 +68,7 @@
          New semantic tokens
          ═══════════════════════════════════════════════════════════ -->
     <Color x:Key="Color.TextOnAccent">#FFFFFF</Color>
-    <Color x:Key="Color.BrandGradientStart">#4F46E5</Color>
+    <Color x:Key="Color.BrandGradientStart">#6366F1</Color>
     <Color x:Key="Color.BrandGradientEnd">#7C3AED</Color>
     <Color x:Key="Color.CrosshairStroke">#CCFFFFFF</Color>
     <Color x:Key="Color.LassoFill">#40F2E94E</Color>
