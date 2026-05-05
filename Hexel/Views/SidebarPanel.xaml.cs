@@ -8,6 +8,8 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Hexel.Views
 {
@@ -34,6 +36,36 @@ namespace Hexel.Views
         {
             InitializeComponent();
             DataContextChanged += OnDataContextChanged;
+            Loaded += SidebarPanel_Loaded;
+            Unloaded += SidebarPanel_Unloaded;
+        }
+
+        private ShellViewModel? _shell;
+
+        private void SidebarPanel_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (Application.Current.MainWindow?.DataContext is ShellViewModel shell)
+            {
+                _shell = shell;
+                _shell.ThemeChanged += Shell_ThemeChanged;
+            }
+        }
+
+        private void SidebarPanel_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (_shell != null)
+            {
+                _shell.ThemeChanged -= Shell_ThemeChanged;
+                _shell = null;
+            }
+        }
+
+        private void Shell_ThemeChanged(object? sender, EventArgs e)
+        {
+            if (_vm != null)
+            {
+                UpdateSyntaxOutput(_vm.ExportedCode);
+            }
         }
 
         private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -161,76 +193,72 @@ namespace Hexel.Views
             // Resolve brushes from theme resources (so they respect theme switches)
             TryLoadBrushes();
 
-            var doc = new FlowDocument
-            {
-                FontFamily = RtbOutput.FontFamily,
-                FontSize = RtbOutput.FontSize,
-                PagePadding = new Thickness(0),
-            };
-
             if (string.IsNullOrEmpty(code))
             {
-                doc.Blocks.Add(new Paragraph(new Run("(no output)") { Foreground = _commentBrush }));
-                RtbOutput.Document = doc;
+                CodeOutputBox.UpdateCode("(no output)", new List<Rendering.TokenSpan> { new Rendering.TokenSpan(0, 11, Rendering.TokenType.Comment) },
+                    _defaultBrush, _keywordBrush, _literalBrush, _commentBrush, _identifierBrush);
                 return;
             }
 
-            string[] lines = code.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-            foreach (string line in lines)
+            Task.Run(() =>
             {
-                var para = new Paragraph { Margin = new Thickness(0), LineHeight = 18 };
-                AppendColouredLine(para.Inlines, line);
-                doc.Blocks.Add(para);
-            }
-
-            RtbOutput.Document = doc;
+                var spans = TokenizeCode(code);
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    CodeOutputBox.UpdateCode(code, spans, _defaultBrush, _keywordBrush, _literalBrush, _commentBrush, _identifierBrush);
+                }));
+            });
         }
 
-        private void AppendColouredLine(InlineCollection inlines, string line)
+        private List<Rendering.TokenSpan> TokenizeCode(string code)
         {
-            // Tokenise the line with a simple regex scanner:
-            // 1. Comments: // … to end of line
-            // 2. Hex literals: 0x / 0X followed by hex digits
-            // 3. C keywords / type names
-            // 4. Python keywords
-            // 5. Everything else
+            var spans = new List<Rendering.TokenSpan>();
+            int absolutePos = 0;
 
-            int pos = 0;
-
-            // Comment check: if the trimmed line starts with //, whole line is a comment
-            string trimmed = line.TrimStart();
-            if (trimmed.StartsWith("//") || trimmed.StartsWith("#"))
+            while (absolutePos < code.Length)
             {
-                inlines.Add(new Run(line) { Foreground = _commentBrush });
-                return;
-            }
+                int endLine = code.IndexOf('\n', absolutePos);
+                int lineLen = (endLine == -1) ? code.Length - absolutePos : endLine - absolutePos;
+                string line = code.Substring(absolutePos, lineLen);
 
-            // Split at embedded comment (e.g. "  0xFF,  // row 0")
-            int commentIdx = FindInlineComment(line);
-            string codePart = commentIdx >= 0 ? line[..commentIdx] : line;
-            string commentPart = commentIdx >= 0 ? line[commentIdx..] : string.Empty;
-
-            foreach (Match m in s_tokenRegex.Matches(codePart))
-            {
-                string token = m.Value;
-                SolidColorBrush brush;
-
-                if (m.Groups[1].Success)
-                    brush = _literalBrush;   // hex literal
-                else if (m.Groups[2].Success)
-                    brush = _keywordBrush;   // keyword / type
-                else if (m.Groups[3].Success)
-                    brush = _identifierBrush; // identifier
+                string trimmed = line.TrimStart();
+                if (trimmed.StartsWith("//") || trimmed.StartsWith("#"))
+                {
+                    spans.Add(new Rendering.TokenSpan(absolutePos, line.Length, Rendering.TokenType.Comment));
+                }
                 else
-                    brush = _defaultBrush;   // punctuation
+                {
+                    int commentIdx = FindInlineComment(line);
+                    string codePart = commentIdx >= 0 ? line[..commentIdx] : line;
+                    string commentPart = commentIdx >= 0 ? line[commentIdx..] : string.Empty;
 
-                inlines.Add(new Run(token) { Foreground = brush });
-                pos += token.Length;
+                    foreach (Match m in s_tokenRegex.Matches(codePart))
+                    {
+                        Rendering.TokenType type = Rendering.TokenType.Default;
+                        if (m.Groups[1].Success)
+                            type = Rendering.TokenType.Literal;
+                        else if (m.Groups[2].Success)
+                            type = Rendering.TokenType.Keyword;
+                        else if (m.Groups[3].Success)
+                            type = Rendering.TokenType.Identifier;
+
+                        if (type != Rendering.TokenType.Default)
+                        {
+                            spans.Add(new Rendering.TokenSpan(absolutePos + m.Index, m.Length, type));
+                        }
+                    }
+
+                    if (commentIdx >= 0)
+                    {
+                        spans.Add(new Rendering.TokenSpan(absolutePos + commentIdx, commentPart.Length, Rendering.TokenType.Comment));
+                    }
+                }
+
+                absolutePos += lineLen;
+                if (endLine != -1) absolutePos += 1; // skip \n
             }
 
-            // Append trailing comment part
-            if (!string.IsNullOrEmpty(commentPart))
-                inlines.Add(new Run(commentPart) { Foreground = _commentBrush });
+            return spans;
         }
 
         /// <summary>

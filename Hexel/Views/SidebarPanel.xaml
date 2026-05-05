@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:core="clr-namespace:Hexel.Core"
+             xmlns:rendering="clr-namespace:Hexel.Rendering"
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="320">
 
@@ -207,18 +208,15 @@
                             </Border>
 
                             <!-- Code content -->
-                            <RichTextBox Grid.Row="1"
-                                         x:Name="RtbOutput"
-                                         IsReadOnly="True"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         FontFamily="{DynamicResource Theme.CodeFont}"
-                                         FontSize="12"
-                                         Padding="8"
-                                         VerticalScrollBarVisibility="Auto"
-                                         HorizontalScrollBarVisibility="Auto"
-                                         IsDocumentEnabled="False"
-                                         AcceptsReturn="False"/>
+                            <ScrollViewer Grid.Row="1"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          Background="Transparent"
+                                          Padding="8">
+                                <rendering:SyntaxHighlightBox x:Name="CodeOutputBox"
+                                                              FontFamily="{DynamicResource Theme.CodeFont}"
+                                                              FontSize="12"/>
+                            </ScrollViewer>
                         </Grid>
                     </Border>
 
