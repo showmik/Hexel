@@ -1047,7 +1047,7 @@ namespace Hexel.ViewModels
             _canvasBuffer = new uint[width * height];
             _previewBuffer = new uint[width * height];
 
-            PreviewScale = Math.Max(1, (int)Math.Floor(288.0 / width));
+            PreviewScale = 2;
         }
 
         /// <summary>
