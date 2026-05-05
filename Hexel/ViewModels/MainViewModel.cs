@@ -938,8 +938,8 @@ namespace Hexel.ViewModels
             var res = Application.Current.Resources;
             var colorOff = ((SolidColorBrush)res["Theme.CanvasPixelBackgroundBrush"]).Color;
             var colorOn = ((SolidColorBrush)res["Theme.CanvasDrawingBrush"]).Color;
-            var prevOff = ((SolidColorBrush)res["Theme.OledOffBrush"]).Color;
-            var prevOn = ((SolidColorBrush)res["Theme.OledOnBrush"]).Color;
+            var prevOff = ((SolidColorBrush)res["Theme.PreviewBackgroundBrush"]).Color;
+            var prevOn = ((SolidColorBrush)res["Theme.PreviewDrawingBrush"]).Color;
 
             _colorOffUint = ToBgra32(colorOff);
             _colorOnUint = ToBgra32(colorOn);

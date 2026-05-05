@@ -365,12 +365,12 @@
                                     <Grid.Style>
                                         <Style TargetType="Grid">
                                             <Setter Property="Background"
-                                                    Value="{DynamicResource Theme.OledOffBrush}"/>
+                                                    Value="{DynamicResource Theme.PreviewBackgroundBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsDisplayInverted}"
                                                              Value="True">
                                                     <Setter Property="Background"
-                                                            Value="{DynamicResource Theme.OledOnBrush}"/>
+                                                            Value="{DynamicResource Theme.PreviewDrawingBrush}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>

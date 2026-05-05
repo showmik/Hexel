@@ -18,8 +18,9 @@
     <Color x:Key="Color.SelectionBackground">#6366F1</Color>
     <Color x:Key="Color.Danger">#E8675A</Color>
     <Color x:Key="Color.Warning">#F2E94E</Color>
-    <Color x:Key="Color.OledBackground">#000000</Color>
-    <Color x:Key="Color.OledForeground">#74B3CE</Color>
+    <Color x:Key="Color.PreviewBackground">#000000</Color>
+    <Color x:Key="Color.PreviewDrawingColor">#74B3CE</Color>
+    <Color x:Key="Color.CanvasGridLines">#232536</Color>
     <Color x:Key="Color.InvertButtonBackground">#0088CC</Color>
     <Color x:Key="Color.ClearButtonBackground">#E04545</Color>
     <Color x:Key="Color.CopyButtonBackground">#6DA65B</Color>
@@ -131,10 +132,12 @@
     <SolidColorBrush x:Key="Theme.WarningBrush"
                      Color="{StaticResource Color.Warning}" />
 
-    <SolidColorBrush x:Key="Theme.OledOffBrush"
-                     Color="{StaticResource Color.OledBackground}" />
-    <SolidColorBrush x:Key="Theme.OledOnBrush"
-                     Color="{StaticResource Color.OledForeground}" />
+    <SolidColorBrush x:Key="Theme.PreviewBackgroundBrush"
+                     Color="{StaticResource Color.PreviewBackground}" />
+    <SolidColorBrush x:Key="Theme.PreviewDrawingBrush"
+                     Color="{StaticResource Color.PreviewDrawingColor}" />
+    <SolidColorBrush x:Key="Theme.CanvasGridLinesBrush"
+                     Color="{StaticResource Color.CanvasGridLines}" />
 
     <!-- UI shell brushes -->
     <SolidColorBrush x:Key="Theme.MenuBarBackgroundBrush"

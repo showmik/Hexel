@@ -443,7 +443,7 @@
                                                 <RectangleGeometry Rect="{Binding GridViewport}" />
                                             </GeometryDrawing.Geometry>
                                             <GeometryDrawing.Pen>
-                                                <Pen Brush="{DynamicResource Theme.BackgroundBrush}"
+                                                <Pen Brush="{DynamicResource Theme.CanvasGridLinesBrush}"
                                                      Thickness="{Binding DynamicStrokeThickness}" />
                                             </GeometryDrawing.Pen>
                                         </GeometryDrawing>
