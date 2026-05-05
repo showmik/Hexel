@@ -194,13 +194,6 @@
                                                FontWeight="SemiBold"
                                                Opacity="0.8"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding ExportStats}"
-                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                               FontSize="10"
-                                               FontFamily="{DynamicResource Theme.CodeFont}"
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               Opacity="0.8"/>
                                 </Grid>
                             </Border>
 
@@ -246,23 +239,41 @@
                                 ToolTip="Copy generated code to clipboard"/>
                     </Grid>
 
-                    <!-- Stale indicator -->
-                    <TextBlock Text="⟳ Code is outdated"
-                               Foreground="#E0A030"
-                               FontSize="10.5"
-                               Margin="0,8,0,0"
-                               Opacity="0.85">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsCodeStale}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <!-- Status and Stats -->
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Stale indicator -->
+                        <TextBlock Grid.Column="0"
+                                   Text="⟳ Code is outdated"
+                                   Foreground="#E0A030"
+                                   FontSize="10.5"
+                                   Opacity="0.85">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Hidden"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCodeStale}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Export Stats -->
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding ExportStats}"
+                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   FontSize="10"
+                                   FontFamily="{DynamicResource Theme.CodeFont}"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.8"/>
+                    </Grid>
 
                 </StackPanel>
                 </Border>
