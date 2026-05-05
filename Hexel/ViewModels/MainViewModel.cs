@@ -936,8 +936,8 @@ namespace Hexel.ViewModels
         public void InitializeBrushColors()
         {
             var res = Application.Current.Resources;
-            var colorOff = ((SolidColorBrush)res["Theme.PanelBackgroundBrush"]).Color;
-            var colorOn = ((SolidColorBrush)res["Theme.PrimaryAccentBrush"]).Color;
+            var colorOff = ((SolidColorBrush)res["Theme.CanvasPixelBackgroundBrush"]).Color;
+            var colorOn = ((SolidColorBrush)res["Theme.CanvasDrawingBrush"]).Color;
             var prevOff = ((SolidColorBrush)res["Theme.OledOffBrush"]).Color;
             var prevOn = ((SolidColorBrush)res["Theme.OledOnBrush"]).Color;
 

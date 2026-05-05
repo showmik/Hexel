@@ -8,6 +8,8 @@
     <Color x:Key="Color.PanelBackground">#FFFFFF</Color>
     <Color x:Key="Color.PanelBorder">#E2DDD6</Color>
     <Color x:Key="Color.CanvasBackground">#3A3A4A</Color>
+    <Color x:Key="Color.CanvasPixelBackground">#3A3A4A</Color>
+    <Color x:Key="Color.CanvasDrawingColor">#FFFFFF</Color>
     <Color x:Key="Color.TextMain">#1E1E2E</Color>
     <Color x:Key="Color.TextMuted">#6E6E80</Color>
     <Color x:Key="Color.TextInverse">#F5F3EF</Color>
@@ -99,6 +101,10 @@
                      Color="{StaticResource Color.PanelBorder}" />
     <SolidColorBrush x:Key="Theme.CanvasBackgroundBrush"
                      Color="{StaticResource Color.CanvasBackground}" />
+    <SolidColorBrush x:Key="Theme.CanvasPixelBackgroundBrush"
+                     Color="{StaticResource Color.CanvasPixelBackground}" />
+    <SolidColorBrush x:Key="Theme.CanvasDrawingBrush"
+                     Color="{StaticResource Color.CanvasDrawingColor}" />
 
     <SolidColorBrush x:Key="Theme.TextMainBrush"
                      Color="{StaticResource Color.TextMain}" />
