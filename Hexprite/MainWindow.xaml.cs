@@ -275,12 +275,8 @@ namespace Hexprite
                 else if (e.Key == Key.Down) { ViewModel.ShiftGrid(0, 1); e.Handled = true; }
                 else if (e.Key == Key.Left) { ViewModel.ShiftGrid(-1, 0); e.Handled = true; }
                 else if (e.Key == Key.Right) { ViewModel.ShiftGrid(1, 0); e.Handled = true; }
-                else if (e.Key == Key.D)
-                {
-                    // Ctrl+D: DeselectCommand handles the model side via KeyBinding;
-                    // we clear the visual overlay here.
-                    _selectionOverlay.Clear();
-                }
+                // FIX: Removed redundant Ctrl+D interception. Deselection UI cleanup is 
+                // strictly handled by the SelectionChanged event triggered by the KeyBinding command.
                 return;
             }
 
