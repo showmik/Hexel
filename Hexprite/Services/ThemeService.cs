@@ -69,9 +69,10 @@ namespace Hexprite.Services
                         return saved;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Swallow – fall through to default
+                // FIX: Fall through to default, but log the error for diagnostics
+                Logger.Log($"[ThemeService] Failed to load saved theme: {ex.Message}");
             }
             return "Dark";
         }
@@ -83,9 +84,10 @@ namespace Hexprite.Services
                 Directory.CreateDirectory(SettingsDir);
                 File.WriteAllText(SettingsFile, themeName);
             }
-            catch
+            catch (Exception ex)
             {
-                // Non-critical — silently ignore
+                // FIX: Do not crash the app, but log the failure to write to disk
+                Logger.Log($"[ThemeService] Failed to persist theme '{themeName}': {ex.Message}");
             }
         }
     }
