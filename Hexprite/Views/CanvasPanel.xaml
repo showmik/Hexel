@@ -508,11 +508,14 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Undo / Redo -->
+                <!-- History & Actions -->
                 <StackPanel Grid.Column="0"
                             Orientation="Horizontal">
+                    
+                    <!-- Undo / Redo -->
                     <Button Command="{Binding UndoCommand}"
                             ToolTip="Undo (Ctrl+Z)"
                             Width="34"
@@ -534,6 +537,47 @@
                                    FontFamily="Segoe MDL2 Assets"
                                    FontSize="14" />
                     </Button>
+
+                    <Rectangle Width="2"
+                               Fill="{DynamicResource Theme.PanelBorderBrush}"
+                               Margin="12,4"
+                               RadiusX="1"
+                               RadiusY="1" />
+
+                    <!-- Canvas Actions -->
+                    <Button Command="{Binding InvertCommand}"
+                            ToolTip="Invert Canvas"
+                            Width="34"
+                            Height="34"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Padding="0"
+                            Margin="0,0,4,0">
+                        <TextBlock Text="&#xE8D5;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="14" />
+                    </Button>
+                    <Button Command="{Binding ClearCommand}"
+                            ToolTip="Clear Canvas"
+                            Width="34"
+                            Height="34"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Padding="0">
+                        <TextBlock Text="&#xE74D;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="14" />
+                    </Button>
+                </StackPanel>
+
+                <!-- View Options -->
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="0,0,4,0">
+                    <CheckBox Content="Show Grid"
+                              IsChecked="{Binding ShowGridLines}"
+                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                              ToolTip="Toggle Grid Preview"
+                              VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>
