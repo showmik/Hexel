@@ -205,10 +205,25 @@ namespace Hexprite.Services
                 return;
             }
 
-            int minX = mode == SelectionMode.Intersect ? Math.Max(_baseMinX, nMinX) : Math.Min(_baseMinX, nMinX);
-            int maxX = mode == SelectionMode.Intersect ? Math.Min(_baseMaxX, nMaxX) : Math.Max(_baseMaxX, nMaxX);
-            int minY = mode == SelectionMode.Intersect ? Math.Max(_baseMinY, nMinY) : Math.Min(_baseMinY, nMinY);
-            int maxY = mode == SelectionMode.Intersect ? Math.Min(_baseMaxY, nMaxY) : Math.Max(_baseMaxY, nMaxY);
+            int minX = _baseMinX;
+            int maxX = _baseMaxX;
+            int minY = _baseMinY;
+            int maxY = _baseMaxY;
+
+            if (mode == SelectionMode.Add)
+            {
+                minX = Math.Min(_baseMinX, nMinX);
+                maxX = Math.Max(_baseMaxX, nMaxX);
+                minY = Math.Min(_baseMinY, nMinY);
+                maxY = Math.Max(_baseMaxY, nMaxY);
+            }
+            else if (mode == SelectionMode.Intersect)
+            {
+                minX = Math.Max(_baseMinX, nMinX);
+                maxX = Math.Min(_baseMaxX, nMaxX);
+                minY = Math.Max(_baseMinY, nMinY);
+                maxY = Math.Min(_baseMaxY, nMaxY);
+            }
 
             if (minX > maxX || minY > maxY)
             {
