@@ -60,6 +60,7 @@ namespace Hexprite.Controllers
             
             bool wasFloating = _selection.IsFloating;
             
+            _vm.SaveStateForUndo();
             _selection.CommitSelection(_vm.SpriteState);
             _vm.RedrawGridFromMemory();
             
