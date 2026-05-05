@@ -7,7 +7,7 @@
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="320">
 
-    <Border Background="{DynamicResource Theme.PanelBackgroundBrush}"
+    <Border Background="{DynamicResource Theme.RightSidebarBackgroundBrush}"
             BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
             BorderThickness="1,0,0,0">
         <ScrollViewer VerticalScrollBarVisibility="Auto"

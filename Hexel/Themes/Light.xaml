@@ -63,6 +63,10 @@
                      Color="{StaticResource Color.Background}" />
     <SolidColorBrush x:Key="Theme.PanelBackgroundBrush"
                      Color="{StaticResource Color.PanelBackground}" />
+    <LinearGradientBrush x:Key="Theme.RightSidebarBackgroundBrush" StartPoint="0,0" EndPoint="0.8,1">
+        <GradientStop Color="#F7F5F0" Offset="0" />
+        <GradientStop Color="#F7F5F0" Offset="1" />
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="Theme.PanelBorderBrush"
                      Color="{StaticResource Color.PanelBorder}" />
     <SolidColorBrush x:Key="Theme.CanvasBackgroundBrush"
