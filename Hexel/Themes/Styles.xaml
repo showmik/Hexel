@@ -1027,7 +1027,7 @@
     <!-- Small accent button — copy, parse etc. -->
     <Style x:Key="AccentButtonStyle" TargetType="Button">
         <Setter Property="Background"  Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
-        <Setter Property="Foreground"  Value="{DynamicResource Theme.TextOnAccentBrush}"/>
+        <Setter Property="Foreground"  Value="{DynamicResource Theme.TextInverseBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding"     Value="14,6"/>
         <Setter Property="Cursor"      Value="Hand"/>

@@ -376,7 +376,7 @@
                           Background="{DynamicResource Theme.PanelBackgroundBrush}"
                           Cursor="SizeWE" />
 
-            <views:SidebarPanel Grid.Column="3" Margin="15,20,20,20" />
+            <views:SidebarPanel Grid.Column="3" Margin="0" />
         </Grid>
         <!-- /Main content -->
 

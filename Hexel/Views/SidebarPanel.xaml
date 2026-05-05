@@ -7,23 +7,30 @@
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="320">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled"
-                  Style="{StaticResource {x:Type ScrollViewer}}">
-        <StackPanel>
+    <Border Background="{DynamicResource Theme.PanelBackgroundBrush}"
+            BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+            BorderThickness="1,0,0,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Style="{StaticResource {x:Type ScrollViewer}}">
+            <StackPanel>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 EXPORT PANEL
-                 ═══════════════════════════════════════════════════════ -->
-            <Border Style="{StaticResource PanelStyle}"
-                    Padding="16,8,16,16"
-                    Margin="0,0,0,12">
+                <!-- ═══════════════════════════════════════════════════════
+                     EXPORT PANEL
+                     ═══════════════════════════════════════════════════════ -->
+                <Border Background="{DynamicResource Theme.SurfaceOverlayBrush}"
+                        CornerRadius="8"
+                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                        BorderThickness="1"
+                        Margin="12,12,12,0"
+                        Padding="16,20,16,20">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
+                    </Border.Effect>
                 <StackPanel>
-
-                    <!-- Header -->
                     <TextBlock Text="EXPORT"
                                Style="{StaticResource HeaderStyle}"
-                               Margin="0,0,0,12"/>
+                               Margin="0,0,0,16"/>
 
                     <!-- Format selector -->
                     <TextBlock Text="Format"
@@ -55,26 +62,26 @@
                              Height="30"
                              FontFamily="{DynamicResource Theme.CodeFont}"
                              Text="{Binding SpriteName, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,0,12"
+                             Margin="0,0,0,16"
                              ToolTip="Will be sanitised to a valid C/Python identifier"/>
 
                     <!-- ─── Code structure options (expander) ──────── -->
                     <Border BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
                             BorderThickness="0,1,0,0"
-                            Margin="0,0,0,10">
+                            Margin="0,0,0,16">
                         <Expander Style="{StaticResource ModernExpanderStyle}"
                                   IsExpanded="False"
-                                  Margin="0,4,0,0">
+                                  Margin="0,8,0,0">
                             <Expander.Header>
                                 <TextBlock Text="CODE STRUCTURE OPTIONS"
                                            Style="{StaticResource HeaderStyle}"
                                            Margin="0"
                                            VerticalAlignment="Center"/>
                             </Expander.Header>
-                            <StackPanel Margin="0,12,0,0">
+                            <StackPanel Margin="0,16,0,0">
 
                                 <!-- Checkboxes row 1 -->
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <CheckBox Content="Usage comment"
                                               IsChecked="{Binding IncludeUsageComment}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
@@ -87,7 +94,7 @@
                                 </StackPanel>
 
                                 <!-- Checkboxes row 2 -->
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                     <CheckBox Content="Row comments"
                                               IsChecked="{Binding IncludeRowComments}"
                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
@@ -109,7 +116,7 @@
                                            Foreground="{DynamicResource Theme.TextMutedBrush}"
                                            FontSize="11"
                                            Margin="0,0,0,5"/>
-                                <WrapPanel Margin="0,0,0,10">
+                                <WrapPanel Margin="0,0,0,12">
                                     <RadioButton x:Name="RbBpl0"
                                                  Content="canvas width"
                                                  GroupName="BytesPerLine"
@@ -162,187 +169,216 @@
                         </Expander>
                     </Border>
 
-                    <!-- ─── Code output box ────────────────────────── -->
+                    <!-- ─── Code output box with header bar ──────── -->
                     <Border Background="{DynamicResource Theme.BackgroundBrush}"
                             CornerRadius="6"
                             BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
                             BorderThickness="1"
-                            Padding="1"
+                            ClipToBounds="True"
                             Height="260">
-                        <RichTextBox x:Name="RtbOutput"
-                                     IsReadOnly="True"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     FontFamily="{DynamicResource Theme.CodeFont}"
-                                     FontSize="12"
-                                     Padding="8"
-                                     VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     IsDocumentEnabled="False"
-                                     AcceptsReturn="False"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Output header bar -->
+                            <Border Grid.Row="0" Padding="10,6"
+                                    BorderThickness="0,0,0,1"
+                                    BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                    Background="{DynamicResource Theme.SurfaceOverlayBrush}">
+                                <Grid>
+                                    <TextBlock Text="OUTPUT"
+                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Opacity="0.8"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ExportStats}"
+                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                               FontSize="10"
+                                               FontFamily="{DynamicResource Theme.CodeFont}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.8"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Code content -->
+                            <RichTextBox Grid.Row="1"
+                                         x:Name="RtbOutput"
+                                         IsReadOnly="True"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         FontFamily="{DynamicResource Theme.CodeFont}"
+                                         FontSize="12"
+                                         Padding="8"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Auto"
+                                         IsDocumentEnabled="False"
+                                         AcceptsReturn="False"/>
+                        </Grid>
                     </Border>
 
-                    <!-- Generate Code + stale indicator -->
-                    <Grid Margin="0,8,0,0">
+                    <!-- Generate Code + Copy buttons -->
+                    <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Generate Code button -->
                         <Button Grid.Column="0"
                                 Content="⟳  Generate Code"
                                 Style="{StaticResource AccentButtonStyle}"
                                 HorizontalAlignment="Stretch"
-                                Padding="8,6"
-                                FontSize="11"
-                                Margin="0,0,6,0"
+                                Padding="8,8"
+                                FontSize="11.5"
+                                Margin="0,0,8,0"
                                 Command="{Binding GenerateCodeCommand}"
                                 ToolTip="Generate code from current canvas data"/>
 
-                        <!-- Copy button -->
                         <Button Grid.Column="1"
                                 Content="⎘ Copy"
                                 Style="{StaticResource ModernButtonStyle}"
-                                Padding="12,6"
-                                FontSize="11"
+                                Padding="16,8"
+                                FontSize="11.5"
                                 Command="{Binding CopyExportedCodeCommand}"
                                 ToolTip="Copy generated code to clipboard"/>
                     </Grid>
 
-                    <!-- Stale indicator + stats row -->
-                    <Grid Margin="0,6,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Stale hint (visible only when code is outdated) -->
-                        <TextBlock Grid.Column="0"
-                                   Text="⟳ Code is outdated"
-                                   Foreground="#E0A030"
-                                   FontSize="10.5"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,8,0"
-                                   Opacity="0.85">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsCodeStale}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-
-                        <!-- Stats (right-aligned) -->
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding ExportStats}"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
-                                   FontSize="10.5"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Right"
-                                   FontFamily="{DynamicResource Theme.CodeFont}"/>
-                    </Grid>
+                    <!-- Stale indicator -->
+                    <TextBlock Text="⟳ Code is outdated"
+                               Foreground="#E0A030"
+                               FontSize="10.5"
+                               Margin="0,8,0,0"
+                               Opacity="0.85">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsCodeStale}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
                 </StackPanel>
-            </Border>
+                </Border>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 IMPORT FROM CODE
-                 ═══════════════════════════════════════════════════════ -->
-            <Border Style="{StaticResource PanelStyle}"
-                    Padding="16,8,16,16"
-                    Margin="0,0,0,12">
+                <!-- ═══════════════════════════════════════════════════════
+                     IMPORT FROM CODE
+                     ═══════════════════════════════════════════════════════ -->
+                <Border Background="{DynamicResource Theme.SurfaceOverlayBrush}"
+                        CornerRadius="8"
+                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                        BorderThickness="1"
+                        Margin="12,12,12,0"
+                        Padding="16,20,16,20">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
+                    </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="IMPORT"
                                Style="{StaticResource HeaderStyle}"
-                               Margin="0,0,0,10"/>
+                               Margin="0,0,0,16"/>
+
                     <TextBlock Text="Import sprite data from Adafruit GFX, u8g2, plain C array, or raw hex code. Dimensions and variable name are auto-detected."
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource Theme.TextMutedBrush}"
                                FontSize="11"
-                               Margin="0,0,0,12"/>
+                               Margin="0,0,0,16"
+                               LineHeight="18"/>
                     <Button Content="Import from Code…"
                             Style="{StaticResource AccentButtonStyle}"
                             HorizontalAlignment="Stretch"
                             Click="ImportFromCode_Click"
-                            ToolTip="Open the Import from Code dialog (Ctrl+Shift+I)"/>
+                            ToolTip="Open the Import from Code dialog (Ctrl+Shift+I)"
+                            Padding="8,8"
+                            FontSize="11.5"/>
                 </StackPanel>
-            </Border>
+                </Border>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 OLED PREVIEW (collapsible, dynamic size)
-                 ═══════════════════════════════════════════════════════ -->
-            <Border Style="{StaticResource PanelStyle}"
-                    Padding="16,8,16,16">
-                <Expander Style="{StaticResource ModernExpanderStyle}"
-                          IsExpanded="False">
-                    <Expander.Header>
-                        <TextBlock Text="DISPLAY PREVIEW"
-                                   Style="{StaticResource HeaderStyle}"
-                                   Margin="0"
-                                   VerticalAlignment="Center"/>
-                    </Expander.Header>
-                    <StackPanel Margin="0,12,0,0">
-                        <!-- Dynamic canvas preview — Width/Height bound to sprite dimensions -->
-                        <Border BorderBrush="{DynamicResource Theme.BackgroundBrush}"
-                                BorderThickness="3"
-                                CornerRadius="5"
-                                HorizontalAlignment="Left">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background"
-                                            Value="{DynamicResource Theme.CanvasBackgroundBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDisplayInverted}"
-                                                     Value="True">
-                                            <Setter Property="Background"
-                                                    Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <Grid>
-                                <Grid.Style>
-                                    <Style TargetType="Grid">
+                <!-- ═══════════════════════════════════════════════════════
+                     OLED PREVIEW (collapsible, dynamic size)
+                     ═══════════════════════════════════════════════════════ -->
+                <Border Background="{DynamicResource Theme.SurfaceOverlayBrush}"
+                        CornerRadius="8"
+                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                        BorderThickness="1"
+                        Margin="12,12,12,12"
+                        Padding="16,20,16,20">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
+                    </Border.Effect>
+                <StackPanel>
+                    <Expander Style="{StaticResource ModernExpanderStyle}"
+                              IsExpanded="False">
+                        <Expander.Header>
+                            <TextBlock Text="DISPLAY PREVIEW"
+                                       Style="{StaticResource HeaderStyle}"
+                                       Margin="0"
+                                       VerticalAlignment="Center"/>
+                        </Expander.Header>
+                        <StackPanel Margin="0,16,0,0">
+
+                            <!-- Dynamic canvas preview -->
+                            <Border BorderBrush="{DynamicResource Theme.BackgroundBrush}"
+                                    BorderThickness="3"
+                                    CornerRadius="5"
+                                    HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
                                         <Setter Property="Background"
-                                                Value="{DynamicResource Theme.OledOffBrush}"/>
+                                                Value="{DynamicResource Theme.CanvasBackgroundBrush}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsDisplayInverted}"
                                                          Value="True">
                                                 <Setter Property="Background"
-                                                        Value="{DynamicResource Theme.OledOnBrush}"/>
+                                                        Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </Grid.Style>
-                                <!-- PreviewWidth/Height are pixel-doubled sprite dimensions,
-                                     so the preview is always crisp and fills naturally -->
-                                <Image Source="{Binding PreviewBitmap}"
-                                       RenderOptions.BitmapScalingMode="NearestNeighbor"
-                                       Stretch="Fill"
-                                       Width="{Binding PreviewWidth}"
-                                       Height="{Binding PreviewHeight}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-                        <TextBlock Margin="0,8,0,0"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}">
-                            <Run Text="Preview: "/>
-                            <Run Text="{Binding SpriteState.Width, Mode=OneWay}"/>
-                            <Run Text="×"/>
-                            <Run Text="{Binding SpriteState.Height, Mode=OneWay}"/>
-                            <Run Text=" px (2× scale)"/>
-                        </TextBlock>
-                    </StackPanel>
-                </Expander>
-            </Border>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Background"
+                                                    Value="{DynamicResource Theme.OledOffBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDisplayInverted}"
+                                                             Value="True">
+                                                    <Setter Property="Background"
+                                                            Value="{DynamicResource Theme.OledOnBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <Image Source="{Binding PreviewBitmap}"
+                                           RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                           Stretch="Fill"
+                                           Width="{Binding PreviewWidth}"
+                                           Height="{Binding PreviewHeight}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <TextBlock Margin="0,10,0,0"
+                                       FontSize="10"
+                                       Foreground="{DynamicResource Theme.TextMutedBrush}">
+                                <Run Text="Preview: "/>
+                                <Run Text="{Binding SpriteState.Width, Mode=OneWay}"/>
+                                <Run Text="×"/>
+                                <Run Text="{Binding SpriteState.Height, Mode=OneWay}"/>
+                                <Run Text=" px (2× scale)"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+                </Border>
 
-        </StackPanel>
-    </ScrollViewer>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
 </UserControl>
