@@ -299,7 +299,7 @@ namespace Hexprite
                         }
                         break;
                     case Key.Escape:
-                        ViewModel.CommitCurrentSelection();
+                        ViewModel.DeselectCommand.Execute(null);
                         _selectionOverlay.Clear();
                         e.Handled = true;
                         break;
@@ -405,7 +405,7 @@ namespace Hexprite
                 // Non-floating selections persist until explicitly deselected (Ctrl+D).
                 if (_selection.HasActiveSelection && _selection.IsFloating)
                 {
-                    ViewModel.CommitCurrentSelection();
+                    ViewModel.DeselectCommand.Execute(null);
                     _selectionOverlay.Clear();
                 }
             }
