@@ -84,6 +84,11 @@ namespace Hexprite.ViewModels
         /// </summary>
         public bool IsLightTheme => _themeService.CurrentTheme == "Light";
 
+        /// <summary>
+        /// Gets whether the current theme is Dim. Used for menu radio-button binding.
+        /// </summary>
+        public bool IsDimTheme => _themeService.CurrentTheme == "Dim";
+
         public ShellViewModel(
             ICodeGeneratorService codeGen,
             IDrawingService drawingService,
@@ -116,6 +121,7 @@ namespace Hexprite.ViewModels
             {
                 OnPropertyChanged(nameof(IsDarkTheme));
                 OnPropertyChanged(nameof(IsLightTheme));
+                OnPropertyChanged(nameof(IsDimTheme));
 
                 // Re-read pixel colors from the new theme and redraw all open canvases
                 foreach (var doc in OpenDocuments)
@@ -331,7 +337,7 @@ namespace Hexprite.ViewModels
                     _codeGen.ParseXbmToState(code, doc.SpriteState);
                 else
                     _codeGen.ParseAdafruitGfxToState(code, doc.SpriteState);
-                
+
                 doc.RedrawGridFromMemory();
 
                 // Set the detected sprite name so the export panel picks it up

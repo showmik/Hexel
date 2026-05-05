@@ -144,6 +144,8 @@
                         <MenuItem Header="_Theme">
                             <MenuItem Header="_Dark" IsCheckable="True" IsChecked="{Binding IsDarkTheme, Mode=OneWay}"
                                       Command="{Binding SwitchThemeCommand}" CommandParameter="Dark"/>
+                            <MenuItem Header="_Dim" IsCheckable="True" IsChecked="{Binding IsDimTheme, Mode=OneWay}"
+                                      Command="{Binding SwitchThemeCommand}" CommandParameter="Dim"/>
                             <MenuItem Header="_Light" IsCheckable="True" IsChecked="{Binding IsLightTheme, Mode=OneWay}"
                                       Command="{Binding SwitchThemeCommand}" CommandParameter="Light"/>
                         </MenuItem>

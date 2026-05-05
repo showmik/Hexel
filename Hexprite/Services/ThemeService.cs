@@ -35,7 +35,7 @@ namespace Hexprite.Services
 
         public void ApplyTheme(string themeName)
         {
-            if (themeName != "Dark" && themeName != "Light")
+            if (themeName != "Dark" && themeName != "Light" && themeName != "Dim")
                 themeName = "Dark";
 
             var dict = new ResourceDictionary
@@ -65,7 +65,7 @@ namespace Hexprite.Services
                 if (File.Exists(SettingsFile))
                 {
                     string saved = File.ReadAllText(SettingsFile).Trim();
-                    if (saved == "Dark" || saved == "Light")
+                    if (saved == "Dark" || saved == "Light" || saved == "Dim")
                         return saved;
                 }
             }
