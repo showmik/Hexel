@@ -493,24 +493,37 @@ namespace Hexprite.Services
         {
             int total = state.Width * state.Height;
 
-            // FIX: was a reused instance field. Now local to avoid shared mutable state
-            // between concurrent calls (shouldn't happen, but the instance field was
-            // also wasteful for large canvases that were later resized smaller).
-            var buffer = new bool[total];
+            // FIX: Rent a buffer from the shared pool to eliminate Garbage Collection spikes.
+            // This preserves thread-safety and avoids the shared mutable state problem.
+            bool[] buffer = System.Buffers.ArrayPool<bool>.Shared.Rent(total);
 
-            for (int y = 0; y < state.Height; y++)
+            try
             {
-                for (int x = 0; x < state.Width; x++)
+                // CRITICAL: Rented arrays can contain garbage data from previous operations. 
+                // We must zero it out so our shifting logic starts with a clean slate.
+                Array.Clear(buffer, 0, total);
+
+                for (int y = 0; y < state.Height; y++)
                 {
-                    if (!state.Pixels[(y * state.Width) + x]) continue;
+                    for (int x = 0; x < state.Width; x++)
+                    {
+                        if (!state.Pixels[(y * state.Width) + x]) continue;
 
-                    int newX = ((x + offsetX) % state.Width + state.Width) % state.Width;
-                    int newY = ((y + offsetY) % state.Height + state.Height) % state.Height;
-                    buffer[(newY * state.Width) + newX] = true;
+                        int newX = ((x + offsetX) % state.Width + state.Width) % state.Width;
+                        int newY = ((y + offsetY) % state.Height + state.Height) % state.Height;
+                        buffer[(newY * state.Width) + newX] = true;
+                    }
                 }
-            }
 
-            Array.Copy(buffer, state.Pixels, total);
+                // ArrayPool might return an array larger than requested. 
+                // Copy exactly 'total' elements to avoid bounds issues.
+                Array.Copy(buffer, state.Pixels, total);
+            }
+            finally
+            {
+                // Guarantee the buffer is returned to the pool
+                System.Buffers.ArrayPool<bool>.Shared.Return(buffer);
+            }
         }
 
         public void InvertGrid(SpriteState state)
