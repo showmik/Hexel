@@ -236,7 +236,7 @@ namespace Hexprite.Services
                     var set = new HashSet<(int, int)>();
 
                     // Horizontal line of brushSize pixels, rotated by angleDeg
-                    for (int dx = -half; dx <= half; dx++)
+                    for (int dx = -half; dx <= half + (brushSize % 2 == 0 ? 1 : 0); dx++)
                     {
                         int rx = (int)Math.Round(dx * cos);
                         int ry = (int)Math.Round(dx * sin);
