@@ -28,13 +28,13 @@
             <!-- Tool Name -->
             <TextBlock Grid.Column="0"
                        Text="{Binding CurrentTool, StringFormat={}Tool: {0}}"
-                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       Foreground="{DynamicResource Brush.Text.Muted}"
                        VerticalAlignment="Center"
                        Margin="0,0,15,0" />
 
             <!-- Coordinates -->
             <TextBlock Grid.Column="1"
-                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       Foreground="{DynamicResource Brush.Text.Muted}"
                        VerticalAlignment="Center"
                        Margin="0,0,15,0">
                 <Run Text="X: " /><Run Text="{Binding CursorX}" /><Run Text=", Y: " /><Run Text="{Binding CursorY}" />
@@ -43,20 +43,20 @@
             <!-- Canvas Dimensions -->
             <TextBlock Grid.Column="2"
                        Text="{Binding CanvasDimensionText}"
-                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       Foreground="{DynamicResource Brush.Text.Muted}"
                        VerticalAlignment="Center"
                        Margin="0,0,15,0" />
 
             <!-- Zoom Level -->
             <TextBlock Grid.Column="3"
                        Text="{Binding ZoomLevel, StringFormat={}Zoom: {0:F1}x}"
-                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       Foreground="{DynamicResource Brush.Text.Muted}"
                        VerticalAlignment="Center" />
 
             <!-- Status message (right-aligned, data-bound) -->
             <TextBlock Grid.Column="4"
                        Text="{Binding StatusMessage}"
-                       Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                       Foreground="{DynamicResource Brush.Accent.Base}"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Right"
                        Padding="0">

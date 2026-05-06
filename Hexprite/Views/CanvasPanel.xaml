@@ -94,7 +94,7 @@
 
                     <!-- Separator -->
                     <Rectangle Width="2"
-                               Fill="{DynamicResource Theme.PanelBorderBrush}"
+                               Fill="{DynamicResource Brush.Border.Base}"
                                Margin="0,4,8,4"
                                RadiusX="1"
                                RadiusY="1" />
@@ -137,15 +137,15 @@
                              VerticalContentAlignment="Center"
                              FontSize="12"
                              FontWeight="Bold"
-                             Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
-                             Background="{DynamicResource Theme.BackgroundBrush}"
-                             BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                             Foreground="{DynamicResource Brush.Accent.Base}"
+                             Background="{DynamicResource Brush.Surface.Base}"
+                             BorderBrush="{DynamicResource Brush.Border.Base}"
                              BorderThickness="1"
                              PreviewTextInput="NumericTextBox_PreviewTextInput"
                              LostFocus="BrushSizeTextBox_LostFocus"
                              ToolTip="Brush size (1-64)" />
                     <TextBlock Text="px"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                VerticalAlignment="Center"
                                Margin="3,0,0,0"
                                FontSize="11" />
@@ -169,7 +169,7 @@
                         </StackPanel.Style>
 
                         <Rectangle Width="2"
-                                   Fill="{DynamicResource Theme.PanelBorderBrush}"
+                                   Fill="{DynamicResource Brush.Border.Base}"
                                    Margin="0,4,8,4"
                                    RadiusX="1"
                                    RadiusY="1" />
@@ -198,15 +198,15 @@
                                  VerticalContentAlignment="Center"
                                  FontSize="12"
                                  FontWeight="Bold"
-                                 Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
-                                 Background="{DynamicResource Theme.BackgroundBrush}"
-                                 BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                 Foreground="{DynamicResource Brush.Accent.Base}"
+                                 Background="{DynamicResource Brush.Surface.Base}"
+                                 BorderBrush="{DynamicResource Brush.Border.Base}"
                                  BorderThickness="1"
                                  PreviewTextInput="NumericTextBox_PreviewTextInput"
                                  LostFocus="BrushAngleTextBox_LostFocus"
                                  ToolTip="Brush angle (0-359°)" />
                         <TextBlock Text="°"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   Foreground="{DynamicResource Brush.Text.Muted}"
                                    VerticalAlignment="Center"
                                    Margin="3,0,0,0"
                                    FontSize="12" />
@@ -251,11 +251,11 @@
                     </StackPanel.Style>
                     <TextBlock Text="&#xE9A6;"
                                FontFamily="Segoe MDL2 Assets"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                VerticalAlignment="Center"
                                Margin="0,0,6,0" />
                     <TextBlock Text="Shift + Drag to constrain proportions or angle"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                VerticalAlignment="Center"
                                FontStyle="Italic" />
                 </StackPanel>
@@ -278,11 +278,11 @@
                     </StackPanel.Style>
                     <TextBlock Text="&#xE946;"
                                FontFamily="Segoe MDL2 Assets"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                VerticalAlignment="Center"
                                Margin="0,0,6,0" />
                     <TextBlock Text="Click to flood fill contiguous pixels"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                VerticalAlignment="Center"
                                FontStyle="Italic" />
                 </StackPanel>
@@ -310,11 +310,11 @@
                     </StackPanel.Style>
                     <TextBlock Text="&#xE9A6;"
                                FontFamily="Segoe MDL2 Assets"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                VerticalAlignment="Center"
                                Margin="0,0,6,0" />
                     <TextBlock Text="Del to erase selection • Esc to clear selection • Shift/Alt/Ctrl to combine"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                VerticalAlignment="Center"
                                FontStyle="Italic" />
                 </StackPanel>
@@ -324,7 +324,7 @@
 
                 <Rectangle Grid.Column="3"
                            Width="2"
-                           Fill="{DynamicResource Theme.PanelBorderBrush}"
+                           Fill="{DynamicResource Brush.Border.Base}"
                            Margin="12,4"
                            RadiusX="1"
                            RadiusY="1" />
@@ -367,7 +367,7 @@
                             Style="{StaticResource ModernButtonStyle}"
                             Click="BtnZoomReset_Click" />
                     <TextBlock Text="{Binding ZoomLevel, StringFormat={}{0:F1}x}"
-                               Foreground="{DynamicResource Theme.PrimaryAccentBrush}"
+                               Foreground="{DynamicResource Brush.Accent.Base}"
                                FontWeight="Bold"
                                VerticalAlignment="Center"
                                Margin="12,0,0,0"
@@ -384,7 +384,7 @@
             <ScrollViewer x:Name="MainScrollViewer" x:FieldModifier="public"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
-                          Background="{DynamicResource Theme.BackgroundBrush}">
+                          Background="{DynamicResource Brush.Surface.Base}">
                 <Grid Background="Transparent">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="2000" />
@@ -398,7 +398,7 @@
                     </Grid.ColumnDefinitions>
                     
                     <Border Grid.Row="1" Grid.Column="1"
-                            Background="{DynamicResource Theme.CanvasBackgroundBrush}"
+                            Background="{DynamicResource Brush.Canvas.Base}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
                         <Border.LayoutTransform>
@@ -443,7 +443,7 @@
                                                 <RectangleGeometry Rect="{Binding GridViewport}" />
                                             </GeometryDrawing.Geometry>
                                             <GeometryDrawing.Pen>
-                                                <Pen Brush="{DynamicResource Theme.CanvasGridLinesBrush}"
+                                                <Pen Brush="{DynamicResource Brush.Canvas.Grid}"
                                                      Thickness="{Binding DynamicStrokeThickness}" />
                                             </GeometryDrawing.Pen>
                                         </GeometryDrawing>
@@ -459,7 +459,7 @@
                                 VerticalAlignment="Stretch">
 
                             <Rectangle x:Name="MarqueeOverlay" x:FieldModifier="public"
-                                       Stroke="{DynamicResource Theme.SelectionPreviewBorderBrush}"
+                                       Stroke="{DynamicResource Brush.Accent.PreviewBorder}"
                                        StrokeThickness="{Binding SelectionStrokeThickness}"
                                        StrokeDashArray="4,4"
                                        Visibility="Hidden"
@@ -467,10 +467,10 @@
 
                             <!-- Light transparent yellow fill shows the lasso interior -->
                             <Path x:Name="LassoOverlay" x:FieldModifier="public"
-                                  Stroke="{DynamicResource Theme.SelectionPreviewBorderBrush}"
+                                  Stroke="{DynamicResource Brush.Accent.PreviewBorder}"
                                   StrokeThickness="{Binding SelectionStrokeThickness}"
                                   StrokeDashArray="4,4"
-                                  Fill="{DynamicResource Theme.LassoFillBrush}"
+                                  Fill="{DynamicResource Brush.Common.LassoFill}"
                                   Visibility="Hidden"
                                   IsHitTestVisible="False" />
 
@@ -539,7 +539,7 @@
                     </Button>
 
                     <Rectangle Width="2"
-                               Fill="{DynamicResource Theme.PanelBorderBrush}"
+                               Fill="{DynamicResource Brush.Border.Base}"
                                Margin="12,4"
                                RadiusX="1"
                                RadiusY="1" />
@@ -575,7 +575,7 @@
                             Margin="0,0,4,0">
                     <CheckBox Content="Show Grid"
                               IsChecked="{Binding ShowGridLines}"
-                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                              Foreground="{DynamicResource Brush.Text.Muted}"
                               ToolTip="Toggle Grid Preview"
                               VerticalAlignment="Center" />
                 </StackPanel>

@@ -1007,10 +1007,10 @@ namespace Hexprite.ViewModels
         public void InitializeBrushColors()
         {
             var res = Application.Current.Resources;
-            var colorOff = ((SolidColorBrush)res["Theme.CanvasPixelBackgroundBrush"]).Color;
-            var colorOn = ((SolidColorBrush)res["Theme.CanvasDrawingBrush"]).Color;
-            var prevOff = ((SolidColorBrush)res["Theme.PreviewBackgroundBrush"]).Color;
-            var prevOn = ((SolidColorBrush)res["Theme.PreviewDrawingBrush"]).Color;
+            var colorOff = ((SolidColorBrush)res["Brush.Canvas.Base"]).Color;
+            var colorOn = ((SolidColorBrush)res["Brush.Canvas.Drawing"]).Color;
+            var prevOff = ((SolidColorBrush)res["Brush.Preview.Base"]).Color;
+            var prevOn = ((SolidColorBrush)res["Brush.Preview.Drawing"]).Color;
 
             _colorOffUint = ToBgra32(colorOff);
             _colorOnUint = ToBgra32(colorOn);
@@ -1030,30 +1030,37 @@ namespace Hexprite.ViewModels
 
         private void UpdatePreviewColors()
         {
-            Color bg, fg;
+            var res = Application.Current.Resources;
+            string bgKey, fgKey;
+
             switch (_previewDisplayType)
             {
                 case DisplayType.SSD1306_Blue:
-                    bg = (Color)ColorConverter.ConvertFromString("#000A1A");
-                    fg = (Color)ColorConverter.ConvertFromString("#82C9FF");
+                    bgKey = "Palette.Preview.OLED.Blue.BG";
+                    fgKey = "Palette.Preview.OLED.Blue.FG";
                     break;
                 case DisplayType.SSD1306_Green:
-                    bg = (Color)ColorConverter.ConvertFromString("#051105");
-                    fg = (Color)ColorConverter.ConvertFromString("#72FF72");
+                    bgKey = "Palette.Preview.OLED.Green.BG";
+                    fgKey = "Palette.Preview.OLED.Green.FG";
                     break;
                 case DisplayType.ePaper:
-                    bg = (Color)ColorConverter.ConvertFromString("#D3D3D3");
-                    fg = (Color)ColorConverter.ConvertFromString("#1A1A1A");
+                    bgKey = "Palette.Preview.EPaper.BG";
+                    fgKey = "Palette.Preview.EPaper.FG";
                     break;
                 case DisplayType.Generic_White:
                 default:
-                    Application.Current.Resources.Remove("Theme.PreviewBackgroundBrush");
-                    Application.Current.Resources.Remove("Theme.PreviewDrawingBrush");
+                    res.Remove("Brush.Preview.Base");
+                    res.Remove("Brush.Preview.Drawing");
                     return;
             }
 
-            Application.Current.Resources["Theme.PreviewBackgroundBrush"] = new SolidColorBrush(bg);
-            Application.Current.Resources["Theme.PreviewDrawingBrush"] = new SolidColorBrush(fg);
+            if (res.Contains(bgKey) && res.Contains(fgKey))
+            {
+                var bg = (Color)res[bgKey];
+                var fg = (Color)res[fgKey];
+                res["Brush.Preview.Base"] = new SolidColorBrush(bg);
+                res["Brush.Preview.Drawing"] = new SolidColorBrush(fg);
+            }
         }
 
         // ── Private: bitmap lifecycle helpers ─────────────────────────────

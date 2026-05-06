@@ -9,8 +9,8 @@
         MinWidth="950"
         Height="780"
         Width="1150"
-        Background="{DynamicResource Theme.BackgroundBrush}"
-        FontFamily="{DynamicResource Theme.MainFont}"
+        Background="{DynamicResource Brush.Surface.Base}"
+        FontFamily="{DynamicResource Font.Primary}"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="False"
@@ -74,7 +74,7 @@
                     Command="{Binding ImportFromCodeMenuCommand}" />
     </Window.InputBindings>
 
-    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
+    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Brush.Border.Base}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -87,7 +87,7 @@
              CUSTOM TITLE BAR (menu + caption buttons)
              ═══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0"
-                Background="{DynamicResource Theme.MenuBarBackgroundBrush}">
+                Background="{DynamicResource Brush.Surface.MenuBar}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -170,7 +170,7 @@
 
                 <!-- Title -->
                 <TextBlock Grid.Column="2" Text="Hexprite"
-                           Foreground="{DynamicResource Theme.TextMutedBrush}"
+                           Foreground="{DynamicResource Brush.Text.Muted}"
                            FontSize="12" VerticalAlignment="Center"
                            HorizontalAlignment="Center" IsHitTestVisible="False"/>
 
@@ -197,8 +197,8 @@
              TAB BAR
              ═══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="1"
-                Background="{DynamicResource Theme.MenuBarBackgroundBrush}"
-                BorderBrush="{DynamicResource Theme.SeparatorBrush}"
+                Background="{DynamicResource Brush.Surface.MenuBar}"
+                BorderBrush="{DynamicResource Brush.Border.Separator}"
                 BorderThickness="0,0,0,1"
                 Padding="4,0">
             <StackPanel Orientation="Horizontal">
@@ -220,13 +220,13 @@
                                         <Setter Property="Background" Value="Transparent" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource Theme.ToolSidebarActiveBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Active}" />
                                             </DataTrigger>
                                             <MultiTrigger>
                                                 <MultiTrigger.Conditions>
                                                     <Condition Property="IsMouseOver" Value="True" />
                                                 </MultiTrigger.Conditions>
-                                                <Setter Property="Background" Value="{DynamicResource Theme.MenuItemHoverBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Hover}" />
                                             </MultiTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -238,7 +238,7 @@
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,6,10,4">
                                         <TextBlock Text="{Binding Title}"
-                                                   Foreground="{DynamicResource Theme.TextMainBrush}"
+                                                   Foreground="{DynamicResource Brush.Text.Primary}"
                                                    VerticalAlignment="Center"
                                                    FontSize="12"
                                                    Margin="0,0,8,0" />
@@ -255,7 +255,7 @@
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent" />
-                                                    <Setter Property="Foreground" Value="{DynamicResource Theme.TextMutedBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Muted}" />
                                                     <Setter Property="BorderThickness" Value="0" />
                                                     <Setter Property="Template">
                                                         <Setter.Value>
@@ -271,8 +271,8 @@
                                                     </Setter>
                                                     <Style.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="{DynamicResource Theme.DangerBrush}" />
-                                                            <Setter Property="Foreground" Value="{DynamicResource Theme.TextOnAccentBrush}" />
+                                                            <Setter Property="Background" Value="{DynamicResource Brush.Status.Danger}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.OnAccent}" />
                                                         </Trigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -284,7 +284,7 @@
                                             Height="2" CornerRadius="1"
                                             Margin="6,0,6,2"
                                             Opacity="0"
-                                            Background="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                                            Background="{DynamicResource Brush.Accent.Base}"/>
                                 </Grid>
                             </Border>
                             <DataTemplate.Triggers>
@@ -312,7 +312,7 @@
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="Foreground" Value="{DynamicResource Theme.TextMutedBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Muted}" />
                             <Setter Property="BorderThickness" Value="0" />
                             <Setter Property="Template">
                                 <Setter.Value>
@@ -328,8 +328,8 @@
                             </Setter>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource Theme.MenuItemHoverBrush}" />
-                                    <Setter Property="Foreground" Value="{DynamicResource Theme.TextMainBrush}" />
+                                    <Setter Property="Background" Value="{DynamicResource Brush.Surface.Hover}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -373,7 +373,7 @@
             <GridSplitter Grid.Column="2"
                           Width="2"
                           HorizontalAlignment="Stretch"
-                          Background="{DynamicResource Theme.PanelBackgroundBrush}"
+                          Background="{DynamicResource Brush.Surface.Panel}"
                           Cursor="SizeWE" />
 
             <views:SidebarPanel Grid.Column="3" Margin="0" />
@@ -408,19 +408,19 @@
                         <ImageBrush ImageSource="pack://application:,,,/Assets/AppIcon.png" Stretch="UniformToFill" />
                     </Border.Background>
                     <Border.Effect>
-                        <DropShadowEffect Color="{DynamicResource Color.BrandGradientStart}" BlurRadius="20" Opacity="0.3"
+                        <DropShadowEffect Color="{DynamicResource Palette.Accent.GradientStart}" BlurRadius="20" Opacity="0.3"
                                           Direction="270" ShadowDepth="4"/>
                     </Border.Effect>
                 </Border>
                 <TextBlock Text="Welcome to Hexprite" 
                            FontSize="26" 
                            FontWeight="Bold" 
-                           Foreground="{DynamicResource Theme.TextMainBrush}" 
+                           Foreground="{DynamicResource Brush.Text.Primary}" 
                            HorizontalAlignment="Center" 
                            Margin="0,0,0,6" />
                 <TextBlock Text="Monochrome pixel art editor for embedded displays" 
                            FontSize="13"
-                           Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                           Foreground="{DynamicResource Brush.Text.Muted}" 
                            HorizontalAlignment="Center"
                            Margin="0,0,0,32" />
 
@@ -465,7 +465,7 @@
                 
                 <!-- Divider -->
                 <Border Height="1" 
-                        Background="{DynamicResource Theme.SeparatorBrush}" 
+                        Background="{DynamicResource Brush.Border.Separator}" 
                         Margin="40,8,40,16"/>
 
                 <!-- Actions -->
@@ -486,19 +486,19 @@
 
                 <!-- Shortcut hints -->
                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Muted}" 
                                FontSize="11" Margin="0,0,16,0">
-                        <Run Text="Ctrl+N" FontWeight="SemiBold" Foreground="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                        <Run Text="Ctrl+N" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Accent.Base}"/>
                         <Run Text=" New"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Muted}" 
                                FontSize="11" Margin="0,0,16,0">
-                        <Run Text="Ctrl+O" FontWeight="SemiBold" Foreground="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                        <Run Text="Ctrl+O" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Accent.Base}"/>
                         <Run Text=" Open"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource Theme.TextMutedBrush}" 
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Muted}" 
                                FontSize="11">
-                        <Run Text="Ctrl+Shift+I" FontWeight="SemiBold" Foreground="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                        <Run Text="Ctrl+Shift+I" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Accent.Base}"/>
                         <Run Text=" Import"/>
                     </TextBlock>
                 </StackPanel>

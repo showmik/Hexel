@@ -14,8 +14,8 @@
             <!-- ═══════════════════════════════════════════════════════════
                  Fonts
                  ═══════════════════════════════════════════════════════════ -->
-            <FontFamily x:Key="Theme.MainFont">Inter, Segoe UI, Helvetica Neue, sans-serif</FontFamily>
-            <FontFamily x:Key="Theme.CodeFont">Cascadia Code, Consolas, Courier New, monospace</FontFamily>
+            <FontFamily x:Key="Font.Primary">Inter, Segoe UI, Helvetica Neue, sans-serif</FontFamily>
+            <FontFamily x:Key="Font.Code">Cascadia Code, Consolas, Courier New, monospace</FontFamily>
 
         </ResourceDictionary>
     </Application.Resources>

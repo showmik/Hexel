@@ -198,7 +198,7 @@ namespace Hexprite.Rendering
             _cachedCrossStroke = Math.Max(cellUnit * 0.08, 0.3);
 
             // Apply crosshair theme brush once per cache rebuild to avoid DynamicResource lag
-            var crosshairBrush = (SolidColorBrush)Application.Current.Resources["Theme.CrosshairStrokeBrush"];
+            var crosshairBrush = (SolidColorBrush)Application.Current.Resources["Brush.Canvas.Crosshair"];
             var crossH = _elements.GetCrosshairH();
             var crossV = _elements.GetCrosshairV();
             if (crossH != null) crossH.Stroke = crosshairBrush;
@@ -268,8 +268,8 @@ namespace Hexprite.Rendering
             var pixels = new uint[bmpW * bmpH];
             // Fetch colors from active theme
             var res = Application.Current.Resources;
-            Color edge = (Color)res["Color.BrushCursorEdge"];
-            Color fill = (Color)res["Color.BrushCursorFill"];
+            Color edge = (Color)res["Palette.Common.BrushEdge"];
+            Color fill = (Color)res["Palette.Common.BrushFill"];
             uint edgeColor = (uint)((edge.A << 24) | (edge.R << 16) | (edge.G << 8) | edge.B);
             uint fillColor = (uint)((fill.A << 24) | (fill.R << 16) | (fill.G << 8) | fill.B);
 
