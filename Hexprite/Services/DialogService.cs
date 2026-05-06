@@ -81,5 +81,32 @@ namespace Hexprite.Services
                 return dlg.Result.Value;
             return null;
         }
+
+        public BugReportInput? ShowBugReportDialog()
+        {
+            var dlg = new ReportBugDialog { Owner = Application.Current.MainWindow };
+            return dlg.ShowDialog() == true ? dlg.Result : null;
+        }
+
+        public void ShowBugReportSuccessDialog(string message, string? reportId, string? successWindowTitle = null)
+        {
+            var dlg = new BugReportSuccessDialog(message, reportId, successWindowTitle)
+            {
+                Owner = Application.Current.MainWindow
+            };
+            dlg.ShowDialog();
+        }
+
+        public UserFeedbackInput? ShowUserFeedbackDialog()
+        {
+            var dlg = new UserFeedbackDialog { Owner = Application.Current.MainWindow };
+            return dlg.ShowDialog() == true ? dlg.Result : null;
+        }
+
+        public bool ShowPrivacySettingsDialog()
+        {
+            var dlg = new PrivacySettingsDialog { Owner = Application.Current.MainWindow };
+            return dlg.ShowDialog() == true;
+        }
     }
 }

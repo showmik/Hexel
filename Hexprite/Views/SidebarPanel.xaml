@@ -8,8 +8,8 @@
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="320">
 
-    <Border Background="{DynamicResource Theme.RightSidebarBackgroundBrush}"
-            BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+    <Border Background="{DynamicResource Brush.Surface.RightSidebar}"
+            BorderBrush="{DynamicResource Brush.Border.Base}"
             BorderThickness="1,0,0,0">
         <DockPanel LastChildFill="True">
 
@@ -22,14 +22,14 @@
                 <!-- ═══════════════════════════════════════════════════════
                      OLED PREVIEW (collapsible, dynamic size)
                      ═══════════════════════════════════════════════════════ -->
-                <Border Background="{DynamicResource Theme.SurfaceOverlayBrush}"
+                <Border Background="{DynamicResource Brush.Surface.Overlay}"
                         CornerRadius="8"
-                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                        BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
                         Margin="12,12,12,0"
                         Padding="16,12,16,16">
                 <Border.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
+                    <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
                 </Border.Effect>
                 <StackPanel>
                     <Expander Style="{StaticResource ModernExpanderStyle}"
@@ -60,22 +60,22 @@
                                 </ComboBox>
 
                                 <Border Grid.Column="1"
-                                        Background="{DynamicResource Theme.BackgroundBrush}"
-                                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                                        Background="{DynamicResource Brush.Surface.Base}"
+                                        BorderBrush="{DynamicResource Brush.Border.Base}"
                                         BorderThickness="1"
                                         CornerRadius="4"
                                         Margin="8,0,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Content="-" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextMainBrush}" Command="{Binding DecreasePreviewScaleCommand}"/>
-                                        <TextBlock Text="{Binding PreviewScale}" VerticalAlignment="Center" Width="24" TextAlignment="Center" Foreground="{DynamicResource Theme.TextMainBrush}"/>
-                                        <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Theme.TextMainBrush}" Command="{Binding IncreasePreviewScaleCommand}"/>
+                                        <Button Content="-" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.Text.Primary}" Command="{Binding DecreasePreviewScaleCommand}"/>
+                                        <TextBlock Text="{Binding PreviewScale}" VerticalAlignment="Center" Width="24" TextAlignment="Center" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                        <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.Text.Primary}" Command="{Binding IncreasePreviewScaleCommand}"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
 
                             <!-- Dynamic canvas preview -->
                             <Grid MinHeight="140">
-                                <Border BorderBrush="{DynamicResource Theme.BackgroundBrush}"
+                                <Border BorderBrush="{DynamicResource Brush.Surface.Base}"
                                         BorderThickness="3"
                                         CornerRadius="5"
                                         HorizontalAlignment="Center"
@@ -83,12 +83,12 @@
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background"
-                                                    Value="{DynamicResource Theme.CanvasBackgroundBrush}"/>
+                                                    Value="{DynamicResource Brush.Canvas.Base}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsDisplayInverted}"
                                                              Value="True">
                                                     <Setter Property="Background"
-                                                            Value="{DynamicResource Theme.PrimaryAccentBrush}"/>
+                                                            Value="{DynamicResource Brush.Accent.Base}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -97,12 +97,12 @@
                                         <Grid.Style>
                                             <Style TargetType="Grid">
                                                 <Setter Property="Background"
-                                                        Value="{DynamicResource Theme.PreviewBackgroundBrush}"/>
+                                                        Value="{DynamicResource Brush.Preview.Base}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsDisplayInverted}"
                                                                  Value="True">
                                                         <Setter Property="Background"
-                                                                Value="{DynamicResource Theme.PreviewDrawingBrush}"/>
+                                                                Value="{DynamicResource Brush.Preview.Drawing}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -120,7 +120,7 @@
                             <TextBlock Margin="0,8,0,0"
                                        FontSize="10"
                                        HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource Theme.TextMutedBrush}">
+                                       Foreground="{DynamicResource Brush.Text.Muted}">
                                 <Run Text="Preview: "/>
                                 <Run Text="{Binding SpriteState.Width, Mode=OneWay}"/>
                                 <Run Text="×"/>
@@ -136,14 +136,14 @@
                 <!-- ═══════════════════════════════════════════════════════
                      EXPORT PANEL
                      ═══════════════════════════════════════════════════════ -->
-                <Border Background="{DynamicResource Theme.SurfaceOverlayBrush}"
+                <Border Background="{DynamicResource Brush.Surface.Overlay}"
                         CornerRadius="8"
-                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                        BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
                         Margin="12,12,12,0"
                         Padding="16,20,16,20">
                     <Border.Effect>
-                        <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
+                        <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
                     </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="EXPORT"
@@ -152,7 +152,7 @@
 
                     <!-- Format selector -->
                     <TextBlock Text="Format"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                FontSize="11"
                                Margin="0,0,0,4"/>
                     <ComboBox x:Name="CboFormat"
@@ -172,19 +172,19 @@
 
                     <!-- Sprite name -->
                     <TextBlock Text="Variable / sprite name"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                FontSize="11"
                                Margin="0,0,0,4"/>
                     <TextBox x:Name="TxtSpriteName"
                              Style="{StaticResource ModernTextBoxStyle}"
                              Height="30"
-                             FontFamily="{DynamicResource Theme.CodeFont}"
+                             FontFamily="{DynamicResource Font.Code}"
                              Text="{Binding SpriteName, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,0,16"
                              ToolTip="Will be sanitised to a valid C/Python identifier"/>
 
                     <!-- ─── Code structure options (expander) ──────── -->
-                    <Border BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                    <Border BorderBrush="{DynamicResource Brush.Border.Base}"
                             BorderThickness="0,1,0,0"
                             Margin="0,0,0,16">
                         <Expander Style="{StaticResource ModernExpanderStyle}"
@@ -212,36 +212,36 @@
 
                                     <CheckBox Grid.Row="0" Grid.Column="0" Content="Usage comment"
                                               IsChecked="{Binding IncludeUsageComment}"
-                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              Foreground="{DynamicResource Brush.Text.Muted}"
                                               FontSize="12"
                                               Margin="0,0,0,8"/>
                                     <CheckBox Grid.Row="0" Grid.Column="1" Content="Width/height constants"
                                               IsChecked="{Binding IncludeDimensionConstants}"
-                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              Foreground="{DynamicResource Brush.Text.Muted}"
                                               FontSize="12"
                                               Margin="0,0,0,8"/>
 
                                     <CheckBox Grid.Row="1" Grid.Column="0" Content="Row comments"
                                               IsChecked="{Binding IncludeRowComments}"
-                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              Foreground="{DynamicResource Brush.Text.Muted}"
                                               FontSize="12"
                                               Margin="0,0,0,8"/>
                                     <CheckBox Grid.Row="1" Grid.Column="1" Content="Comma separator"
                                               IsChecked="{Binding UseCommaSeparator}"
                                               IsEnabled="{Binding IsCommaSeparatorEnabled}"
-                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              Foreground="{DynamicResource Brush.Text.Muted}"
                                               FontSize="12"
                                               Margin="0,0,0,8"/>
 
                                     <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Array size"
                                               IsChecked="{Binding IncludeArraySize}"
-                                              Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                              Foreground="{DynamicResource Brush.Text.Muted}"
                                               FontSize="12"/>
                                 </Grid>
 
                                 <!-- Bytes per line -->
                                 <TextBlock Text="Bytes per line"
-                                           Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                           Foreground="{DynamicResource Brush.Text.Muted}"
                                            FontSize="11"
                                            Margin="0,0,0,4"/>
                                 <WrapPanel Margin="0,0,0,12">
@@ -277,7 +277,7 @@
 
                                 <!-- Hex case -->
                                 <TextBlock Text="Hex digits"
-                                           Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                           Foreground="{DynamicResource Brush.Text.Muted}"
                                            FontSize="11"
                                            Margin="0,0,0,4"/>
                                 <StackPanel Orientation="Horizontal">
@@ -302,9 +302,9 @@
                     </Border>
 
                     <!-- ─── Code output box with header bar ──────── -->
-                    <Border Background="{DynamicResource Theme.BackgroundBrush}"
+                    <Border Background="{DynamicResource Brush.Surface.Base}"
                             CornerRadius="6"
-                            BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                            BorderBrush="{DynamicResource Brush.Border.Base}"
                             BorderThickness="1"
                             ClipToBounds="True"
                             Height="260">
@@ -317,11 +317,11 @@
                             <!-- Output header bar -->
                             <Border Grid.Row="0" Padding="10,6"
                                     BorderThickness="0,0,0,1"
-                                    BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
-                                    Background="{DynamicResource Theme.SurfaceOverlayBrush}">
+                                    BorderBrush="{DynamicResource Brush.Border.Base}"
+                                    Background="{DynamicResource Brush.Surface.Overlay}">
                                 <Grid>
                                     <TextBlock Text="OUTPUT"
-                                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                               Foreground="{DynamicResource Brush.Text.Muted}"
                                                FontSize="10"
                                                FontWeight="SemiBold"
                                                Opacity="0.8"
@@ -335,7 +335,7 @@
                                           HorizontalScrollBarVisibility="Auto"
                                           Background="Transparent">
                                 <rendering:SyntaxHighlightBox x:Name="CodeOutputBox"
-                                                              FontFamily="{DynamicResource Theme.CodeFont}"
+                                                              FontFamily="{DynamicResource Font.Code}"
                                                               FontSize="12"
                                                               Margin="8"/>
                             </ScrollViewer>
@@ -378,7 +378,7 @@
                         <!-- Stale indicator -->
                         <TextBlock Grid.Column="0"
                                    Text="⟳ Code is outdated"
-                                   Foreground="{DynamicResource Theme.WarningBrush}"
+                                   Foreground="{DynamicResource Brush.Status.Warning}"
                                    FontSize="10.5"
                                    Opacity="0.85">
                             <TextBlock.Style>
@@ -396,9 +396,9 @@
                         <!-- Export Stats -->
                         <TextBlock Grid.Column="1"
                                    Text="{Binding ExportStats}"
-                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   Foreground="{DynamicResource Brush.Text.Muted}"
                                    FontSize="10"
-                                   FontFamily="{DynamicResource Theme.CodeFont}"
+                                   FontFamily="{DynamicResource Font.Code}"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Center"
                                    Opacity="0.8"/>
@@ -410,14 +410,14 @@
                 <!-- ═══════════════════════════════════════════════════════
                      IMPORT FROM CODE
                      ═══════════════════════════════════════════════════════ -->
-                <Border Background="{DynamicResource Theme.SurfaceOverlayBrush}"
+                <Border Background="{DynamicResource Brush.Surface.Overlay}"
                         CornerRadius="8"
-                        BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                        BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
                         Margin="12,12,12,12"
                         Padding="16,20,16,20">
                     <Border.Effect>
-                        <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
+                        <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
                     </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="IMPORT"
@@ -426,7 +426,7 @@
 
                     <TextBlock Text="Import sprite data from Adafruit GFX, u8g2, plain C array, or raw hex code. Dimensions and variable name are auto-detected."
                                TextWrapping="Wrap"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                FontSize="11"
                                Margin="0,0,0,16"
                                LineHeight="18"/>

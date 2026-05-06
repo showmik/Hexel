@@ -71,8 +71,7 @@ namespace Hexprite.Services
             }
             catch (Exception ex)
             {
-                // FIX: Fall through to default, but log the error for diagnostics
-                Logger.Log($"[ThemeService] Failed to load saved theme: {ex.Message}");
+                HandledErrorReporter.Warning(ex, "ThemeService.LoadSavedTheme");
             }
             return "Dark";
         }
@@ -86,8 +85,7 @@ namespace Hexprite.Services
             }
             catch (Exception ex)
             {
-                // FIX: Do not crash the app, but log the failure to write to disk
-                Logger.Log($"[ThemeService] Failed to persist theme '{themeName}': {ex.Message}");
+                HandledErrorReporter.Error(ex, "ThemeService.PersistTheme", new { themeName });
             }
         }
     }

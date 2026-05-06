@@ -281,11 +281,11 @@ namespace Hexprite.Views
         {
             try
             {
-                _keywordBrush = (SolidColorBrush)FindResource("Syntax.KeywordBrush");
-                _literalBrush = (SolidColorBrush)FindResource("Syntax.LiteralBrush");
-                _commentBrush = (SolidColorBrush)FindResource("Syntax.CommentBrush");
-                _identifierBrush = (SolidColorBrush)FindResource("Syntax.IdentifierBrush");
-                _defaultBrush = (SolidColorBrush)FindResource("Syntax.PunctuationBrush");
+                _keywordBrush = (SolidColorBrush)FindResource("Brush.Code.Keyword");
+                _literalBrush = (SolidColorBrush)FindResource("Brush.Code.Literal");
+                _commentBrush = (SolidColorBrush)FindResource("Brush.Code.Comment");
+                _identifierBrush = (SolidColorBrush)FindResource("Brush.Code.Identifier");
+                _defaultBrush = (SolidColorBrush)FindResource("Brush.Code.Punctuation");
             }
             catch { /* fallback colours already set in field initialisers */ }
         }

@@ -7,8 +7,8 @@
         MinWidth="420" MinHeight="400"
         ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource Theme.BackgroundBrush}"
-        FontFamily="{DynamicResource Theme.MainFont}"
+        Background="{DynamicResource Brush.Surface.Base}"
+        FontFamily="{DynamicResource Font.Primary}"
         ShowInTaskbar="False"
         WindowStyle="None"
         AllowsTransparency="False"
@@ -22,7 +22,7 @@
                       UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
 
-    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
+    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Brush.Border.Base}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -30,14 +30,14 @@
             </Grid.RowDefinitions>
 
             <!-- TITLE BAR -->
-            <Border Grid.Row="0" Background="{DynamicResource Theme.MenuBarBackgroundBrush}">
+            <Border Grid.Row="0" Background="{DynamicResource Brush.Surface.MenuBar}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                FontSize="12" VerticalAlignment="Center"
                                Margin="12,0,0,0" IsHitTestVisible="False"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
@@ -69,16 +69,16 @@
         <!-- Instructions -->
         <TextBlock Grid.Row="1"
                    TextWrapping="Wrap"
-                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                   Foreground="{DynamicResource Brush.Text.Muted}"
                    FontSize="12"
                    Margin="0,0,0,12"
                    Text="Paste Adafruit GFX, u8g2, plain C array, or raw hex code below. Dimensions will be auto-detected from WIDTH/HEIGHT constants if present." />
 
         <!-- Code input -->
         <Border Grid.Row="2"
-                Background="{DynamicResource Theme.BackgroundBrush}"
+                Background="{DynamicResource Brush.Surface.Base}"
                 CornerRadius="6"
-                BorderBrush="{DynamicResource Theme.PanelBorderBrush}"
+                BorderBrush="{DynamicResource Brush.Border.Base}"
                 BorderThickness="1"
                 Padding="2"
                 Margin="0,0,0,14">
@@ -86,10 +86,10 @@
                      AcceptsReturn="True"
                      AcceptsTab="True"
                      TextWrapping="NoWrap"
-                     FontFamily="{DynamicResource Theme.CodeFont}"
+                     FontFamily="{DynamicResource Font.Code}"
                      FontSize="12"
                      Background="Transparent"
-                     Foreground="{DynamicResource Theme.CodeTxtBrush}"
+                     Foreground="{DynamicResource Brush.Code.Punctuation}"
                      BorderThickness="0"
                      Padding="8"
                      VerticalScrollBarVisibility="Auto"
@@ -110,7 +110,7 @@
 
             <TextBlock Grid.Column="0"
                        Text="Width"
-                       Foreground="{DynamicResource Theme.TextMainBrush}"
+                       Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0" />
             <TextBox x:Name="TxtWidth"
@@ -124,7 +124,7 @@
 
             <TextBlock Grid.Column="2"
                        Text="Height"
-                       Foreground="{DynamicResource Theme.TextMainBrush}"
+                       Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0" />
             <TextBox x:Name="TxtHeight"
@@ -139,7 +139,7 @@
             <TextBlock x:Name="TxtDetectionHint"
                        Grid.Column="4"
                        Grid.ColumnSpan="2"
-                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       Foreground="{DynamicResource Brush.Text.Muted}"
                        FontSize="11"
                        VerticalAlignment="Center"
                        Text="(auto-detected)" />
@@ -148,7 +148,7 @@
         <!-- Info / stats -->
         <TextBlock x:Name="TxtStats"
                    Grid.Row="4"
-                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                   Foreground="{DynamicResource Brush.Text.Muted}"
                    FontSize="11"
                    Margin="0,0,0,14"
                    Text="Paste code above to begin." />

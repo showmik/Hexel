@@ -7,8 +7,8 @@
         Width="380" Height="320"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource Theme.BackgroundBrush}"
-        FontFamily="{DynamicResource Theme.MainFont}"
+        Background="{DynamicResource Brush.Surface.Base}"
+        FontFamily="{DynamicResource Font.Primary}"
         ShowInTaskbar="False"
         WindowStyle="None"
         AllowsTransparency="False"
@@ -22,7 +22,7 @@
                       UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
 
-    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Theme.PanelBorderBrush}">
+    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Brush.Border.Base}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -30,14 +30,14 @@
             </Grid.RowDefinitions>
 
             <!-- TITLE BAR -->
-            <Border Grid.Row="0" Background="{DynamicResource Theme.MenuBarBackgroundBrush}">
+            <Border Grid.Row="0" Background="{DynamicResource Brush.Surface.MenuBar}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
-                               Foreground="{DynamicResource Theme.TextMutedBrush}"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
                                FontSize="12" VerticalAlignment="Center"
                                Margin="12,0,0,0" IsHitTestVisible="False"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
@@ -68,7 +68,7 @@
         <!-- Preset dropdown -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14">
             <TextBlock Text="Preset"
-                       Foreground="{DynamicResource Theme.TextMainBrush}"
+                       Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
                        Width="60" />
             <ComboBox x:Name="PresetComboBox"
@@ -82,7 +82,7 @@
         <!-- Width x Height -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,14">
             <TextBlock Text="Size"
-                       Foreground="{DynamicResource Theme.TextMainBrush}"
+                       Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
                        Width="60" />
             <TextBox x:Name="TxtWidth"
@@ -92,7 +92,7 @@
                      PreviewTextInput="NumberOnly"
                      Margin="0,0,8,0" />
             <TextBlock Text="×"
-                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       Foreground="{DynamicResource Brush.Text.Muted}"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0" />
             <TextBox x:Name="TxtHeight"
@@ -101,7 +101,7 @@
                      Style="{StaticResource ModernTextBoxStyle}"
                      PreviewTextInput="NumberOnly" />
             <TextBlock Text="px"
-                       Foreground="{DynamicResource Theme.TextMutedBrush}"
+                       Foreground="{DynamicResource Brush.Text.Muted}"
                        VerticalAlignment="Center"
                        Margin="6,0,0,0" />
         </StackPanel>

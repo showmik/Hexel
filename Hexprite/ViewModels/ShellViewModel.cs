@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using Serilog;
 
 namespace Hexprite.ViewModels
 {
@@ -18,12 +19,15 @@ namespace Hexprite.ViewModels
     public class ShellViewModel : ObservableObject
     {
         // ── Services (shared across all documents) ────────────────────────
+        private static readonly Serilog.ILogger Logger = Log.ForContext<ShellViewModel>();
         private readonly ICodeGeneratorService _codeGen;
         private readonly IDrawingService _drawingService;
         private readonly IClipboardService _clipboardService;
         private readonly IPixelClipboardService _pixelClipboard;
         private readonly IDialogService _dialogService;
         private readonly IThemeService _themeService;
+        private readonly IBugReportService _bugReportService;
+        private readonly IUserFeedbackService _userFeedbackService;
 
         private const string FileFilter = "Hexprite Sprite (*.hexprite)|*.hexprite|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
 
@@ -58,13 +62,17 @@ namespace Hexprite.ViewModels
         public IRelayCommand<MainViewModel> CloseTabCommand { get; }
         public IRelayCommand ResizeCanvasCommand { get; }
         public IRelayCommand OpenDocumentationCommand { get; }
+        public IRelayCommand OpenPrivacySettingsCommand { get; }
         public IRelayCommand ShowAboutCommand { get; }
+        public IRelayCommand ReportBugCommand { get; }
+        public IRelayCommand SendFeedbackCommand { get; }
         /// <summary>Opens the Import from Code dialog and creates a new tab.</summary>
         public IRelayCommand ImportFromCodeMenuCommand { get; }
         /// <summary>Copies the active document's exported code to the clipboard.</summary>
         public IRelayCommand CopyExportCodeMenuCommand { get; }
         /// <summary>Switches the theme between Dark and Light.</summary>
         public IRelayCommand<string> SwitchThemeCommand { get; }
+        public IRelayCommand RefreshThemeCommand { get; }
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>Raised when a tab is added so the View can wire events.</summary>
@@ -99,7 +107,9 @@ namespace Hexprite.ViewModels
             IDrawingService drawingService,
             IClipboardService clipboardService,
             IDialogService dialogService,
-            IThemeService themeService)
+            IThemeService themeService,
+            IBugReportService bugReportService,
+            IUserFeedbackService userFeedbackService)
         {
             _codeGen = codeGen;
             _drawingService = drawingService;
@@ -107,6 +117,8 @@ namespace Hexprite.ViewModels
             _pixelClipboard = new PixelClipboardService();
             _dialogService = dialogService;
             _themeService = themeService;
+            _bugReportService = bugReportService;
+            _userFeedbackService = userFeedbackService;
 
             NewCanvasCommand = new RelayCommand<object?>(ExecuteNewCanvas);
             OpenCommand = new RelayCommand(ExecuteOpen);
@@ -115,12 +127,16 @@ namespace Hexprite.ViewModels
             CloseTabCommand = new RelayCommand<MainViewModel>(ExecuteCloseTab);
             ResizeCanvasCommand = new RelayCommand(ExecuteResizeCanvas, () => HasOpenDocument);
             OpenDocumentationCommand = new RelayCommand(ExecuteOpenDocumentation);
+            OpenPrivacySettingsCommand = new RelayCommand(ExecuteOpenPrivacySettings);
             ShowAboutCommand = new RelayCommand(ExecuteShowAbout);
+            ReportBugCommand = new RelayCommand(ExecuteReportBug);
+            SendFeedbackCommand = new RelayCommand(ExecuteSendFeedback);
             ImportFromCodeMenuCommand = new RelayCommand(ExecuteImportFromCode);
             CopyExportCodeMenuCommand = new RelayCommand(
                 () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
                 () => HasOpenDocument);
             SwitchThemeCommand = new RelayCommand<string>(ExecuteSwitchTheme);
+            RefreshThemeCommand = new RelayCommand(ExecuteRefreshTheme);
 
             _themeService.ThemeChanged += (_, _) =>
             {
@@ -143,9 +159,11 @@ namespace Hexprite.ViewModels
 
         private void ExecuteNewCanvas(object? parameter)
         {
+            using var operation = LoggingService.BeginOperation("Shell.NewCanvas", new { parameter });
             if (OpenDocuments.Count >= MaxTabs)
             {
                 _dialogService.ShowMessage($"Maximum of {MaxTabs} tabs reached. Close a tab first.");
+                Logger.Warning("New canvas blocked because max tabs reached. MaxTabs={MaxTabs}", MaxTabs);
                 return;
             }
 
@@ -159,22 +177,28 @@ namespace Hexprite.ViewModels
                     qw > 0 && qh > 0)
                 {
                     AddNewDocument(qw, qh);
+                    Logger.Information("Created quick-start canvas {Width}x{Height}", qw, qh);
                     return;
                 }
             }
 
             var result = _dialogService.ShowNewCanvasDialog();
             if (result.HasValue)
+            {
                 AddNewDocument(result.Value.Width, result.Value.Height);
+                Logger.Information("Created canvas from dialog {Width}x{Height}", result.Value.Width, result.Value.Height);
+            }
         }
 
         // ── Open ──────────────────────────────────────────────────────────
 
         private void ExecuteOpen()
         {
+            using var operation = LoggingService.BeginOperation("Shell.OpenDocument");
             if (OpenDocuments.Count >= MaxTabs)
             {
                 _dialogService.ShowMessage($"Maximum of {MaxTabs} tabs reached. Close a tab first.");
+                Logger.Warning("Open blocked because max tabs reached. MaxTabs={MaxTabs}", MaxTabs);
                 return;
             }
 
@@ -202,9 +226,11 @@ namespace Hexprite.ViewModels
                 ActiveDocument = doc;
                 TabAdded?.Invoke(this, doc);
                 RaiseActiveTabChanged();
+                Logger.Information("Opened document at {Path} with size {Width}x{Height}", path, doc.SpriteState.Width, doc.SpriteState.Height);
             }
             catch (Exception ex)
             {
+                HandledErrorReporter.Error(ex, "ShellViewModel.OpenFile", new { path });
                 _dialogService.ShowMessage($"Error opening file: {ex.Message}");
             }
         }
@@ -214,6 +240,7 @@ namespace Hexprite.ViewModels
         private void ExecuteSave()
         {
             if (ActiveDocument == null) return;
+            using var operation = LoggingService.BeginOperation("Shell.Save", new { title = ActiveDocument.Title, hasFilePath = ActiveDocument.FilePath != null });
 
             if (ActiveDocument.FilePath != null)
                 SaveToPath(ActiveDocument, ActiveDocument.FilePath);
@@ -224,6 +251,7 @@ namespace Hexprite.ViewModels
         private void ExecuteSaveAs()
         {
             if (ActiveDocument == null) return;
+            using var operation = LoggingService.BeginOperation("Shell.SaveAs", new { title = ActiveDocument.Title });
 
             var path = _dialogService.ShowSaveFileDialog(FileFilter, "Save Sprite", ".hexprite");
             if (path != null)
@@ -232,6 +260,7 @@ namespace Hexprite.ViewModels
 
         private void SaveToPath(MainViewModel doc, string path)
         {
+            using var operation = LoggingService.BeginOperation("Shell.SaveToPath", new { path, width = doc.SpriteState.Width, height = doc.SpriteState.Height });
             try
             {
                 // Persist the current export settings alongside the pixel data
@@ -245,9 +274,11 @@ namespace Hexprite.ViewModels
 
                 // Offer a sensible default sprite name derived from the filename
                 doc.UpdateSpriteNameFromFile();
+                Logger.Information("Saved document to {Path}", path);
             }
             catch (Exception ex)
             {
+                HandledErrorReporter.Error(ex, "ShellViewModel.SaveFile", new { path });
                 _dialogService.ShowMessage($"Error saving: {ex.Message}");
             }
         }
@@ -258,6 +289,7 @@ namespace Hexprite.ViewModels
         {
             doc ??= ActiveDocument;
             if (doc == null) return;
+            using var operation = LoggingService.BeginOperation("Shell.CloseTab", new { title = doc.Title, isDirty = doc.IsDirty });
 
             if (doc.IsDirty)
             {
@@ -293,11 +325,13 @@ namespace Hexprite.ViewModels
             {
                 ActiveDocument = null;
                 RaiseActiveTabChanged();
+                Logger.Information("Closed tab {TabTitle}. No tabs remain open.", doc.Title);
             }
             else
             {
                 ActiveDocument = OpenDocuments[Math.Min(idx, OpenDocuments.Count - 1)];
                 RaiseActiveTabChanged();
+                Logger.Information("Closed tab {TabTitle}. RemainingTabs={RemainingTabs}", doc.Title, OpenDocuments.Count);
             }
         }
 
@@ -306,6 +340,9 @@ namespace Hexprite.ViewModels
         private void ExecuteResizeCanvas()
         {
             if (ActiveDocument == null) return;
+            using var operation = LoggingService.BeginOperation(
+                "Shell.ResizeCanvas",
+                new { width = ActiveDocument.SpriteState.Width, height = ActiveDocument.SpriteState.Height });
 
             var result = _dialogService.ShowResizeCanvasDialog(
                 ActiveDocument.SpriteState.Width,
@@ -318,6 +355,7 @@ namespace Hexprite.ViewModels
                     h == ActiveDocument.SpriteState.Height) return;
 
                 ActiveDocument.ResizeCanvas(w, h, anchor);
+                Logger.Information("Resized active canvas to {Width}x{Height} using anchor {Anchor}", w, h, anchor);
             }
         }
 
@@ -325,9 +363,11 @@ namespace Hexprite.ViewModels
 
         private void ExecuteImportFromCode()
         {
+            using var operation = LoggingService.BeginOperation("Shell.ImportFromCode");
             if (OpenDocuments.Count >= MaxTabs)
             {
                 _dialogService.ShowMessage($"Maximum of {MaxTabs} tabs reached. Close a tab first.");
+                Logger.Warning("Import blocked because max tabs reached. MaxTabs={MaxTabs}", MaxTabs);
                 return;
             }
 
@@ -356,9 +396,11 @@ namespace Hexprite.ViewModels
                 ActiveDocument = doc;
                 TabAdded?.Invoke(this, doc);
                 RaiseActiveTabChanged();
+                Logger.Information("Imported sprite from code. IsXbm={IsXbm} Size={Width}x{Height}", isXbm, w, h);
             }
             catch (Exception ex)
             {
+                HandledErrorReporter.Error(ex, "ShellViewModel.ImportFromCode", new { w, h, isXbm });
                 _dialogService.ShowMessage($"Error importing: {ex.Message}");
             }
         }
@@ -367,12 +409,74 @@ namespace Hexprite.ViewModels
 
         private void ExecuteOpenDocumentation()
         {
-            Process.Start(new ProcessStartInfo("https://hexprite.com") { UseShellExecute = true });
+            using var operation = LoggingService.BeginOperation("Shell.OpenDocumentation", new { url = "https://hexprite.com" });
+            try
+            {
+                Process.Start(new ProcessStartInfo("https://hexprite.com") { UseShellExecute = true });
+                Logger.Information("Opened documentation URL");
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "ShellViewModel.OpenDocumentation", new { url = "https://hexprite.com" });
+                _dialogService.ShowMessage("Could not open the documentation website.");
+            }
+        }
+
+        private void ExecuteOpenPrivacySettings()
+        {
+            using var operation = LoggingService.BeginOperation("Shell.OpenPrivacySettings");
+            bool saved = _dialogService.ShowPrivacySettingsDialog();
+            Logger.Information("Privacy settings dialog closed. Saved={Saved}", saved);
         }
 
         private void ExecuteShowAbout()
         {
+            Logger.Information("Opening About dialog");
             _dialogService.ShowAboutDialog();
+        }
+
+        private void ExecuteReportBug()
+        {
+            using var operation = LoggingService.BeginOperation("Shell.ReportBug");
+            BugReportInput? input = _dialogService.ShowBugReportDialog();
+            if (input == null)
+            {
+                Logger.Information("Bug report dialog canceled by user");
+                return;
+            }
+
+            BugReportResult result = _bugReportService.SubmitReport(input);
+            if (result.Success)
+            {
+                _dialogService.ShowBugReportSuccessDialog(result.Message, result.EventId);
+                Logger.Information("Bug report submitted successfully. EventId={EventId}", result.EventId);
+                return;
+            }
+
+            _dialogService.ShowMessage(result.Message);
+            Log.Warning("User-facing bug report submission failed: {Message}", result.Message);
+        }
+
+        private void ExecuteSendFeedback()
+        {
+            using var operation = LoggingService.BeginOperation("Shell.SendFeedback");
+            UserFeedbackInput? input = _dialogService.ShowUserFeedbackDialog();
+            if (input == null)
+            {
+                Logger.Information("Feedback dialog canceled by user");
+                return;
+            }
+
+            FeedbackSubmitResult result = _userFeedbackService.SubmitFeedback(input);
+            if (result.Success)
+            {
+                _dialogService.ShowBugReportSuccessDialog(result.Message, result.EventId, "Feedback sent");
+                Logger.Information("Feedback submitted successfully. EventId={EventId}", result.EventId);
+                return;
+            }
+
+            _dialogService.ShowMessage(result.Message);
+            Log.Warning("User-facing feedback submission failed: {Message}", result.Message);
         }
 
         // ── Theme ─────────────────────────────────────────────────────────
@@ -380,7 +484,20 @@ namespace Hexprite.ViewModels
         private void ExecuteSwitchTheme(string? themeName)
         {
             if (themeName != null)
+            {
                 _themeService.ApplyTheme(themeName);
+                Logger.Information("Theme switched to {ThemeName}", themeName);
+            }
+        }
+
+        private void ExecuteRefreshTheme()
+        {
+            using var operation = LoggingService.BeginOperation("Shell.RefreshTheme", new { openDocuments = OpenDocuments.Count });
+            // Force redraw of all open documents with current theme colors
+            foreach (var doc in OpenDocuments)
+                doc.RefreshCanvasColors();
+
+            ThemeChanged?.Invoke(this, EventArgs.Empty);
         }
 
         // ── Helpers ───────────────────────────────────────────────────────

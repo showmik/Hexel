@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Navigation;
+using Hexprite.Services;
 
 namespace Hexprite.Views
 {
@@ -29,7 +30,20 @@ namespace Hexprite.Views
 
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
         {
-            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            try
+            {
+                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "AboutDialog.OpenHyperlink", new { e.Uri.AbsoluteUri });
+                MessageBox.Show(
+                    "Could not open the link.",
+                    "Hexel",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+
             e.Handled = true;
         }
     }
