@@ -130,7 +130,11 @@ namespace Hexprite.ViewModels
         public bool ShowGridLines
         {
             get => _showGridLines;
-            set => SetProperty(ref _showGridLines, value);
+            set
+            {
+                if (SetProperty(ref _showGridLines, value))
+                    SaveEditorPreferences();
+            }
         }
 
         // ── Tool state ────────────────────────────────────────────────────
@@ -138,7 +142,11 @@ namespace Hexprite.ViewModels
         public ToolMode CurrentTool
         {
             get => _currentTool;
-            set => SetProperty(ref _currentTool, value);
+            set
+            {
+                if (SetProperty(ref _currentTool, value))
+                    SaveEditorPreferences();
+            }
         }
 
         private double _zoomLevel = 1.0;
@@ -152,21 +160,33 @@ namespace Hexprite.ViewModels
         public int BrushSize
         {
             get => _brushSize;
-            set => SetProperty(ref _brushSize, Math.Clamp(value, 1, 64));
+            set
+            {
+                if (SetProperty(ref _brushSize, Math.Clamp(value, 1, 64)))
+                    SaveEditorPreferences();
+            }
         }
 
         private BrushShape _brushShape = BrushShape.Circle;
         public BrushShape BrushShape
         {
             get => _brushShape;
-            set => SetProperty(ref _brushShape, value);
+            set
+            {
+                if (SetProperty(ref _brushShape, value))
+                    SaveEditorPreferences();
+            }
         }
 
         private int _brushAngle = 0;
         public int BrushAngle
         {
             get => _brushAngle;
-            set => SetProperty(ref _brushAngle, ((value % 360) + 360) % 360);
+            set
+            {
+                if (SetProperty(ref _brushAngle, ((value % 360) + 360) % 360))
+                    SaveEditorPreferences();
+            }
         }
 
         // Flags read by the View to know whether a shape preview is in progress
@@ -398,6 +418,7 @@ namespace Hexprite.ViewModels
                     OnPropertyChanged(nameof(PreviewWidth));
                     OnPropertyChanged(nameof(PreviewHeight));
                     OnPropertyChanged(nameof(PreviewScaleText));
+                    SaveEditorPreferences();
                 }
             }
         }
@@ -416,6 +437,7 @@ namespace Hexprite.ViewModels
                     _previewDisplayType = (DisplayType)value;
                     OnPropertyChanged();
                     RefreshCanvasColors();
+                    SaveEditorPreferences();
                 }
             }
         }
@@ -507,6 +529,7 @@ namespace Hexprite.ViewModels
             _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
             _pixelClipboard = pixelClipboard ?? throw new ArgumentNullException(nameof(pixelClipboard));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            ApplySavedEditorPreferences();
 
             // ── Commands ──────────────────────────────────────────────────
 
@@ -1157,8 +1180,6 @@ namespace Hexprite.ViewModels
             PreviewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
             _canvasBuffer = new uint[width * height];
             _previewBuffer = new uint[width * height];
-
-            PreviewScale = 2;
         }
 
         /// <summary>
@@ -1176,6 +1197,32 @@ namespace Hexprite.ViewModels
             OnPropertyChanged(nameof(SelectionStrokeThickness));
             OnPropertyChanged(nameof(PreviewScaleText));
             OnPropertyChanged(nameof(CanvasDimensionText));
+        }
+
+        private void ApplySavedEditorPreferences()
+        {
+            var prefs = UserPreferencesService.Get();
+            _currentTool = prefs.LastTool;
+            _showGridLines = prefs.ShowGridLines;
+            _brushSize = Math.Clamp(prefs.BrushSize, 1, 64);
+            _brushShape = prefs.BrushShape;
+            _brushAngle = ((prefs.BrushAngle % 360) + 360) % 360;
+            _previewScale = Math.Max(1, prefs.PreviewScale);
+            _previewDisplayType = (DisplayType)Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 3);
+        }
+
+        private void SaveEditorPreferences()
+        {
+            UserPreferencesService.Update(p =>
+            {
+                p.LastTool = _currentTool;
+                p.ShowGridLines = _showGridLines;
+                p.BrushSize = _brushSize;
+                p.BrushShape = _brushShape;
+                p.BrushAngle = _brushAngle;
+                p.PreviewScale = _previewScale;
+                p.PreviewDisplayTypeIndex = (int)_previewDisplayType;
+            });
         }
     }
 }

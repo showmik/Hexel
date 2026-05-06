@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 using Hexprite.Core;
+using Hexprite.Services;
 using Hexprite.ViewModels;
 
 namespace Hexprite.Views
@@ -15,7 +16,15 @@ namespace Hexprite.Views
         public NewCanvasDialog()
         {
             InitializeComponent();
-            PresetComboBox.SelectedIndex = 0; // "Custom"
+            var prefs = UserPreferencesService.Get();
+            TxtWidth.Text = prefs.NewCanvasWidth.ToString();
+            TxtHeight.Text = prefs.NewCanvasHeight.ToString();
+
+            int presetIndex = Math.Clamp(
+                prefs.NewCanvasPresetIndex,
+                0,
+                Math.Max(0, MainViewModel.DisplayPresets.Count - 1));
+            PresetComboBox.SelectedIndex = presetIndex;
         }
 
         private void Preset_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -51,6 +60,12 @@ namespace Hexprite.Views
             }
 
             Result = (w, h);
+            UserPreferencesService.Update(p =>
+            {
+                p.NewCanvasWidth = w;
+                p.NewCanvasHeight = h;
+                p.NewCanvasPresetIndex = Math.Max(0, PresetComboBox.SelectedIndex);
+            });
             DialogResult = true;
         }
 

@@ -1,8 +1,12 @@
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using Hexprite.Core;
+using Hexprite.Services;
+using Hexprite.ViewModels;
 
 namespace Hexprite.Views
 {
@@ -18,7 +22,14 @@ namespace Hexprite.Views
             TxtCurrentSize.Text = $"{currentWidth} × {currentHeight}";
             TxtWidth.Text = currentWidth.ToString();
             TxtHeight.Text = currentHeight.ToString();
-            PresetComboBox.SelectedIndex = 0;
+
+            var prefs = UserPreferencesService.Get();
+            int presetIndex = Math.Clamp(
+                prefs.ResizePresetIndex,
+                0,
+                Math.Max(0, MainViewModel.DisplayPresets.Count - 1));
+            PresetComboBox.SelectedIndex = presetIndex;
+            SetAnchorSelection(prefs.ResizeAnchor);
         }
 
         private void Preset_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -58,6 +69,11 @@ namespace Hexprite.Views
                 return;
             }
             Result = (w, h, _selectedAnchor);
+            UserPreferencesService.Update(p =>
+            {
+                p.ResizePresetIndex = Math.Max(0, PresetComboBox.SelectedIndex);
+                p.ResizeAnchor = _selectedAnchor;
+            });
             DialogResult = true;
         }
 
@@ -74,6 +90,17 @@ namespace Hexprite.Views
         private void NumberOnly(object sender, TextCompositionEventArgs e)
         {
             e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
+        }
+
+        private void SetAnchorSelection(ResizeAnchor anchor)
+        {
+            _selectedAnchor = anchor;
+            var selected = AnchorGrid.Children
+                .OfType<RadioButton>()
+                .FirstOrDefault(rb => string.Equals(rb.Tag as string, anchor.ToString(), StringComparison.Ordinal));
+
+            if (selected != null)
+                selected.IsChecked = true;
         }
     }
 }
