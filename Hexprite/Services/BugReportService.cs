@@ -34,6 +34,14 @@ namespace Hexprite.Services
                     },
                     SentryLevel.Error);
 
+                // Also send to Sentry's Feedback feature so the report
+                // appears on the associated event's feedback tab.
+                _ = SentrySdk.CaptureFeedback(
+                    BuildBugReportComments(input),
+                    string.IsNullOrWhiteSpace(input.ContactEmail) ? null : input.ContactEmail.Trim(),
+                    name: null,
+                    associatedEventId: eventId);
+
                 Log.Information("Manual bug report submitted. EventId={EventId}", eventId.ToString());
 
                 return new BugReportResult
@@ -52,6 +60,22 @@ namespace Hexprite.Services
                     Message = $"Unable to submit bug report: {ex.Message}"
                 };
             }
+        }
+
+        private static string BuildBugReportComments(BugReportInput input)
+        {
+            // This ends up in Sentry's "User Feedback" comments field.
+            // Keep it readable but compact.
+            string summary = string.IsNullOrWhiteSpace(input.Summary) ? "(no summary)" : input.Summary.Trim();
+            string steps = string.IsNullOrWhiteSpace(input.StepsToReproduce) ? "(not provided)" : input.StepsToReproduce.Trim();
+            string expected = string.IsNullOrWhiteSpace(input.ExpectedBehavior) ? "(not provided)" : input.ExpectedBehavior.Trim();
+            string actual = string.IsNullOrWhiteSpace(input.ActualBehavior) ? "(not provided)" : input.ActualBehavior.Trim();
+
+            return
+                $"Summary:\n{summary}\n\n" +
+                $"Steps to reproduce:\n{steps}\n\n" +
+                $"Expected behavior:\n{expected}\n\n" +
+                $"Actual behavior:\n{actual}";
         }
 
         private static string GetAppVersion()

@@ -43,6 +43,14 @@ namespace Hexprite.Services
                     },
                     SentryLevel.Info);
 
+                // Also send a corresponding Feedback entry so it shows
+                // up on the event's feedback tab in Sentry.
+                _ = SentrySdk.CaptureFeedback(
+                    string.IsNullOrWhiteSpace(messageBody) ? "User feedback" : messageBody,
+                    string.IsNullOrWhiteSpace(input.ContactEmail) ? null : input.ContactEmail.Trim(),
+                    name: null,
+                    associatedEventId: eventId);
+
                 Log.Information("User feedback submitted. EventId={EventId}", eventId.ToString());
 
                 return new FeedbackSubmitResult
