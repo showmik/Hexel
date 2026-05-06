@@ -103,14 +103,14 @@
                 <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <Button Content="Cancel"
                             Width="90"
-                            Height="30"
+                            MinHeight="30"
                             Margin="0,0,8,0"
                             Style="{StaticResource ModernButtonStyle}"
                             IsCancel="True"
                             Click="Cancel_Click"/>
                     <Button Content="Save"
                             Width="110"
-                            Height="30"
+                            MinHeight="30"
                             Style="{StaticResource AccentButtonStyle}"
                             IsDefault="True"
                             Click="Save_Click"/>

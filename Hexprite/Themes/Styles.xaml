@@ -1037,7 +1037,7 @@
         <Setter Property="Background"  Value="{DynamicResource Brush.Accent.Base}"/>
         <Setter Property="Foreground"  Value="{DynamicResource Brush.Text.OnAccent}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding"     Value="14,6"/>
+        <Setter Property="Padding"     Value="16,8"/>
         <Setter Property="Cursor"      Value="Hand"/>
         <Setter Property="FontWeight"  Value="SemiBold"/>
         <Setter Property="FontSize"    Value="12"/>
