@@ -5,7 +5,7 @@ namespace Hexprite.Core
     public class SpriteState
     {
         /// <summary>Hard upper bound used by NewCanvasCommand to prevent OOM crashes.</summary>
-        public const int MaxDimension = 256;
+        public const int MaxDimension = 512;
 
         public int Width { get; }
         public int Height { get; }

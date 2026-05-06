@@ -45,8 +45,8 @@
     <!-- Accent & Selection -->
     <Color x:Key="Palette.Accent.Base">#2563EB</Color>
     <!-- Vivid Blue 600 -->
-    <Color x:Key="Palette.Accent.Selection">#DBEAFE</Color>
-    <!-- Soft Blue background for selected text -->
+    <Color x:Key="Palette.Accent.Selection">#3B82F6</Color>
+    <!-- Stronger Blue for clear selected-state contrast -->
     <Color x:Key="Palette.Accent.PreviewBorder">#2563EB</Color>
     <Color x:Key="Palette.Accent.GradientStart">#3B82F6</Color>
     <Color x:Key="Palette.Accent.GradientEnd">#4F46E5</Color>

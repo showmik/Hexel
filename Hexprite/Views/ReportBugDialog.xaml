@@ -108,14 +108,14 @@
                 <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <Button Content="Cancel"
                             Width="90"
-                            Height="30"
+                            MinHeight="30"
                             Margin="0,0,8,0"
                             Style="{StaticResource ModernButtonStyle}"
                             IsCancel="True"
                             Click="Cancel_Click"/>
                     <Button Content="Submit Report"
                             Width="130"
-                            Height="30"
+                            MinHeight="30"
                             Style="{StaticResource AccentButtonStyle}"
                             IsDefault="True"
                             Click="Submit_Click"/>

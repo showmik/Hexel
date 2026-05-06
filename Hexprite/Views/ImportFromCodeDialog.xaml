@@ -158,13 +158,13 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button Content="Cancel"
-                    Width="80" Height="30"
+                    Width="80" MinHeight="30"
                     Style="{StaticResource ModernButtonStyle}"
                     Margin="0,0,8,0"
                     Click="Cancel_Click" />
             <Button x:Name="BtnImport"
                     Content="Import"
-                    Width="120" Height="30"
+                    Width="120" MinHeight="30"
                     Style="{StaticResource AccentButtonStyle}"
                     Click="Import_Click"
                     IsDefault="True"

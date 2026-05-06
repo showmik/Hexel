@@ -362,9 +362,9 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2" />
-                <ColumnDefinition Width="400"
-                                  MinWidth="300"
-                                  MaxWidth="600" />
+                <ColumnDefinition Width="360"
+                                  MinWidth="280"
+                                  MaxWidth="520" />
             </Grid.ColumnDefinitions>
 
             <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Column="0" />
@@ -401,9 +401,11 @@
                     </Style.Triggers>
                 </Style>
             </Grid.Style>
-            
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="24,24,24,24">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                        MaxWidth="460">
+                        MaxWidth="600">
                 <!-- App branding -->
                 <Border Width="72" Height="72"
                         CornerRadius="18"
@@ -434,57 +436,107 @@
                            Style="{StaticResource HeaderStyle}"
                            HorizontalAlignment="Center"
                            FontSize="11"
-                           Margin="0,0,0,12"/>
-                <WrapPanel HorizontalAlignment="Center" Margin="0,0,0,10">
-                    <Button Content="8 × 8" 
+                           Margin="0,0,0,10"/>
+                <Grid HorizontalAlignment="Center" Margin="0,0,0,12">
+                    <Grid.Resources>
+                        <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Separator}" />
+                            <Setter Property="BorderThickness" Value="1" />
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                            <Setter Property="Margin" Value="4" />
+                            <Setter Property="Padding" Value="14,8" />
+                            <Setter Property="MinWidth" Value="88" />
+                        </Style>
+                    </Grid.Resources>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Top row -->
+                    <Button Grid.Row="0" Grid.Column="0"
+                            Content="8 × 8"
                             Command="{Binding NewCanvasCommand}"
                             CommandParameter="8x8"
-                            Margin="4" Padding="20,10" 
-                            Style="{StaticResource ModernButtonStyle}"
-                            ToolTip="Create 8×8 canvas" />
-                    <Button Content="16 × 16" 
+                            ToolTip="Create 8×8 icon canvas" />
+                    <Button Grid.Row="0" Grid.Column="1"
+                            Content="16 × 16"
                             Command="{Binding NewCanvasCommand}"
                             CommandParameter="16x16"
-                            Margin="4" Padding="20,10" 
-                            Style="{StaticResource ModernButtonStyle}"
-                            ToolTip="Create 16×16 canvas" />
-                    <Button Content="32 × 32" 
+                            ToolTip="Create 16×16 icon canvas" />
+                    <Button Grid.Row="0" Grid.Column="2"
+                            Content="32 × 32"
                             Command="{Binding NewCanvasCommand}"
                             CommandParameter="32x32"
-                            Margin="4" Padding="20,10" 
-                            Style="{StaticResource ModernButtonStyle}"
-                            ToolTip="Create 32×32 canvas" />
-                    <Button Content="64 × 64" 
+                            ToolTip="Create 32×32 sprite canvas" />
+                    <Button Grid.Row="0" Grid.Column="3"
+                            Content="64 × 32"
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="64x32"
+                            ToolTip="Create 64×32 OLED banner canvas" />
+
+                    <!-- Bottom row -->
+                    <Button Grid.Row="1" Grid.Column="0"
+                            Content="64 × 64"
                             Command="{Binding NewCanvasCommand}"
                             CommandParameter="64x64"
-                            Margin="4" Padding="20,10" 
-                            Style="{StaticResource ModernButtonStyle}"
-                            ToolTip="Create 64×64 canvas" />
-                    <Button Content="128 × 64" 
+                            ToolTip="Create 64×64 sprite canvas" />
+                    <Button Grid.Row="1" Grid.Column="1"
+                            Content="84 × 48"
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="84x48"
+                            ToolTip="Create 84×48 Nokia 5110 canvas" />
+                    <Button Grid.Row="1" Grid.Column="2"
+                            Content="96 × 16"
+                            Command="{Binding NewCanvasCommand}"
+                            CommandParameter="96x16"
+                            ToolTip="Create 96×16 HUD/status strip canvas" />
+                    <Button Grid.Row="1" Grid.Column="3"
+                            Content="128 × 64"
                             Command="{Binding NewCanvasCommand}"
                             CommandParameter="128x64"
-                            Margin="4" Padding="20,10" 
-                            Style="{StaticResource ModernButtonStyle}"
-                            ToolTip="Create 128×64 canvas (SSD1306)" />
-                </WrapPanel>
+                            ToolTip="Create 128×64 SSD1306 canvas" />
+                </Grid>
                 
                 <!-- Divider -->
                 <Border Height="1" 
                         Background="{DynamicResource Brush.Border.Separator}" 
-                        Margin="40,8,40,16"/>
+                        Margin="40,2,40,16"/>
 
                 <!-- Actions -->
-                <StackPanel HorizontalAlignment="Center">
-                    <Button Content="✦  Custom Size…" 
+                <TextBlock Text="START FROM FILE"
+                           Style="{StaticResource HeaderStyle}"
+                           HorizontalAlignment="Center"
+                           FontSize="11"
+                           Margin="0,0,0,10"/>
+                <StackPanel HorizontalAlignment="Center" MinWidth="220">
+                    <Button Content="Custom Size…" 
                             Command="{Binding NewCanvasCommand}" 
                             HorizontalAlignment="Center" 
-                            Padding="28,10" 
+                            Width="220"
+                            Padding="20,10" 
                             Style="{StaticResource AccentButtonStyle}"
                             Margin="0,0,0,10" />
                     <Button Content="Open File…" 
                             Command="{Binding OpenCommand}" 
                             HorizontalAlignment="Center" 
-                            Padding="28,10" 
+                            Width="220"
+                            Padding="20,10" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="0,0,0,10" />
+                    <Button Content="Import from Code…"
+                            Command="{Binding ImportFromCodeMenuCommand}"
+                            HorizontalAlignment="Center"
+                            Width="220"
+                            Padding="20,10"
                             Style="{StaticResource ModernButtonStyle}"
                             Margin="0,0,0,20" />
                 </StackPanel>
@@ -508,6 +560,7 @@
                     </TextBlock>
                 </StackPanel>
             </StackPanel>
+            </ScrollViewer>
         </Grid>
 
         </Grid>

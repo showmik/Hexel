@@ -53,7 +53,11 @@
         <Setter Property="Stretch"
                 Value="Uniform" />
         <Setter Property="StrokeThickness"
-                Value="2" />
+                Value="1.8" />
+        <Setter Property="SnapsToDevicePixels"
+                Value="True" />
+        <Setter Property="StrokeMiterLimit"
+                Value="1" />
         <Setter Property="StrokeStartLineCap"
                 Value="Round" />
         <Setter Property="StrokeEndLineCap"
@@ -87,7 +91,11 @@
         <Setter Property="Stretch"
                 Value="Uniform" />
         <Setter Property="StrokeThickness"
-                Value="2" />
+                Value="1.4" />
+        <Setter Property="SnapsToDevicePixels"
+                Value="True" />
+        <Setter Property="StrokeMiterLimit"
+                Value="1" />
         <Setter Property="StrokeStartLineCap"
                 Value="Round" />
         <Setter Property="StrokeEndLineCap"
@@ -1037,7 +1045,7 @@
         <Setter Property="Background"  Value="{DynamicResource Brush.Accent.Base}"/>
         <Setter Property="Foreground"  Value="{DynamicResource Brush.Text.OnAccent}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding"     Value="14,6"/>
+        <Setter Property="Padding"     Value="16,8"/>
         <Setter Property="Cursor"      Value="Hand"/>
         <Setter Property="FontWeight"  Value="SemiBold"/>
         <Setter Property="FontSize"    Value="12"/>
