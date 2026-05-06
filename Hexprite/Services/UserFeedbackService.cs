@@ -9,6 +9,15 @@ namespace Hexprite.Services
     {
         public FeedbackSubmitResult SubmitFeedback(UserFeedbackInput input)
         {
+            using var operation = LoggingService.BeginOperation(
+                "UserFeedbackService.SubmitFeedback",
+                new
+                {
+                    category = string.IsNullOrWhiteSpace(input.Category) ? "General" : input.Category.Trim(),
+                    includeRecentLogs = input.IncludeRecentLogs,
+                    hasContactEmail = !string.IsNullOrWhiteSpace(input.ContactEmail)
+                });
+
             try
             {
                 string messageBody = input.Message.Trim();

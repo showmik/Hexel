@@ -2,8 +2,12 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Serilog.Context;
+using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using Serilog.Core;
+using Serilog.Debugging;
 using Serilog.Events;
 using Sentry;
 
@@ -13,6 +17,7 @@ namespace Hexprite.Services
     {
         private const string DefaultAppName = "Hexel";
         private const string AppSettingsFile = "appsettings.json";
+        private static string? _currentSessionId;
 
         public static void Initialize()
         {
@@ -21,58 +26,75 @@ namespace Hexprite.Services
             string appNameFromConfig = configuration["Logging:AppName"] ?? appName;
             string logDirectory = BuildLogDirectory(appNameFromConfig);
 
-            Directory.CreateDirectory(logDirectory);
-
-            string? sentryDsn = configuration["Sentry:Dsn"];
-            string sentryEnvironment = configuration["Sentry:Environment"] ?? "beta";
-            bool sentryAutoSessionTracking = ParseBool(configuration["Sentry:AutoSessionTracking"], true);
-
-            LogEventLevel minimumLevel = ParseLogLevel(configuration["Logging:MinimumLevel"], LogEventLevel.Information);
-            LogEventLevel sentryBreadcrumbLevel = ParseLogLevel(configuration["Sentry:MinimumBreadcrumbLevel"], LogEventLevel.Information);
-            LogEventLevel sentryEventLevel = ParseLogLevel(configuration["Sentry:MinimumEventLevel"], LogEventLevel.Error);
-
-            int retainedFileCount = ParseInt(configuration["Logging:RetainedFileCountLimit"], 14);
-            int fileSizeLimitMb = ParseInt(configuration["Logging:FileSizeLimitMB"], 10);
-
-            var loggerConfiguration = new LoggerConfiguration()
-                .MinimumLevel.Is(minimumLevel)
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .MinimumLevel.Override("System", LogEventLevel.Warning)
-                .Enrich.FromLogContext()
-                .Enrich.WithMachineName()
-                .Enrich.WithThreadId()
-                .WriteTo.File(
-                    path: Path.Combine(logDirectory, "log-.txt"),
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: retainedFileCount,
-                    fileSizeLimitBytes: fileSizeLimitMb * 1024 * 1024,
-                    rollOnFileSizeLimit: true,
-                    shared: true,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] (Thread:{ThreadId}) {Message:lj}{NewLine}{Exception}");
-
-            // Serilog's Sentry sink initializes its own SDK; it does not pick up a separate SentrySdk.Init.
-            // DSN and core options must be set on the sink's options or GetDsn() throws.
-            if (!string.IsNullOrWhiteSpace(sentryDsn))
+            try
             {
-                loggerConfiguration = loggerConfiguration.WriteTo.Sentry(options =>
+                Directory.CreateDirectory(logDirectory);
+                ConfigureSerilogSelfDiagnostics(logDirectory);
+
+                string? sentryDsn = configuration["Sentry:Dsn"];
+                string sentryEnvironment = configuration["Sentry:Environment"] ?? "beta";
+                bool sentryAutoSessionTracking = ParseBool(configuration["Sentry:AutoSessionTracking"], true);
+
+                LogEventLevel minimumLevel = ParseLogLevel(configuration["Logging:MinimumLevel"], LogEventLevel.Information);
+                LogEventLevel sentryBreadcrumbLevel = ParseLogLevel(configuration["Sentry:MinimumBreadcrumbLevel"], LogEventLevel.Information);
+                LogEventLevel sentryEventLevel = ParseLogLevel(configuration["Sentry:MinimumEventLevel"], LogEventLevel.Error);
+
+                int retainedFileCount = ParseInt(configuration["Logging:RetainedFileCountLimit"], 14);
+                int fileSizeLimitMb = ParseInt(configuration["Logging:FileSizeLimitMB"], 10);
+
+                string sessionId = Guid.NewGuid().ToString("N");
+                _currentSessionId = sessionId;
+
+                var loggerConfiguration = new LoggerConfiguration()
+                    .MinimumLevel.Is(minimumLevel)
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                    .MinimumLevel.Override("System", LogEventLevel.Warning)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithMachineName()
+                    .Enrich.WithThreadId()
+                    .Enrich.WithProperty("AppName", appNameFromConfig)
+                    .Enrich.WithProperty("AppVersion", GetAppVersion())
+                    .Enrich.WithProperty("Environment", sentryEnvironment)
+                    .Enrich.WithProperty("SessionId", sessionId)
+                    .Enrich.WithProperty("ProcessId", Environment.ProcessId)
+                    .WriteTo.File(
+                        path: Path.Combine(logDirectory, "log-.txt"),
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: retainedFileCount,
+                        fileSizeLimitBytes: fileSizeLimitMb * 1024 * 1024,
+                        rollOnFileSizeLimit: true,
+                        shared: true,
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] (Thread:{ThreadId} Process:{ProcessId} Session:{SessionId}) {Message:lj}{NewLine}{Exception}");
+
+                // Serilog's Sentry sink initializes its own SDK; it does not pick up a separate SentrySdk.Init.
+                // DSN and core options must be set on the sink's options or GetDsn() throws.
+                if (!string.IsNullOrWhiteSpace(sentryDsn))
                 {
-                    options.Dsn = sentryDsn;
-                    options.Environment = sentryEnvironment;
-                    options.Release = $"{appNameFromConfig}@{GetAppVersion()}";
-                    options.AutoSessionTracking = sentryAutoSessionTracking;
-                    options.AttachStacktrace = true;
-                    options.MinimumBreadcrumbLevel = sentryBreadcrumbLevel;
-                    options.MinimumEventLevel = sentryEventLevel;
-                });
+                    loggerConfiguration = loggerConfiguration.WriteTo.Sentry(options =>
+                    {
+                        options.Dsn = sentryDsn;
+                        options.Environment = sentryEnvironment;
+                        options.Release = $"{appNameFromConfig}@{GetAppVersion()}";
+                        options.AutoSessionTracking = sentryAutoSessionTracking;
+                        options.AttachStacktrace = true;
+                        options.MinimumBreadcrumbLevel = sentryBreadcrumbLevel;
+                        options.MinimumEventLevel = sentryEventLevel;
+                    });
+                }
+
+                Log.Logger = loggerConfiguration.CreateLogger();
+                LogStartupSummary(logDirectory, minimumLevel, retainedFileCount, fileSizeLimitMb, !string.IsNullOrWhiteSpace(sentryDsn));
+
+                if (string.IsNullOrWhiteSpace(sentryDsn))
+                {
+                    Log.Warning(
+                        "Sentry DSN is not configured. Set Sentry:Dsn via dotnet user-secrets (dev), environment variable HEXEL_Sentry__Dsn, or appsettings.json. Optional: Sentry:CrashFlushTimeoutSeconds (1-30) or HEXEL_Sentry__CrashFlushTimeoutSeconds for terminating-crash upload wait.");
+                }
             }
-
-            Log.Logger = loggerConfiguration.CreateLogger();
-            Log.Information("Logging initialized. Directory: {LogDirectory}", logDirectory);
-
-            if (string.IsNullOrWhiteSpace(sentryDsn))
+            catch (Exception ex)
             {
-                Log.Warning(
-                    "Sentry DSN is not configured. Set Sentry:Dsn via dotnet user-secrets (dev), environment variable HEXEL_Sentry__Dsn, or appsettings.json. Optional: Sentry:CrashFlushTimeoutSeconds (1–30) or HEXEL_Sentry__CrashFlushTimeoutSeconds for terminating-crash upload wait.");
+                SetupFallbackConsoleLogger();
+                Log.Error(ex, "Failed to initialize file/Sentry logging. Falling back to console logger.");
             }
         }
 
@@ -112,22 +134,48 @@ namespace Hexprite.Services
         /// </summary>
         public static void AttachRecentLogFilesToScope(Scope scope)
         {
-            string logDirectory = GetLogDirectory();
-            if (!Directory.Exists(logDirectory))
+            try
             {
-                return;
+                string logDirectory = GetLogDirectory();
+                if (!Directory.Exists(logDirectory))
+                {
+                    return;
+                }
+
+                int maxFiles = GetBugReportingMaxAttachedLogs();
+                string[] latestFiles = Directory.EnumerateFiles(logDirectory, "*.txt")
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .Take(maxFiles)
+                    .ToArray();
+
+                foreach (string file in latestFiles)
+                {
+                    scope.AddAttachment(file);
+                }
             }
-
-            int maxFiles = GetBugReportingMaxAttachedLogs();
-            string[] latestFiles = Directory.EnumerateFiles(logDirectory, "*.txt")
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .Take(maxFiles)
-                .ToArray();
-
-            foreach (string file in latestFiles)
+            catch (Exception ex)
             {
-                scope.AddAttachment(file);
+                Log.Warning(ex, "Unable to attach recent log files to report scope.");
             }
+        }
+
+        /// <summary>
+        /// Creates a timing scope that logs operation start, completion, and duration.
+        /// </summary>
+        public static IDisposable BeginOperation(string operationName, object? context = null)
+        {
+            return new TimedOperationScope(operationName, context);
+        }
+
+        /// <summary>
+        /// Pushes standard operation properties into Serilog's log context.
+        /// Usage: using var _ = LoggingService.PushContext("OpenFile", new { path });
+        /// </summary>
+        public static IDisposable PushContext(string operationName, object? context = null)
+        {
+            IDisposable op = LogContext.PushProperty("Operation", operationName);
+            IDisposable? payload = context is null ? null : LogContext.PushProperty("OperationContext", context, true);
+            return new CompositeDisposable(op, payload);
         }
 
         private static string GetAppName()
@@ -163,6 +211,53 @@ namespace Hexprite.Services
                 "Logs");
         }
 
+        private static void ConfigureSerilogSelfDiagnostics(string logDirectory)
+        {
+            string selfLogPath = Path.Combine(logDirectory, "serilog-selflog.txt");
+            SelfLog.Enable(message =>
+            {
+                try
+                {
+                    File.AppendAllText(selfLogPath, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");
+                }
+                catch
+                {
+                    // Never throw from self-diagnostic channel.
+                }
+            });
+        }
+
+        private static void SetupFallbackConsoleLogger()
+        {
+            string fallbackPath = Path.Combine(Path.GetTempPath(), "hexel-fallback-log.txt");
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .Enrich.FromLogContext()
+                .WriteTo.File(
+                    fallbackPath,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    shared: true)
+                .CreateLogger();
+        }
+
+        private static void LogStartupSummary(
+            string logDirectory,
+            LogEventLevel minimumLevel,
+            int retainedFileCount,
+            int fileSizeLimitMb,
+            bool sentryEnabled)
+        {
+            Log.Information(
+                "Logging initialized. Directory={LogDirectory} MinLevel={MinLevel} RetainedFileCount={RetainedFileCount} FileSizeLimitMB={FileSizeLimitMB} SentryEnabled={SentryEnabled} SessionId={SessionId}",
+                logDirectory,
+                minimumLevel,
+                retainedFileCount,
+                fileSizeLimitMb,
+                sentryEnabled,
+                _currentSessionId ?? "unknown");
+        }
+
         private static bool ParseBool(string? value, bool fallback)
         {
             return bool.TryParse(value, out bool parsed) ? parsed : fallback;
@@ -176,6 +271,71 @@ namespace Hexprite.Services
         private static LogEventLevel ParseLogLevel(string? value, LogEventLevel fallback)
         {
             return Enum.TryParse(value, ignoreCase: true, out LogEventLevel parsed) ? parsed : fallback;
+        }
+
+        private sealed class TimedOperationScope : IDisposable
+        {
+            private readonly string _operationName;
+            private readonly object? _context;
+            private readonly Stopwatch _stopwatch;
+            private bool _disposed;
+
+            public TimedOperationScope(string operationName, object? context)
+            {
+                _operationName = operationName;
+                _context = context;
+                _stopwatch = Stopwatch.StartNew();
+
+                if (_context is null)
+                {
+                    Log.Information("Starting operation {Operation}", _operationName);
+                }
+                else
+                {
+                    Log.Information("Starting operation {Operation} {@OperationContext}", _operationName, _context);
+                }
+            }
+
+            public void Dispose()
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                _stopwatch.Stop();
+
+                if (_context is null)
+                {
+                    Log.Information("Completed operation {Operation} in {ElapsedMs}ms", _operationName, _stopwatch.ElapsedMilliseconds);
+                    return;
+                }
+
+                Log.Information(
+                    "Completed operation {Operation} in {ElapsedMs}ms {@OperationContext}",
+                    _operationName,
+                    _stopwatch.ElapsedMilliseconds,
+                    _context);
+            }
+        }
+
+        private sealed class CompositeDisposable : IDisposable
+        {
+            private readonly IDisposable _first;
+            private readonly IDisposable? _second;
+
+            public CompositeDisposable(IDisposable first, IDisposable? second)
+            {
+                _first = first;
+                _second = second;
+            }
+
+            public void Dispose()
+            {
+                _second?.Dispose();
+                _first.Dispose();
+            }
         }
     }
 }

@@ -9,6 +9,10 @@ namespace Hexprite.Services
     {
         public BugReportResult SubmitReport(BugReportInput input)
         {
+            using var operation = LoggingService.BeginOperation(
+                "BugReportService.SubmitReport",
+                new { includeRecentLogs = input.IncludeRecentLogs, hasContactEmail = !string.IsNullOrWhiteSpace(input.ContactEmail) });
+
             try
             {
                 SentryId eventId = SentrySdk.CaptureMessage(

@@ -15,6 +15,7 @@ namespace Hexprite
         protected override void OnStartup(StartupEventArgs e)
         {
             LoggingService.Initialize();
+            Log.Information("Application startup invoked. ArgsCount={ArgsCount}", e.Args?.Length ?? 0);
 
             DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -50,6 +51,7 @@ namespace Hexprite
 
         protected override void OnExit(ExitEventArgs e)
         {
+            Log.Information("Application exiting with code {ExitCode}", e.ApplicationExitCode);
             DispatcherUnhandledException -= App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException -= TaskScheduler_UnobservedTaskException;
@@ -80,7 +82,7 @@ namespace Hexprite
         private static void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
             // Serilog Sentry sink forwards Fatal + exception to Sentry when configured.
-            Log.Fatal(e.Exception, "Unhandled UI thread exception");
+            Log.Fatal(e.Exception, "Unhandled UI thread exception. IsTerminating=true");
             SentryCrashFlush.TryFlushPendingEvents();
 
             MessageBox.Show(
@@ -118,7 +120,7 @@ namespace Hexprite
 
         private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
-            Log.Error(e.Exception, "Unobserved task exception");
+            Log.Error(e.Exception, "Unobserved task exception. ObservedBeforeSet={ObservedBeforeSet}", e.Observed);
             e.SetObserved();
         }
     }

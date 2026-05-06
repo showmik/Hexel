@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Serilog;
 
 namespace Hexprite.Services
@@ -9,27 +10,35 @@ namespace Hexprite.Services
     /// </summary>
     public static class HandledErrorReporter
     {
-        public static void Error(Exception ex, string operation, object? context = null)
+        public static void Error(
+            Exception ex,
+            string operation,
+            object? context = null,
+            [CallerMemberName] string? callerMemberName = null)
         {
             if (context is null)
             {
-                Log.Error(ex, "Handled error: {HandledOperation}", operation);
+                Log.Error(ex, "Handled error: {HandledOperation} Caller={CallerMember}", operation, callerMemberName);
             }
             else
             {
-                Log.Error(ex, "Handled error: {HandledOperation} {@HandledContext}", operation, context);
+                Log.Error(ex, "Handled error: {HandledOperation} Caller={CallerMember} {@HandledContext}", operation, callerMemberName, context);
             }
         }
 
-        public static void Warning(Exception ex, string operation, object? context = null)
+        public static void Warning(
+            Exception ex,
+            string operation,
+            object? context = null,
+            [CallerMemberName] string? callerMemberName = null)
         {
             if (context is null)
             {
-                Log.Warning(ex, "Handled warning: {HandledOperation}", operation);
+                Log.Warning(ex, "Handled warning: {HandledOperation} Caller={CallerMember}", operation, callerMemberName);
             }
             else
             {
-                Log.Warning(ex, "Handled warning: {HandledOperation} {@HandledContext}", operation, context);
+                Log.Warning(ex, "Handled warning: {HandledOperation} Caller={CallerMember} {@HandledContext}", operation, callerMemberName, context);
             }
         }
     }
