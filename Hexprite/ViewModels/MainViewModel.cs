@@ -444,6 +444,26 @@ namespace Hexprite.ViewModels
             }
         }
 
+        public double PreviewEffectiveScale => PreviewScaleEffective;
+        public bool IsPreviewScaleCapped => PreviewScaleEffective < (PreviewScale - 0.01);
+        public int MaxUsefulPreviewScale
+        {
+            get
+            {
+                if (SpriteState == null) return int.MaxValue;
+                int maxDim = Math.Max(SpriteState.Width, SpriteState.Height);
+                if (maxDim <= 0) return 1;
+                return Math.Max(1, (int)Math.Floor(MaxPreviewDimensionPx / (double)maxDim));
+            }
+        }
+        public bool CanIncreasePreviewScale => PreviewScale < MaxUsefulPreviewScale;
+        public bool CanDecreasePreviewScale => PreviewScale > 1;
+        public string PreviewScaleStatusText => IsPreviewScaleCapped
+            ? $"Requested {PreviewScale}x, capped to {PreviewScaleEffective:F2}x (preview limit)."
+            : !CanIncreasePreviewScale
+                ? $"Max useful scale reached ({MaxUsefulPreviewScale}x) for this preview size."
+            : "Requested scale is fully applied.";
+
         public int PreviewWidth =>
             Math.Max(1, (int)Math.Round((SpriteState?.Width ?? 16) * PreviewScaleEffective));
 
@@ -456,11 +476,18 @@ namespace Hexprite.ViewModels
             get => _previewScale;
             set
             {
-                if (SetProperty(ref _previewScale, Math.Max(1, value)))
+                int clamped = Math.Clamp(value, 1, Math.Max(1, MaxUsefulPreviewScale));
+                if (SetProperty(ref _previewScale, clamped))
                 {
                     OnPropertyChanged(nameof(PreviewWidth));
                     OnPropertyChanged(nameof(PreviewHeight));
                     OnPropertyChanged(nameof(PreviewScaleText));
+                    OnPropertyChanged(nameof(PreviewEffectiveScale));
+                    OnPropertyChanged(nameof(IsPreviewScaleCapped));
+                    OnPropertyChanged(nameof(MaxUsefulPreviewScale));
+                    OnPropertyChanged(nameof(CanIncreasePreviewScale));
+                    OnPropertyChanged(nameof(CanDecreasePreviewScale));
+                    OnPropertyChanged(nameof(PreviewScaleStatusText));
                     EnsurePreviewSimBitmap();
                     UpdatePreviewSimulation();
                     SaveEditorPreferences();
@@ -804,8 +831,14 @@ namespace Hexprite.ViewModels
             });
 
             SelectToolCommand = new RelayCommand<string>(ExecuteSelectTool);
-            IncreasePreviewScaleCommand = new RelayCommand(() => PreviewScale++);
-            DecreasePreviewScaleCommand = new RelayCommand(() => PreviewScale--);
+            IncreasePreviewScaleCommand = new RelayCommand(() =>
+            {
+                if (CanIncreasePreviewScale) PreviewScale++;
+            });
+            DecreasePreviewScaleCommand = new RelayCommand(() =>
+            {
+                if (CanDecreasePreviewScale) PreviewScale--;
+            });
             AddLayerCommand = new RelayCommand(AddLayer);
             DeleteLayerCommand = new RelayCommand(DeleteActiveLayer);
 
@@ -1550,6 +1583,12 @@ namespace Hexprite.ViewModels
             OnPropertyChanged(nameof(GridViewport));
             OnPropertyChanged(nameof(PreviewWidth));
             OnPropertyChanged(nameof(PreviewHeight));
+            OnPropertyChanged(nameof(PreviewEffectiveScale));
+            OnPropertyChanged(nameof(IsPreviewScaleCapped));
+            OnPropertyChanged(nameof(MaxUsefulPreviewScale));
+            OnPropertyChanged(nameof(CanIncreasePreviewScale));
+            OnPropertyChanged(nameof(CanDecreasePreviewScale));
+            OnPropertyChanged(nameof(PreviewScaleStatusText));
             OnPropertyChanged(nameof(CanvasDisplayWidth));
             OnPropertyChanged(nameof(CanvasDisplayHeight));
             OnPropertyChanged(nameof(DynamicStrokeThickness));
@@ -1653,6 +1692,8 @@ namespace Hexprite.ViewModels
                 GetDisplaySimulationPreset(),
                 _previewQuality,
                 PreviewRealismStrength / 100.0,
+                PreviewScaleEffective,
+                IsPreviewScaleCapped,
                 _previewSimBuffer);
 
             var rect = new Int32Rect(0, 0, PreviewSimBitmap.PixelWidth, PreviewSimBitmap.PixelHeight);

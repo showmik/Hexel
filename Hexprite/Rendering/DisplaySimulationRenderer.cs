@@ -46,6 +46,8 @@ namespace Hexprite.Rendering
             DisplaySimulationPreset preset,
             PreviewQuality quality,
             double strength01,
+            double effectiveScale,
+            bool isScaleCapped,
             uint[] outBgra)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
@@ -111,6 +113,37 @@ namespace Hexprite.Rendering
             float cellH = outH / (float)srcH;
             float invCellW = 1f / cellW;
             float invCellH = 1f / cellH;
+
+            float cellMin = MathF.Min(cellW, cellH);
+            // Progressive detail regime: 0 -> 1 as pixel footprint grows
+            float detailRegime = Math.Clamp((cellMin - 1.15f) / 2.35f, 0f, 1f);
+            if (isScaleCapped)
+                detailRegime *= 0.92f;
+            float effectiveScaleFactor = Math.Clamp((float)(effectiveScale / 2.0), 0.75f, 1.15f);
+
+            // Keep deterministic but gently reduce fragile details near cap/small cell sizes.
+            float stabilityBias = Math.Clamp((0.8f + (0.2f * detailRegime)) * effectiveScaleFactor, 0.75f, 1f);
+            blurStrength *= Math.Clamp(0.70f + (0.30f * detailRegime), 0.70f, 1f);
+            bloomStrength *= Math.Clamp(0.35f + (0.65f * detailRegime), 0.35f, 1f) * stabilityBias;
+
+            // When output pixels are near/below source-pixel size, the aperture model
+            // can produce unstable artifacts during scale changes. In that range, use a
+            // stable nearest-sample simulation with only subtle preset texture/noise.
+            if (cellW < 1.15f || cellH < 1.15f)
+            {
+                RenderLowScaleFallback(
+                    state,
+                    selectionService,
+                    outW,
+                    outH,
+                    bgSrgb,
+                    fgSrgb,
+                    preset,
+                    strength,
+                    detailRegime,
+                    outBgra);
+                return;
+            }
 
             var pool = ArrayPool<float>.Shared;
             int pxCount = outW * outH;
@@ -197,7 +230,7 @@ namespace Hexprite.Rendering
 
                     // Optional: simple RGB stripe mask for High quality when pixels are large enough
                     float mr = 1f, mg = 1f, mb = 1f;
-                    if (quality == PreviewQuality.High && MathF.Min(cellW, cellH) >= 3.0f && preset != DisplaySimulationPreset.EPaper)
+                    if (quality == PreviewQuality.High && cellMin >= 3.0f && detailRegime > 0.75f && preset != DisplaySimulationPreset.EPaper)
                     {
                         int stripe = ox % 3;
                         if (stripe == 0) { mg = 0.9f; mb = 0.85f; }
@@ -207,7 +240,9 @@ namespace Hexprite.Rendering
 
                     // Texture/noise (mostly for e-paper, subtle elsewhere)
                     float noise = Hash01(ox, oy) - 0.5f;
-                    float paperNoise = preset == DisplaySimulationPreset.EPaper ? (0.08f * strength) : (0.015f * strength);
+                    float paperNoise = preset == DisplaySimulationPreset.EPaper
+                        ? (0.08f * strength * Math.Clamp(0.55f + (0.45f * detailRegime), 0.55f, 1f))
+                        : (0.015f * strength * Math.Clamp(0.45f + (0.55f * detailRegime), 0.45f, 1f));
 
                     float bgN = paperNoise * noise;
                     float fgN = paperNoise * noise;
@@ -242,6 +277,87 @@ namespace Hexprite.Rendering
             pool.Return(intensity);
             if (blurred != null) pool.Return(blurred);
             if (bloom != null) pool.Return(bloom);
+        }
+
+        private static void RenderLowScaleFallback(
+            SpriteState state,
+            ISelectionService selectionService,
+            int outW,
+            int outH,
+            Color bgSrgb,
+            Color fgSrgb,
+            DisplaySimulationPreset preset,
+            float strength,
+            float detailRegime,
+            uint[] outBgra)
+        {
+            int srcW = state.Width;
+            int srcH = state.Height;
+            float invScaleX = srcW / (float)outW;
+            float invScaleY = srcH / (float)outH;
+
+            bool hasFloating = selectionService.IsFloating && selectionService.FloatingPixels != null;
+            float noiseAmp = preset == DisplaySimulationPreset.EPaper
+                ? 0.06f * strength * Math.Clamp(0.50f + (0.50f * detailRegime), 0.50f, 1f)
+                : 0.01f * strength * Math.Clamp(0.35f + (0.65f * detailRegime), 0.35f, 1f);
+            float contrast = preset == DisplaySimulationPreset.EPaper ? (0.88f + 0.08f * (1f - strength)) : 1f;
+
+            var bgLin = (
+                r: SrgbToLinear(bgSrgb.R / 255f),
+                g: SrgbToLinear(bgSrgb.G / 255f),
+                b: SrgbToLinear(bgSrgb.B / 255f));
+            var fgLin = (
+                r: SrgbToLinear(fgSrgb.R / 255f),
+                g: SrgbToLinear(fgSrgb.G / 255f),
+                b: SrgbToLinear(fgSrgb.B / 255f));
+
+            for (int oy = 0; oy < outH; oy++)
+            {
+                int sy = Math.Clamp((int)MathF.Round((oy + 0.5f) * invScaleY - 0.5f), 0, srcH - 1);
+                for (int ox = 0; ox < outW; ox++)
+                {
+                    int sx = Math.Clamp((int)MathF.Round((ox + 0.5f) * invScaleX - 0.5f), 0, srcW - 1);
+                    int si = (sy * srcW) + sx;
+
+                    bool on = false;
+                    foreach (var layer in state.Layers)
+                    {
+                        if (!layer.IsVisible) continue;
+                        if (layer.Pixels[si]) { on = true; break; }
+                    }
+                    if (hasFloating)
+                    {
+                        int fx = sx - selectionService.FloatingX;
+                        int fy = sy - selectionService.FloatingY;
+                        if (fx >= 0 && fx < selectionService.FloatingWidth &&
+                            fy >= 0 && fy < selectionService.FloatingHeight &&
+                            selectionService.FloatingPixels![fx, fy])
+                        {
+                            on = true;
+                        }
+                    }
+
+                    float n = (Hash01(ox, oy) - 0.5f) * noiseAmp;
+                    float r = bgLin.r + n;
+                    float g = bgLin.g + n;
+                    float b = bgLin.b + n;
+                    if (on)
+                    {
+                        r = r + contrast * (fgLin.r - r);
+                        g = g + contrast * (fgLin.g - g);
+                        b = b + contrast * (fgLin.b - b);
+                    }
+
+                    r = Math.Clamp(r, 0f, 1f);
+                    g = Math.Clamp(g, 0f, 1f);
+                    b = Math.Clamp(b, 0f, 1f);
+
+                    byte R = (byte)Math.Clamp((int)MathF.Round(LinearToSrgb(r) * 255f), 0, 255);
+                    byte G = (byte)Math.Clamp((int)MathF.Round(LinearToSrgb(g) * 255f), 0, 255);
+                    byte B = (byte)Math.Clamp((int)MathF.Round(LinearToSrgb(b) * 255f), 0, 255);
+                    outBgra[(oy * outW) + ox] = PackBgra(255, R, G, B);
+                }
+            }
         }
 
         private static float[] BlurSeparable(float[] src, int w, int h, float sigma, ArrayPool<float> pool)

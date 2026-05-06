@@ -71,9 +71,9 @@
                                         CornerRadius="4"
                                         Margin="8,0,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Content="-" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.Text.Primary}" Command="{Binding DecreasePreviewScaleCommand}"/>
+                                        <Button Content="-" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.Text.Primary}" Command="{Binding DecreasePreviewScaleCommand}" IsEnabled="{Binding CanDecreasePreviewScale}"/>
                                         <TextBlock Text="{Binding PreviewScale}" VerticalAlignment="Center" Width="24" TextAlignment="Center" Foreground="{DynamicResource Brush.Text.Primary}"/>
-                                        <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.Text.Primary}" Command="{Binding IncreasePreviewScaleCommand}"/>
+                                        <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.Text.Primary}" Command="{Binding IncreasePreviewScaleCommand}" IsEnabled="{Binding CanIncreasePreviewScale}"/>
                                     </StackPanel>
                                 </Border>
 
@@ -109,6 +109,14 @@
                                     </ComboBox>
                                 </StackPanel>
                             </Grid>
+
+                            <TextBlock Text="{Binding PreviewScaleStatusText}"
+                                       Foreground="{DynamicResource Brush.Text.Muted}"
+                                       FontSize="10"
+                                       Margin="0,-4,0,8"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
 
                             <!-- Dynamic canvas preview -->
                             <Grid MinHeight="140">
