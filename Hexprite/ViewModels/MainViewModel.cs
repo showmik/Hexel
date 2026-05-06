@@ -652,6 +652,9 @@ namespace Hexprite.ViewModels
         public IRelayCommand DecreasePreviewScaleCommand { get; }
         public IRelayCommand AddLayerCommand { get; }
         public IRelayCommand DeleteLayerCommand { get; }
+        public IRelayCommand DuplicateLayerCommand { get; }
+        public IRelayCommand MoveLayerUpCommand { get; }
+        public IRelayCommand MoveLayerDownCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
@@ -786,7 +789,7 @@ namespace Hexprite.ViewModels
                 if (!_pixelClipboard.HasData || _pixelClipboard.Data == null) return;
 
                 SaveStateForUndo(); // Push state BEFORE flattening the current floating layer
-                _selectionInput.CommitIfActive();
+                _selectionInput.CommitIfActive(saveHistory: false);
 
                 _selectionService.PasteAsFloating(
                     _pixelClipboard.Data,
@@ -842,6 +845,9 @@ namespace Hexprite.ViewModels
             });
             AddLayerCommand = new RelayCommand(AddLayer);
             DeleteLayerCommand = new RelayCommand(DeleteActiveLayer);
+            DuplicateLayerCommand = new RelayCommand(DuplicateActiveLayer);
+            MoveLayerUpCommand = new RelayCommand(MoveActiveLayerUp);
+            MoveLayerDownCommand = new RelayCommand(MoveActiveLayerDown);
 
             // ── Initialization ────────────────────────────────────────────
             InitializeBrushColors();
@@ -927,22 +933,21 @@ namespace Hexprite.ViewModels
             if (fromIndex < 0 || fromIndex >= SpriteState.Layers.Count) return;
             if (toIndex < 0 || toIndex >= SpriteState.Layers.Count) return;
 
-            SaveStateForUndo();
-            var moved = SpriteState.Layers[fromIndex];
-            SpriteState.Layers.RemoveAt(fromIndex);
-            SpriteState.Layers.Insert(toIndex, moved);
+            ApplyLayerMutation(() =>
+            {
+                var moved = SpriteState.Layers[fromIndex];
+                SpriteState.Layers.RemoveAt(fromIndex);
+                SpriteState.Layers.Insert(toIndex, moved);
 
-            if (SpriteState.ActiveLayerIndex == fromIndex)
-                SpriteState.ActiveLayerIndex = toIndex;
-            else if (SpriteState.ActiveLayerIndex > fromIndex && SpriteState.ActiveLayerIndex <= toIndex)
-                SpriteState.ActiveLayerIndex--;
-            else if (SpriteState.ActiveLayerIndex < fromIndex && SpriteState.ActiveLayerIndex >= toIndex)
-                SpriteState.ActiveLayerIndex++;
+                if (SpriteState.ActiveLayerIndex == fromIndex)
+                    SpriteState.ActiveLayerIndex = toIndex;
+                else if (SpriteState.ActiveLayerIndex > fromIndex && SpriteState.ActiveLayerIndex <= toIndex)
+                    SpriteState.ActiveLayerIndex--;
+                else if (SpriteState.ActiveLayerIndex < fromIndex && SpriteState.ActiveLayerIndex >= toIndex)
+                    SpriteState.ActiveLayerIndex++;
 
-            SpriteState.SetActiveLayer(SpriteState.ActiveLayerIndex);
-            RebuildLayerViewModels();
-            RedrawGridFromMemory();
-            MarkCodeStale();
+                SpriteState.SetActiveLayer(SpriteState.ActiveLayerIndex);
+            });
         }
 
         public void UpdateLayerName(int index, string? name)
@@ -963,12 +968,23 @@ namespace Hexprite.ViewModels
             SpriteState.EnsureLayers();
             if (index < 0 || index >= SpriteState.Layers.Count) return;
             if (SpriteState.Layers[index].IsVisible == isVisible) return;
+            if (!isVisible)
+            {
+                int visibleCount = 0;
+                foreach (var layer in SpriteState.Layers)
+                    if (layer.IsVisible) visibleCount++;
+                if (visibleCount <= 1)
+                {
+                    _dialogService.ShowMessage("At least one layer must remain visible.");
+                    return;
+                }
+            }
 
-            SaveStateForUndo();
-            SpriteState.Layers[index].IsVisible = isVisible;
-            Layers[index].IsVisible = isVisible;
-            RedrawGridFromMemory();
-            MarkCodeStale();
+            ApplyLayerMutation(() =>
+            {
+                SpriteState.Layers[index].IsVisible = isVisible;
+                Layers[index].IsVisible = isVisible;
+            }, rebuildLayerList: false);
         }
 
         public void SetLayerLocked(int index, bool isLocked)
@@ -1213,6 +1229,7 @@ namespace Hexprite.ViewModels
 
         public void SaveStateForUndo()
         {
+            SpriteState.NormalizeLayerState();
             SpriteState.SelectionSnapshot = _selectionService.CreateSnapshot();
             _historyService.SaveState(SpriteState);
             IsDirty = true;
@@ -1257,8 +1274,9 @@ namespace Hexprite.ViewModels
 
             try
             {
-                var exportState = SpriteState.Clone();
-                exportState.Pixels = SpriteState.CompositeVisiblePixels();
+                // Code generation is fed a pre-projected pixel buffer so the generator
+                // does not need to understand layer semantics directly.
+                var exportState = BuildCodeGenerationState();
                 string code = await _codeGen.GenerateCodeAsync(
                     exportState,
                     settingsSnapshot,
@@ -1326,6 +1344,17 @@ namespace Hexprite.ViewModels
             OnPropertyChanged(nameof(IncludeRowComments));
             OnPropertyChanged(nameof(IncludeArraySize));
             UpdateTextOutputs();
+        }
+
+        private SpriteState BuildCodeGenerationState()
+        {
+            var exportState = SpriteState.Clone();
+            exportState.EnsureLayers();
+
+            // Export contract: code generation always receives the merged result of
+            // all visible layers. Hidden layers are excluded.
+            exportState.Pixels = SpriteState.CompositeVisiblePixels();
+            return exportState;
         }
 
         /// <summary>
@@ -1424,7 +1453,7 @@ namespace Hexprite.ViewModels
             }
 
             SpriteState = state;
-            SpriteState.EnsureLayers();
+            SpriteState.NormalizeLayerState();
             _selectedLayerIndex = SpriteState.ActiveLayerIndex;
             IsDisplayInverted = state.IsDisplayInverted; // restores the visual invert flag
 
@@ -1440,17 +1469,17 @@ namespace Hexprite.ViewModels
         private void AddLayer()
         {
             SpriteState.EnsureLayers();
-            SaveStateForUndo();
-            int layerNumber = SpriteState.Layers.Count + 1;
-            SpriteState.Layers.Insert(0, new LayerState
+            ApplyLayerMutation(() =>
             {
-                Name = $"Layer {layerNumber}",
-                IsVisible = true,
-                Pixels = new bool[SpriteState.Width * SpriteState.Height]
-            });
-            SpriteState.SetActiveLayer(0);
-            RebuildLayerViewModels();
-            MarkCodeStale();
+                int layerNumber = SpriteState.Layers.Count + 1;
+                SpriteState.Layers.Insert(0, new LayerState
+                {
+                    Name = $"Layer {layerNumber}",
+                    IsVisible = true,
+                    Pixels = new bool[SpriteState.Width * SpriteState.Height]
+                });
+                SpriteState.SetActiveLayer(0);
+            }, redraw: false);
         }
 
         private void DeleteActiveLayer()
@@ -1458,13 +1487,64 @@ namespace Hexprite.ViewModels
             SpriteState.EnsureLayers();
             if (SpriteState.Layers.Count <= 1) return;
 
-            SaveStateForUndo();
             int idx = SpriteState.ActiveLayerIndex;
-            SpriteState.Layers.RemoveAt(idx);
-            SpriteState.SetActiveLayer(Math.Clamp(idx, 0, SpriteState.Layers.Count - 1));
-            RebuildLayerViewModels();
-            RedrawGridFromMemory();
-            MarkCodeStale();
+            ApplyLayerMutation(() =>
+            {
+                SpriteState.Layers.RemoveAt(idx);
+                int fallback = Math.Clamp(idx, 0, SpriteState.Layers.Count - 1);
+                if (!SpriteState.Layers[fallback].IsVisible)
+                {
+                    for (int i = fallback; i >= 0; i--)
+                    {
+                        if (SpriteState.Layers[i].IsVisible)
+                        {
+                            fallback = i;
+                            break;
+                        }
+                    }
+                }
+                SpriteState.SetActiveLayer(fallback);
+            });
+        }
+
+        private void DuplicateActiveLayer()
+        {
+            SpriteState.EnsureLayers();
+            int idx = SpriteState.ActiveLayerIndex;
+            ApplyLayerMutation(() =>
+            {
+                var duplicated = SpriteState.Layers[idx].Clone();
+                duplicated.Name = $"{duplicated.Name} Copy";
+                SpriteState.Layers.Insert(idx, duplicated);
+                SpriteState.SetActiveLayer(idx);
+            });
+        }
+
+        private void MoveActiveLayerUp()
+        {
+            if (SpriteState.ActiveLayerIndex <= 0) return;
+            MoveLayer(SpriteState.ActiveLayerIndex, SpriteState.ActiveLayerIndex - 1);
+        }
+
+        private void MoveActiveLayerDown()
+        {
+            if (SpriteState.ActiveLayerIndex >= SpriteState.Layers.Count - 1) return;
+            MoveLayer(SpriteState.ActiveLayerIndex, SpriteState.ActiveLayerIndex + 1);
+        }
+
+        private void ApplyLayerMutation(Action mutation, bool redraw = true, bool rebuildLayerList = true, bool markCodeStale = true)
+        {
+            SaveStateForUndo();
+            mutation();
+            SpriteState.NormalizeLayerState();
+            if (rebuildLayerList)
+                RebuildLayerViewModels();
+            else
+                SyncLayerActiveFlags();
+            if (redraw)
+                RedrawGridFromMemory();
+            if (markCodeStale)
+                MarkCodeStale();
         }
 
         private void RebuildLayerViewModels()

@@ -49,6 +49,27 @@ namespace Hexprite.Views
                 ViewModel.UpdateLayerName(index, tb.Text);
         }
 
+        private void LayerName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (ViewModel == null || sender is not TextBox tb) return;
+            int index = LayerList.Items.IndexOf(tb.DataContext);
+            if (index < 0) return;
+
+            if (e.Key == Key.Enter)
+            {
+                ViewModel.UpdateLayerName(index, tb.Text);
+                Keyboard.ClearFocus();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                if (tb.DataContext is LayerItemViewModel item)
+                    tb.Text = item.Name;
+                Keyboard.ClearFocus();
+                e.Handled = true;
+            }
+        }
+
         private void LayerList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             _layerDragStart = e.GetPosition(null);

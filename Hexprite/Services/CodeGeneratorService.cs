@@ -26,7 +26,9 @@ namespace Hexprite.Services
             bool isFloating, bool[,]? floatingPixels,
             int floatX, int floatY, int floatW, int floatH)
         {
-            // Resolve the effective pixel grid (including any floating selection)
+            // Contract: caller already projected layers into state.Pixels
+            // (currently composited visible layers). This service only encodes pixels.
+            // Floating selection remains an overlay concern handled here.
             byte[] data = BuildByteArray(state, settings.Format == ExportFormat.U8g2DrawXBM,
                 isFloating, floatingPixels, floatX, floatY, floatW, floatH);
 
@@ -54,8 +56,19 @@ namespace Hexprite.Services
             bool isFloating, bool[,]? floatingPixels,
             int floatX, int floatY, int floatW, int floatH)
         {
-            // Clone state to avoid cross-thread data races
-            var clone = state.Clone();
+            // Clone state to avoid cross-thread data races without mutating the caller.
+            // We preserve the caller-provided projection in state.Pixels (e.g. merged
+            // visible layers) instead of rebinding to active-layer pixels.
+            bool[] projectedPixels = (bool[])state.Pixels.Clone();
+            var clone = new SpriteState(state.Width, state.Height)
+            {
+                Layers = state.Layers.ConvertAll(l => l.Clone()),
+                ActiveLayerIndex = state.ActiveLayerIndex,
+                IsDisplayInverted = state.IsDisplayInverted,
+                SelectionSnapshot = state.SelectionSnapshot?.Clone()
+            };
+            clone.EnsureLayers();
+            clone.Pixels = projectedPixels;
             bool[,]? fpClone = floatingPixels != null
                 ? (bool[,])floatingPixels.Clone()
                 : null;
@@ -279,6 +292,7 @@ namespace Hexprite.Services
             int bytesPerRow = BytesPerRow(state.Width);
             int matchIndex = 0;
 
+            // Import writes into the currently active layer only.
             Array.Clear(state.Pixels, 0, state.Pixels.Length);
 
             for (int row = 0; row < state.Height; row++)
@@ -317,6 +331,7 @@ namespace Hexprite.Services
             int bytesPerRow = BytesPerRow(state.Width);
             int matchIndex = 0;
 
+            // Import writes into the currently active layer only.
             Array.Clear(state.Pixels, 0, state.Pixels.Length);
 
             for (int row = 0; row < state.Height; row++)
@@ -341,6 +356,7 @@ namespace Hexprite.Services
 
         public void ParseBinaryToState(string text, SpriteState state)
         {
+            // Import writes into the currently active layer only.
             Array.Clear(state.Pixels, 0, state.Pixels.Length);
             string[] lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             int row = 0;

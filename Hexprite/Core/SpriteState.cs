@@ -14,6 +14,8 @@ namespace Hexprite.Core
         public bool[] Pixels { get; set; }
         public List<LayerState> Layers { get; set; } = new();
         public int ActiveLayerIndex { get; set; }
+        [JsonIgnore]
+        public bool[] ActiveLayerPixels => Layers[ActiveLayerIndex].Pixels;
 
         /// <summary>
         /// Stored alongside pixels so that Undo/Redo can restore the visual invert
@@ -52,8 +54,9 @@ namespace Hexprite.Core
         [JsonIgnore]
         public SelectionSnapshot? SelectionSnapshot { get; set; }
 
-        public void EnsureLayers()
+        public bool NormalizeLayerState()
         {
+            bool changed = false;
             int pixelCount = Width * Height;
 
             if (Layers == null || Layers.Count == 0)
@@ -68,16 +71,53 @@ namespace Hexprite.Core
                     }
                 };
                 ActiveLayerIndex = 0;
+                changed = true;
             }
 
             for (int i = 0; i < Layers.Count; i++)
             {
-                Layers[i].Name = string.IsNullOrWhiteSpace(Layers[i].Name) ? $"Layer {i + 1}" : Layers[i].Name;
+                string fallbackName = $"Layer {i + 1}";
+                string normalizedName = string.IsNullOrWhiteSpace(Layers[i].Name) ? fallbackName : Layers[i].Name.Trim();
+                if (Layers[i].Name != normalizedName)
+                {
+                    Layers[i].Name = normalizedName;
+                    changed = true;
+                }
                 if (Layers[i].Pixels == null || Layers[i].Pixels.Length != pixelCount)
+                {
                     Layers[i].Pixels = new bool[pixelCount];
+                    changed = true;
+                }
             }
 
-            ActiveLayerIndex = Math.Clamp(ActiveLayerIndex, 0, Layers.Count - 1);
+            int clampedActiveLayer = Math.Clamp(ActiveLayerIndex, 0, Layers.Count - 1);
+            if (ActiveLayerIndex != clampedActiveLayer)
+            {
+                ActiveLayerIndex = clampedActiveLayer;
+                changed = true;
+            }
+
+            if (!ReferenceEquals(Pixels, Layers[ActiveLayerIndex].Pixels))
+            {
+                Pixels = Layers[ActiveLayerIndex].Pixels;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        public void EnsureLayers()
+        {
+            NormalizeLayerState();
+        }
+
+        public void SetActiveLayerPixels(bool[] pixels)
+        {
+            EnsureLayers();
+            if (pixels == null || pixels.Length != Width * Height)
+                throw new ArgumentException("Active layer pixels must match canvas dimensions.", nameof(pixels));
+
+            Layers[ActiveLayerIndex].Pixels = pixels;
             Pixels = Layers[ActiveLayerIndex].Pixels;
         }
 

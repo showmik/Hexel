@@ -239,6 +239,12 @@
                     <TextBlock Text="EXPORT"
                                Style="{StaticResource HeaderStyle}"
                                Margin="0,0,0,16"/>
+                    <TextBlock Text="Code generation exports composited pixels from visible layers only."
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
+                               FontSize="11"
+                               Margin="0,0,0,12"
+                               LineHeight="16"/>
 
                     <!-- Format selector -->
                     <TextBlock Text="Format"
@@ -514,7 +520,7 @@
                                Style="{StaticResource HeaderStyle}"
                                Margin="0,0,0,16"/>
 
-                    <TextBlock Text="Import sprite data from Adafruit GFX, u8g2, plain C array, or raw hex code. Dimensions and variable name are auto-detected."
+                    <TextBlock Text="Import sprite data from Adafruit GFX, u8g2, plain C array, or raw hex code. Dimensions and variable name are auto-detected. Imported pixels are applied to the active layer."
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource Brush.Text.Muted}"
                                FontSize="11"

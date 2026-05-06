@@ -14,6 +14,12 @@ namespace Hexprite.Core
         /// <summary>Target platform / library.</summary>
         public ExportFormat Format { get; set; } = ExportFormat.AdafruitGfx;
 
+        /// <summary>
+        /// Selects how layers are mapped into export pixels.
+        /// Current UI uses <see cref="ExportLayerMode.CompositeVisible"/> only.
+        /// </summary>
+        public ExportLayerMode LayerMode { get; set; } = ExportLayerMode.CompositeVisible;
+
         // ── Naming ────────────────────────────────────────────────────────────
 
         /// <summary>

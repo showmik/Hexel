@@ -42,6 +42,28 @@
                             Margin="6,0,0,0"
                             Command="{Binding DeleteLayerCommand}" />
                 </Grid>
+                <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0"
+                            Content="Duplicate"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="0,0,4,0"
+                            Command="{Binding DuplicateLayerCommand}" />
+                    <Button Grid.Column="1"
+                            Content="Move Up"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="4,0,4,0"
+                            Command="{Binding MoveLayerUpCommand}" />
+                    <Button Grid.Column="2"
+                            Content="Move Down"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="4,0,0,0"
+                            Command="{Binding MoveLayerDownCommand}" />
+                </Grid>
 
                 <ListBox x:Name="LayerList"
                          ItemsSource="{Binding Layers}"
@@ -113,6 +135,7 @@
                                          Style="{StaticResource ModernTextBoxStyle}"
                                          Height="24"
                                          Margin="0,0,6,0"
+                                         KeyDown="LayerName_KeyDown"
                                          LostFocus="LayerName_LostFocus" />
                                 <CheckBox Grid.Column="3"
                                           Margin="0,0,2,0"

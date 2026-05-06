@@ -332,13 +332,13 @@ namespace Hexprite.ViewModels
             {
                 string json = File.ReadAllText(path);
                 var loaded = JsonSerializer.Deserialize<SpriteState>(json);
-                if (loaded?.Pixels == null) return;
-                loaded.EnsureLayers();
+                if (loaded == null) return;
+                loaded.NormalizeLayerState();
 
                 var doc = CreateDocument(loaded.Width, loaded.Height);
                 doc.SpriteState.Layers = loaded.Layers.ConvertAll(l => l.Clone());
                 doc.SpriteState.ActiveLayerIndex = loaded.ActiveLayerIndex;
-                doc.SpriteState.EnsureLayers();
+                doc.SpriteState.NormalizeLayerState();
                 doc.ReloadLayersFromState();
                 doc.SpriteState.IsDisplayInverted = loaded.IsDisplayInverted;
                 doc.IsDisplayInverted = loaded.IsDisplayInverted;
@@ -391,6 +391,7 @@ namespace Hexprite.ViewModels
             try
             {
                 // Persist the current export settings alongside the pixel data
+                doc.SpriteState.NormalizeLayerState();
                 doc.SpriteState.ExportSettings = doc.ExportSettings;
 
                 string json = JsonSerializer.Serialize(doc.SpriteState,
@@ -595,8 +596,7 @@ namespace Hexprite.ViewModels
                     BitmapToMonochromeConverter.ConvertTo1Bit(selectedPath, importSettings));
 
                 var doc = CreateDocument(w, h, redrawImmediately: false);
-                doc.SpriteState.Pixels = pixels;
-                doc.SpriteState.Layers[doc.SpriteState.ActiveLayerIndex].Pixels = pixels;
+                doc.SpriteState.SetActiveLayerPixels(pixels);
 
                 doc.RedrawGridFromMemory();
 

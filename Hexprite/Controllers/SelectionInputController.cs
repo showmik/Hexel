@@ -55,13 +55,15 @@ namespace Hexprite.Controllers
         /// Commits the current selection (stamps floating pixels) and clears overlays.
         /// Returns true if there was an active selection that was committed.
         /// </summary>
-        public bool CommitIfActive()
+        public bool CommitIfActive(bool saveHistory = true)
         {
             if (!_selection.HasActiveSelection) return false;
             
             bool wasFloating = _selection.IsFloating;
-            
-            _vm.SaveStateForUndo();
+
+            if (saveHistory && wasFloating)
+                _vm.SaveStateForUndo();
+
             _selection.CommitSelection(_vm.SpriteState);
             _vm.RedrawGridFromMemory();
             
