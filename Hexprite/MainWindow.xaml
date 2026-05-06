@@ -71,6 +71,9 @@
         <KeyBinding Key="D"
                     Modifiers="Ctrl"
                     Command="{Binding ActiveDocument.DeselectCommand}" />
+        <KeyBinding Key="A"
+                    Modifiers="Ctrl"
+                    Command="{Binding ActiveDocument.SelectAllCommand}" />
         <KeyBinding Key="I"
                     Modifiers="Ctrl+Shift"
                     Command="{Binding ImportFromCodeMenuCommand}" />

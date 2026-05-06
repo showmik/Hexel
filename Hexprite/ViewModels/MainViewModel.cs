@@ -471,6 +471,7 @@ namespace Hexprite.ViewModels
         public IRelayCommand CutSelectionCommand { get; }
         public IRelayCommand PasteCommand { get; }
         public IRelayCommand DeselectCommand { get; }
+        public IRelayCommand SelectAllCommand { get; }
         public IRelayCommand<string> SelectToolCommand { get; }
         public IRelayCommand IncreasePreviewScaleCommand { get; }
         public IRelayCommand DecreasePreviewScaleCommand { get; }
@@ -635,6 +636,21 @@ namespace Hexprite.ViewModels
             {
                 _selectionInput.CommitIfActive();
                 _selectionService.Cancel();
+            });
+
+            SelectAllCommand = new RelayCommand(() =>
+            {
+                // Preserve any "lifted" (floating) pixels by committing before replacing
+                // the selection with the whole-canvas marquee.
+                _selectionInput.CommitIfActive();
+                _selectionService.Cancel();
+
+                int w = SpriteState.Width;
+                int h = SpriteState.Height;
+
+                _selectionService.BeginRectangleSelection(0, 0, SelectionMode.Replace);
+                _selectionService.UpdateRectangleSelection(w - 1, h - 1);
+                _selectionService.FinalizeSelection();
             });
 
             SelectToolCommand = new RelayCommand<string>(ExecuteSelectTool);
