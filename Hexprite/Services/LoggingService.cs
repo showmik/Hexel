@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reflection;
 using Serilog.Context;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;
@@ -17,6 +19,10 @@ namespace Hexprite.Services
     {
         private const string DefaultAppName = "Hexel";
         private const string AppSettingsFile = "appsettings.json";
+        private static readonly string UserSettingsDirectory =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hexprite");
+        private static readonly string UserPrivacySettingsFile =
+            Path.Combine(UserSettingsDirectory, "privacy-settings.json");
         private static string? _currentSessionId;
 
         public static void Initialize()
@@ -129,6 +135,61 @@ namespace Hexprite.Services
             return Math.Clamp(n, 1, 10);
         }
 
+        public static PrivacyOptions GetPrivacyOptions()
+        {
+            IConfiguration configuration = BuildConfiguration();
+            var defaults = new PrivacyOptions(
+                telemetryEnabled: ParseBool(configuration["Privacy:TelemetryEnabled"], true),
+                attachLogsByDefault: ParseBool(configuration["Privacy:AttachLogsByDefault"], false),
+                allowLogAttachments: ParseBool(configuration["Privacy:AllowLogAttachments"], true),
+                redactPersonalData: ParseBool(configuration["Privacy:RedactPersonalData"], true),
+                shareContactEmailByDefault: ParseBool(configuration["Privacy:ShareContactEmailByDefault"], false),
+                allowContactEmailInTelemetry: ParseBool(configuration["Privacy:AllowContactEmailInTelemetry"], false));
+
+            PrivacyOptions? saved = LoadPrivacyOptionsFromDisk();
+            return saved is null ? defaults : defaults.MergeWith(saved);
+        }
+
+        public static bool SavePrivacyOptions(PrivacyOptions options)
+        {
+            try
+            {
+                Directory.CreateDirectory(UserSettingsDirectory);
+                string json = JsonSerializer.Serialize(options, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(UserPrivacySettingsFile, json);
+                Log.Information("Saved privacy settings to {SettingsFile}", UserPrivacySettingsFile);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "LoggingService.SavePrivacyOptions", new { UserPrivacySettingsFile });
+                return false;
+            }
+        }
+
+        public static string SanitizeForTelemetry(string? value)
+        {
+            PrivacyOptions options = GetPrivacyOptions();
+            return SanitizeForTelemetry(value, options, allowEmail: false);
+        }
+
+        public static string SanitizeForTelemetry(string? value, PrivacyOptions options, bool allowEmail)
+        {
+            string text = value?.Trim() ?? string.Empty;
+            if (!options.RedactPersonalData || text.Length == 0)
+            {
+                return text;
+            }
+
+            text = RedactWindowsPaths(text);
+            if (!allowEmail)
+            {
+                text = RedactEmails(text);
+            }
+
+            return text;
+        }
+
         /// <summary>
         /// Attaches the newest rolling log files to a Sentry scope (manual bug or feedback reports).
         /// </summary>
@@ -136,6 +197,13 @@ namespace Hexprite.Services
         {
             try
             {
+                PrivacyOptions privacy = GetPrivacyOptions();
+                if (!privacy.AllowLogAttachments)
+                {
+                    Log.Information("Log attachment disabled by privacy settings.");
+                    return;
+                }
+
                 string logDirectory = GetLogDirectory();
                 if (!Directory.Exists(logDirectory))
                 {
@@ -271,6 +339,87 @@ namespace Hexprite.Services
         private static LogEventLevel ParseLogLevel(string? value, LogEventLevel fallback)
         {
             return Enum.TryParse(value, ignoreCase: true, out LogEventLevel parsed) ? parsed : fallback;
+        }
+
+        private static string RedactEmails(string input)
+        {
+            return Regex.Replace(
+                input,
+                @"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b",
+                "[redacted-email]");
+        }
+
+        private static string RedactWindowsPaths(string input)
+        {
+            return Regex.Replace(
+                input,
+                @"\b[A-Za-z]:\\(?:[^\\/:*?""<>|\r\n]+\\)*[^\\/:*?""<>|\r\n]*",
+                "[redacted-path]");
+        }
+
+        private static PrivacyOptions? LoadPrivacyOptionsFromDisk()
+        {
+            try
+            {
+                if (!File.Exists(UserPrivacySettingsFile))
+                {
+                    return null;
+                }
+
+                string json = File.ReadAllText(UserPrivacySettingsFile);
+                return JsonSerializer.Deserialize<PrivacyOptions>(json);
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Warning(ex, "LoggingService.LoadPrivacyOptionsFromDisk", new { UserPrivacySettingsFile });
+                return null;
+            }
+        }
+
+        public sealed class PrivacyOptions
+        {
+            public bool TelemetryEnabled { get; init; }
+            public bool AttachLogsByDefault { get; init; }
+            public bool AllowLogAttachments { get; init; }
+            public bool RedactPersonalData { get; init; }
+            public bool ShareContactEmailByDefault { get; init; }
+            public bool AllowContactEmailInTelemetry { get; init; }
+
+            public PrivacyOptions()
+            {
+            }
+
+            public PrivacyOptions(
+                bool telemetryEnabled,
+                bool attachLogsByDefault,
+                bool allowLogAttachments,
+                bool redactPersonalData,
+                bool shareContactEmailByDefault,
+                bool allowContactEmailInTelemetry)
+            {
+                TelemetryEnabled = telemetryEnabled;
+                AttachLogsByDefault = attachLogsByDefault;
+                AllowLogAttachments = allowLogAttachments;
+                RedactPersonalData = redactPersonalData;
+                ShareContactEmailByDefault = shareContactEmailByDefault;
+                AllowContactEmailInTelemetry = allowContactEmailInTelemetry;
+            }
+
+            public PrivacyOptions MergeWith(PrivacyOptions? overrideOptions)
+            {
+                if (overrideOptions is null)
+                {
+                    return this;
+                }
+
+                return new PrivacyOptions(
+                    telemetryEnabled: overrideOptions.TelemetryEnabled,
+                    attachLogsByDefault: overrideOptions.AttachLogsByDefault,
+                    allowLogAttachments: overrideOptions.AllowLogAttachments,
+                    redactPersonalData: overrideOptions.RedactPersonalData,
+                    shareContactEmailByDefault: overrideOptions.ShareContactEmailByDefault,
+                    allowContactEmailInTelemetry: overrideOptions.AllowContactEmailInTelemetry);
+            }
         }
 
         private sealed class TimedOperationScope : IDisposable

@@ -11,6 +11,9 @@ namespace Hexprite.Views
         public UserFeedbackDialog()
         {
             InitializeComponent();
+            var privacy = LoggingService.GetPrivacyOptions();
+            IncludeLogsCheckBox.IsChecked = privacy.AttachLogsByDefault;
+            ShareEmailCheckBox.IsChecked = privacy.ShareContactEmailByDefault;
         }
 
         private void Submit_Click(object sender, RoutedEventArgs e)
@@ -33,6 +36,7 @@ namespace Hexprite.Views
                 Category = category,
                 Message = MessageTextBox.Text.Trim(),
                 ContactEmail = string.IsNullOrWhiteSpace(EmailTextBox.Text) ? null : EmailTextBox.Text.Trim(),
+                IncludeContactEmail = ShareEmailCheckBox.IsChecked == true,
                 IncludeRecentLogs = IncludeLogsCheckBox.IsChecked == true
             };
 

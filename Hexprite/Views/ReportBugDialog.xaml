@@ -92,6 +92,9 @@
                 <StackPanel Grid.Row="5" Margin="0,0,0,8">
                     <TextBlock Text="Contact email (optional)" Margin="0,0,0,4"/>
                     <TextBox x:Name="EmailTextBox" MinHeight="32" MaxLength="200" />
+                    <CheckBox x:Name="ShareEmailCheckBox"
+                              Margin="0,6,0,0"
+                              Content="Include this email in the report so we can contact you" />
                     <CheckBox x:Name="IncludeLogsCheckBox"
                               Margin="0,10,0,4"
                               IsChecked="True"

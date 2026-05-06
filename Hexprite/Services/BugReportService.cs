@@ -9,25 +9,56 @@ namespace Hexprite.Services
     {
         public BugReportResult SubmitReport(BugReportInput input)
         {
+            LoggingService.PrivacyOptions privacy = LoggingService.GetPrivacyOptions();
             using var operation = LoggingService.BeginOperation(
                 "BugReportService.SubmitReport",
-                new { includeRecentLogs = input.IncludeRecentLogs, hasContactEmail = !string.IsNullOrWhiteSpace(input.ContactEmail) });
+                new
+                {
+                    includeRecentLogs = input.IncludeRecentLogs,
+                    includeContactEmail = input.IncludeContactEmail,
+                    telemetryEnabled = privacy.TelemetryEnabled
+                });
+
+            if (!privacy.TelemetryEnabled)
+            {
+                Log.Warning("Bug report submission blocked because telemetry is disabled in privacy settings.");
+                return new BugReportResult
+                {
+                    Success = false,
+                    Message = "Telemetry is disabled in privacy settings."
+                };
+            }
 
             try
             {
+                string summary = LoggingService.SanitizeForTelemetry(input.Summary, privacy, allowEmail: false);
+                string steps = LoggingService.SanitizeForTelemetry(input.StepsToReproduce, privacy, allowEmail: false);
+                string expected = LoggingService.SanitizeForTelemetry(input.ExpectedBehavior, privacy, allowEmail: false);
+                string actual = LoggingService.SanitizeForTelemetry(input.ActualBehavior, privacy, allowEmail: false);
+                string? contactEmail = null;
+                if (input.IncludeContactEmail && privacy.AllowContactEmailInTelemetry)
+                {
+                    string sanitizedEmail = LoggingService.SanitizeForTelemetry(input.ContactEmail, privacy, allowEmail: true);
+                    contactEmail = string.IsNullOrWhiteSpace(sanitizedEmail) ? null : sanitizedEmail;
+                }
+
                 SentryId eventId = SentrySdk.CaptureMessage(
-                    string.IsNullOrWhiteSpace(input.Summary) ? "Manual bug report submitted" : input.Summary.Trim(),
+                    string.IsNullOrWhiteSpace(summary) ? "Manual bug report submitted" : summary,
                     scope =>
                     {
                         scope.SetTag("report.type", "manual");
                         scope.SetTag("report.channel", "in-app");
                         scope.SetTag("app.version", GetAppVersion());
-                        scope.SetExtra("stepsToReproduce", input.StepsToReproduce.Trim());
-                        scope.SetExtra("expectedBehavior", input.ExpectedBehavior.Trim());
-                        scope.SetExtra("actualBehavior", input.ActualBehavior.Trim());
-                        scope.SetExtra("contactEmail", string.IsNullOrWhiteSpace(input.ContactEmail) ? string.Empty : input.ContactEmail.Trim());
+                        scope.SetExtra("stepsToReproduce", steps);
+                        scope.SetExtra("expectedBehavior", expected);
+                        scope.SetExtra("actualBehavior", actual);
+                        scope.SetTag("report.contact_email_included", contactEmail is null ? "false" : "true");
+                        if (contactEmail is not null)
+                        {
+                            scope.SetExtra("contactEmail", contactEmail);
+                        }
 
-                        if (input.IncludeRecentLogs)
+                        if (input.IncludeRecentLogs && privacy.AllowLogAttachments)
                         {
                             LoggingService.AttachRecentLogFilesToScope(scope);
                         }

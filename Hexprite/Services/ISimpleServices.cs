@@ -9,6 +9,7 @@ namespace Hexprite.Services
         public string ExpectedBehavior { get; set; } = string.Empty;
         public string ActualBehavior { get; set; } = string.Empty;
         public string? ContactEmail { get; set; }
+        public bool IncludeContactEmail { get; set; }
         public bool IncludeRecentLogs { get; set; } = true;
     }
 
@@ -17,6 +18,7 @@ namespace Hexprite.Services
         public string Category { get; set; } = "General";
         public string Message { get; set; } = string.Empty;
         public string? ContactEmail { get; set; }
+        public bool IncludeContactEmail { get; set; }
         public bool IncludeRecentLogs { get; set; }
     }
 
@@ -83,6 +85,11 @@ namespace Hexprite.Services
         /// Shows the "Send Feedback" dialog and returns user-entered data, or null if cancelled.
         /// </summary>
         UserFeedbackInput? ShowUserFeedbackDialog();
+
+        /// <summary>
+        /// Shows the Privacy Settings dialog and persists changes when accepted.
+        /// </summary>
+        bool ShowPrivacySettingsDialog();
     }
 
 }

@@ -62,6 +62,7 @@ namespace Hexprite.ViewModels
         public IRelayCommand<MainViewModel> CloseTabCommand { get; }
         public IRelayCommand ResizeCanvasCommand { get; }
         public IRelayCommand OpenDocumentationCommand { get; }
+        public IRelayCommand OpenPrivacySettingsCommand { get; }
         public IRelayCommand ShowAboutCommand { get; }
         public IRelayCommand ReportBugCommand { get; }
         public IRelayCommand SendFeedbackCommand { get; }
@@ -126,6 +127,7 @@ namespace Hexprite.ViewModels
             CloseTabCommand = new RelayCommand<MainViewModel>(ExecuteCloseTab);
             ResizeCanvasCommand = new RelayCommand(ExecuteResizeCanvas, () => HasOpenDocument);
             OpenDocumentationCommand = new RelayCommand(ExecuteOpenDocumentation);
+            OpenPrivacySettingsCommand = new RelayCommand(ExecuteOpenPrivacySettings);
             ShowAboutCommand = new RelayCommand(ExecuteShowAbout);
             ReportBugCommand = new RelayCommand(ExecuteReportBug);
             SendFeedbackCommand = new RelayCommand(ExecuteSendFeedback);
@@ -418,6 +420,13 @@ namespace Hexprite.ViewModels
                 HandledErrorReporter.Error(ex, "ShellViewModel.OpenDocumentation", new { url = "https://hexprite.com" });
                 _dialogService.ShowMessage("Could not open the documentation website.");
             }
+        }
+
+        private void ExecuteOpenPrivacySettings()
+        {
+            using var operation = LoggingService.BeginOperation("Shell.OpenPrivacySettings");
+            bool saved = _dialogService.ShowPrivacySettingsDialog();
+            Logger.Information("Privacy settings dialog closed. Saved={Saved}", saved);
         }
 
         private void ExecuteShowAbout()

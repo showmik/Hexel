@@ -102,5 +102,11 @@ namespace Hexprite.Services
             var dlg = new UserFeedbackDialog { Owner = Application.Current.MainWindow };
             return dlg.ShowDialog() == true ? dlg.Result : null;
         }
+
+        public bool ShowPrivacySettingsDialog()
+        {
+            var dlg = new PrivacySettingsDialog { Owner = Application.Current.MainWindow };
+            return dlg.ShowDialog() == true;
+        }
     }
 }
