@@ -742,11 +742,46 @@ namespace Hexprite.ViewModels
             SpriteState.EnsureLayers();
             RebuildBitmaps(width, height);
 
+            AutoSelectPreviewDisplayTypeForCanvasSize(width, height);
+
             MarkCodeStale();
             if (redrawImmediately)
                 RedrawGridFromMemory();
 
             NotifyCanvasLayoutChanged();
+        }
+
+        private void AutoSelectPreviewDisplayTypeForCanvasSize(int width, int height)
+        {
+            // Only auto-select when the user hasn't explicitly chosen a preview style.
+            // This keeps the app feeling "smart" for common presets (SSD1306 / ePaper)
+            // while still respecting the user's preference if they changed it.
+            if (_previewDisplayType != DisplayType.Generic_White)
+                return;
+
+            var inferred = InferPreviewDisplayType(width, height);
+            if (inferred == _previewDisplayType)
+                return;
+
+            _previewDisplayType = inferred;
+            OnPropertyChanged(nameof(PreviewDisplayTypeIndex));
+
+            // Update theme-backed brushes + cached pixel colors (no redraw here; caller will redraw if needed).
+            UpdatePreviewColors();
+            InitializeBrushColors();
+        }
+
+        private static DisplayType InferPreviewDisplayType(int width, int height)
+        {
+            // SSD1306 family
+            if (width == 128 && (height == 64 || height == 32))
+                return DisplayType.SSD1306_Blue;
+
+            // Common monochrome e-paper preset
+            if (width == 296 && height == 128)
+                return DisplayType.ePaper;
+
+            return DisplayType.Generic_White;
         }
 
         public void SetActiveLayer(int index, bool shouldRedraw)
@@ -1445,6 +1480,7 @@ namespace Hexprite.ViewModels
             _brushAngle = ((prefs.BrushAngle % 360) + 360) % 360;
             _previewScale = Math.Max(1, prefs.PreviewScale);
             _previewDisplayType = (DisplayType)Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 3);
+            UpdatePreviewColors();
         }
 
         private void SaveEditorPreferences()
