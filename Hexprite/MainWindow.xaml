@@ -165,6 +165,7 @@
                     </MenuItem>
                     <MenuItem Header="_Help">
                         <MenuItem Header="_Documentation" Command="{Binding OpenDocumentationCommand}" InputGestureText="F1"/>
+                        <MenuItem Header="Send _Feedback..." Command="{Binding SendFeedbackCommand}"/>
                         <MenuItem Header="_Report a Bug..." Command="{Binding ReportBugCommand}"/>
                         <Separator Style="{StaticResource MenuSeparatorStyle}"/>
                         <MenuItem Header="_About Hexprite" Command="{Binding ShowAboutCommand}"/>

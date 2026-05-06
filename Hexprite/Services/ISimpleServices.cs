@@ -12,6 +12,14 @@ namespace Hexprite.Services
         public bool IncludeRecentLogs { get; set; } = true;
     }
 
+    public sealed class UserFeedbackInput
+    {
+        public string Category { get; set; } = "General";
+        public string Message { get; set; } = string.Empty;
+        public string? ContactEmail { get; set; }
+        public bool IncludeRecentLogs { get; set; }
+    }
+
     public interface IClipboardService
     {
         void SetText(string text);
@@ -68,7 +76,13 @@ namespace Hexprite.Services
         /// <summary>
         /// Shows confirmation after a bug report was submitted, with optional copyable reference ID.
         /// </summary>
-        void ShowBugReportSuccessDialog(string message, string? reportId);
+        /// <param name="successWindowTitle">Optional window title; default is for bug reports.</param>
+        void ShowBugReportSuccessDialog(string message, string? reportId, string? successWindowTitle = null);
+
+        /// <summary>
+        /// Shows the "Send Feedback" dialog and returns user-entered data, or null if cancelled.
+        /// </summary>
+        UserFeedbackInput? ShowUserFeedbackDialog();
     }
 
 }

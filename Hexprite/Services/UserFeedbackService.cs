@@ -1,0 +1,80 @@
+using System;
+using System.Reflection;
+using Sentry;
+using Serilog;
+
+namespace Hexprite.Services
+{
+    public sealed class UserFeedbackService : IUserFeedbackService
+    {
+        public FeedbackSubmitResult SubmitFeedback(UserFeedbackInput input)
+        {
+            try
+            {
+                string messageBody = input.Message.Trim();
+                string title = BuildEventTitle(messageBody);
+
+                SentryId eventId = SentrySdk.CaptureMessage(
+                    title,
+                    scope =>
+                    {
+                        scope.SetTag("report.type", "feedback");
+                        scope.SetTag("report.channel", "in-app");
+                        scope.SetTag("feedback.category", string.IsNullOrWhiteSpace(input.Category) ? "General" : input.Category.Trim());
+                        scope.SetTag("app.version", GetAppVersion());
+                        scope.SetExtra("message", messageBody);
+                        scope.SetExtra(
+                            "contactEmail",
+                            string.IsNullOrWhiteSpace(input.ContactEmail) ? string.Empty : input.ContactEmail.Trim());
+
+                        if (input.IncludeRecentLogs)
+                        {
+                            LoggingService.AttachRecentLogFilesToScope(scope);
+                        }
+                    },
+                    SentryLevel.Info);
+
+                Log.Information("User feedback submitted. EventId={EventId}", eventId.ToString());
+
+                return new FeedbackSubmitResult
+                {
+                    Success = true,
+                    EventId = eventId.ToString(),
+                    Message = "Thanks! Your feedback was submitted."
+                };
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "UserFeedbackService.SubmitFeedback");
+                return new FeedbackSubmitResult
+                {
+                    Success = false,
+                    Message = $"Unable to submit feedback: {ex.Message}"
+                };
+            }
+        }
+
+        private static string BuildEventTitle(string messageBody)
+        {
+            if (string.IsNullOrEmpty(messageBody))
+            {
+                return "User feedback";
+            }
+
+            int end = messageBody.IndexOfAny(new[] { '\r', '\n' });
+            string firstLine = end >= 0 ? messageBody.Substring(0, end) : messageBody;
+            firstLine = firstLine.Trim();
+            if (firstLine.Length > 120)
+            {
+                return firstLine.Substring(0, 117) + "...";
+            }
+
+            return string.IsNullOrEmpty(firstLine) ? "User feedback" : firstLine;
+        }
+
+        private static string GetAppVersion()
+        {
+            return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+        }
+    }
+}

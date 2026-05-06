@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using Sentry;
 using Serilog;
@@ -27,7 +25,7 @@ namespace Hexprite.Services
 
                         if (input.IncludeRecentLogs)
                         {
-                            AttachRecentLogs(scope);
+                            LoggingService.AttachRecentLogFilesToScope(scope);
                         }
                     },
                     SentryLevel.Error);
@@ -49,26 +47,6 @@ namespace Hexprite.Services
                     Success = false,
                     Message = $"Unable to submit bug report: {ex.Message}"
                 };
-            }
-        }
-
-        private static void AttachRecentLogs(Scope scope)
-        {
-            string logDirectory = LoggingService.GetLogDirectory();
-            if (!Directory.Exists(logDirectory))
-            {
-                return;
-            }
-
-            int maxFiles = LoggingService.GetBugReportingMaxAttachedLogs();
-            string[] latestFiles = Directory.EnumerateFiles(logDirectory, "*.txt")
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .Take(maxFiles)
-                .ToArray();
-
-            foreach (string file in latestFiles)
-            {
-                scope.AddAttachment(file);
             }
         }
 

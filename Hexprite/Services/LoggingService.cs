@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -104,6 +105,29 @@ namespace Hexprite.Services
             IConfiguration configuration = BuildConfiguration();
             int n = ParseInt(configuration["BugReporting:MaxAttachedLogs"], 2);
             return Math.Clamp(n, 1, 10);
+        }
+
+        /// <summary>
+        /// Attaches the newest rolling log files to a Sentry scope (manual bug or feedback reports).
+        /// </summary>
+        public static void AttachRecentLogFilesToScope(Scope scope)
+        {
+            string logDirectory = GetLogDirectory();
+            if (!Directory.Exists(logDirectory))
+            {
+                return;
+            }
+
+            int maxFiles = GetBugReportingMaxAttachedLogs();
+            string[] latestFiles = Directory.EnumerateFiles(logDirectory, "*.txt")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .Take(maxFiles)
+                .ToArray();
+
+            foreach (string file in latestFiles)
+            {
+                scope.AddAttachment(file);
+            }
         }
 
         private static string GetAppName()

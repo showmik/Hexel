@@ -7,9 +7,14 @@ namespace Hexprite.Views
     {
         private readonly string? _reportId;
 
-        public BugReportSuccessDialog(string message, string? reportId)
+        public BugReportSuccessDialog(string message, string? reportId, string? windowTitle = null)
         {
             InitializeComponent();
+            if (!string.IsNullOrWhiteSpace(windowTitle))
+            {
+                Title = windowTitle;
+            }
+
             TxtMessage.Text = message;
             _reportId = reportId;
 

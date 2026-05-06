@@ -26,6 +26,7 @@ namespace Hexprite.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IThemeService _themeService;
         private readonly IBugReportService _bugReportService;
+        private readonly IUserFeedbackService _userFeedbackService;
 
         private const string FileFilter = "Hexprite Sprite (*.hexprite)|*.hexprite|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
 
@@ -62,6 +63,7 @@ namespace Hexprite.ViewModels
         public IRelayCommand OpenDocumentationCommand { get; }
         public IRelayCommand ShowAboutCommand { get; }
         public IRelayCommand ReportBugCommand { get; }
+        public IRelayCommand SendFeedbackCommand { get; }
         /// <summary>Opens the Import from Code dialog and creates a new tab.</summary>
         public IRelayCommand ImportFromCodeMenuCommand { get; }
         /// <summary>Copies the active document's exported code to the clipboard.</summary>
@@ -104,7 +106,8 @@ namespace Hexprite.ViewModels
             IClipboardService clipboardService,
             IDialogService dialogService,
             IThemeService themeService,
-            IBugReportService bugReportService)
+            IBugReportService bugReportService,
+            IUserFeedbackService userFeedbackService)
         {
             _codeGen = codeGen;
             _drawingService = drawingService;
@@ -113,6 +116,7 @@ namespace Hexprite.ViewModels
             _dialogService = dialogService;
             _themeService = themeService;
             _bugReportService = bugReportService;
+            _userFeedbackService = userFeedbackService;
 
             NewCanvasCommand = new RelayCommand<object?>(ExecuteNewCanvas);
             OpenCommand = new RelayCommand(ExecuteOpen);
@@ -123,6 +127,7 @@ namespace Hexprite.ViewModels
             OpenDocumentationCommand = new RelayCommand(ExecuteOpenDocumentation);
             ShowAboutCommand = new RelayCommand(ExecuteShowAbout);
             ReportBugCommand = new RelayCommand(ExecuteReportBug);
+            SendFeedbackCommand = new RelayCommand(ExecuteSendFeedback);
             ImportFromCodeMenuCommand = new RelayCommand(ExecuteImportFromCode);
             CopyExportCodeMenuCommand = new RelayCommand(
                 () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
@@ -411,6 +416,25 @@ namespace Hexprite.ViewModels
 
             _dialogService.ShowMessage(result.Message);
             Log.Warning("User-facing bug report submission failed: {Message}", result.Message);
+        }
+
+        private void ExecuteSendFeedback()
+        {
+            UserFeedbackInput? input = _dialogService.ShowUserFeedbackDialog();
+            if (input == null)
+            {
+                return;
+            }
+
+            FeedbackSubmitResult result = _userFeedbackService.SubmitFeedback(input);
+            if (result.Success)
+            {
+                _dialogService.ShowBugReportSuccessDialog(result.Message, result.EventId, "Feedback sent");
+                return;
+            }
+
+            _dialogService.ShowMessage(result.Message);
+            Log.Warning("User-facing feedback submission failed: {Message}", result.Message);
         }
 
         // ── Theme ─────────────────────────────────────────────────────────
