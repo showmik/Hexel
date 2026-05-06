@@ -304,6 +304,34 @@ namespace Hexprite.Services
         {
             if (_lassoPoints.Count > 0)
             {
+                if (_lassoPoints.Count < 3)
+                {
+                    if (_currentMode == SelectionMode.Replace)
+                    {
+                        Cancel();
+                        return;
+                    }
+                    else
+                    {
+                        if (_baseMask != null)
+                        {
+                            MinX = _baseMinX; MaxX = _baseMaxX;
+                            MinY = _baseMinY; MaxY = _baseMaxY;
+                            Mask = _baseMask;
+                            HasActiveSelection = true;
+                        }
+                        else
+                        {
+                            Cancel();
+                            return;
+                        }
+                        IsSelecting = false;
+                        _lassoPoints.Clear();
+                        Notify();
+                        return;
+                    }
+                }
+                
                 RecomputeCombinedSelection();
             }
 
@@ -311,6 +339,31 @@ namespace Hexprite.Services
             {
                 Cancel();
                 return;
+            }
+
+            if (Mask != null && _currentMode == SelectionMode.Replace)
+            {
+                bool hasAnyPixel = false;
+                int w = Mask.GetLength(0);
+                int h = Mask.GetLength(1);
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        if (Mask[x, y])
+                        {
+                            hasAnyPixel = true;
+                            break;
+                        }
+                    }
+                    if (hasAnyPixel) break;
+                }
+
+                if (!hasAnyPixel)
+                {
+                    Cancel();
+                    return;
+                }
             }
 
             IsSelecting = false;
@@ -395,9 +448,23 @@ namespace Hexprite.Services
                             state.Pixels[(gy * w) + gx] = true;
                     }
                 }
-            }
 
-            ResetState();
+                MinX = FloatingX;
+                MinY = FloatingY;
+                MaxX = FloatingX + FloatingWidth - 1;
+                MaxY = FloatingY + FloatingHeight - 1;
+
+                FloatingPixels = null;
+                IsFloating = false;
+                FloatingX = FloatingY = FloatingWidth = FloatingHeight = 0;
+
+                _baseMask = null;
+                _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
+                _dragMinX = _dragMaxX = _dragMinY = _dragMaxY = -1;
+                _lassoPoints.Clear();
+
+                Notify();
+            }
         }
 
         public void DeleteSelection(SpriteState state)
@@ -407,8 +474,19 @@ namespace Hexprite.Services
             if (IsFloating)
             {
                 // Just drop the floating pixels — nothing stamps back to the canvas
+                MinX = FloatingX;
+                MinY = FloatingY;
+                MaxX = FloatingX + FloatingWidth - 1;
+                MaxY = FloatingY + FloatingHeight - 1;
+
                 FloatingPixels = null;
                 IsFloating = false;
+                FloatingX = FloatingY = FloatingWidth = FloatingHeight = 0;
+                
+                _baseMask = null;
+                _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
+                _dragMinX = _dragMaxX = _dragMinY = _dragMaxY = -1;
+                _lassoPoints.Clear();
             }
             else
             {
@@ -422,7 +500,7 @@ namespace Hexprite.Services
                 }
             }
 
-            ResetState();
+            Notify();
         }
 
         public void Cancel()

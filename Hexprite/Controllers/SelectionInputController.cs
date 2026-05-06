@@ -114,15 +114,7 @@ namespace Hexprite.Controllers
             }
             else if (_selection.IsFloating)
             {
-                // Preserve the existing mask before committing, so we can apply the modifier mode
-                var oldMask = _selection.Mask;
-                var oldMinX = _selection.MinX;
-                var oldMinY = _selection.MinY;
-                var oldMaxX = _selection.MaxX;
-                var oldMaxY = _selection.MaxY;
                 CommitIfActive();
-                if (oldMinX != -1 && oldMask != null)
-                    _selection.ApplyMask(oldMask, oldMinX, oldMinY, oldMaxX, oldMaxY, SelectionMode.Replace);
             }
 
             if (_vm.CurrentTool == ToolMode.MagicWand)

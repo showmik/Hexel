@@ -112,7 +112,8 @@ namespace Hexprite.Rendering
 
             if (sel.IsFloating && sel.FloatingPixels != null)
             {
-                mask = sel.FloatingPixels;
+                // Use the original mask shape if available, otherwise fallback to the colored pixels
+                mask = sel.Mask ?? sel.FloatingPixels;
                 baseX = sel.FloatingX;
                 baseY = sel.FloatingY;
                 maskW = sel.FloatingWidth;

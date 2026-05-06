@@ -596,6 +596,7 @@ namespace Hexprite.ViewModels
             DeselectCommand = new RelayCommand(() =>
             {
                 _selectionInput.CommitIfActive();
+                _selectionService.Cancel();
             });
 
             SelectToolCommand = new RelayCommand<string>(ExecuteSelectTool);
