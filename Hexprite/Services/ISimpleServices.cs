@@ -71,6 +71,12 @@ namespace Hexprite.Services
         (int Width, int Height, string Code, string? SpriteName, bool IsXbm)? ShowImportFromCodeDialog();
 
         /// <summary>
+        /// Shows the bitmap import settings dialog.
+        /// Returns selected settings, or null if cancelled.
+        /// </summary>
+        BitmapImportSettings? ShowImportBitmapDialog(string fileName, BitmapImportSettings initialSettings);
+
+        /// <summary>
         /// Shows the "Report a Bug" dialog and returns user-entered data, or null if cancelled.
         /// </summary>
         BugReportInput? ShowBugReportDialog();

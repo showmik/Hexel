@@ -3,12 +3,15 @@ using Hexprite.Core;
 using Hexprite.Rendering;
 using Hexprite.Services;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Controls.Primitives;
 
 namespace Hexprite
 {
@@ -30,6 +33,10 @@ namespace Hexprite
         private int _dragStartFloatingX;
         private int _dragStartFloatingY;
 
+        private double _layersColumnWidthBeforeDrag;
+        private double _rightSidebarWidthBeforeDrag;
+        private double _dragAccumulator;
+
         // ── Last hovered pixel (avoids spamming ViewModel on same pixel) ──
         private int _lastHoveredX = -1;
         private int _lastHoveredY = -1;
@@ -39,6 +46,7 @@ namespace Hexprite
 
         // ── Currently-subscribed document (for event unwiring) ─────────────
         private ViewModels.MainViewModel? _subscribedDoc;
+        private const string DebugLogPath = @"H:\dev\Hexel\debug-4d8f4c.log";
 
         // ── Constructor ───────────────────────────────────────────────────
 
@@ -91,8 +99,120 @@ namespace Hexprite
             Canvas.MainScrollViewer.PreviewMouseMove += ScrollViewer_PreviewMouseMove;
             Canvas.MainScrollViewer.PreviewMouseUp += ScrollViewer_PreviewMouseUp;
             Canvas.CanvasImage.MouseLeave += CanvasImage_MouseLeave;
+            Loaded += MainWindow_Loaded;
 
             OnActiveTabChanged();
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            #region agent log
+            LogPanelWidths("initial-layout", "H1");
+            #endregion
+        }
+
+        private void PanelSplitter_DragStarted(object sender, DragStartedEventArgs e)
+        {
+            string splitterName = (sender as FrameworkElement)?.Name ?? "unknown";
+
+            if (sender == RightPanelSplitter)
+            {
+                // Capture the starting widths and reset our manual drag accumulator
+                _layersColumnWidthBeforeDrag = LayersColumn.ActualWidth;
+                _rightSidebarWidthBeforeDrag = RightSidebarColumn.ActualWidth;
+                _dragAccumulator = 0;
+            }
+
+            #region agent log
+            LogPanelWidths($"splitter-start:{splitterName}", "H2");
+            #endregion
+        }
+
+        private void PanelSplitter_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            string splitterName = (sender as FrameworkElement)?.Name ?? "unknown";
+
+            if (sender == RightPanelSplitter)
+            {
+                // Track total horizontal mouse movement ourselves
+                _dragAccumulator += e.HorizontalChange;
+
+                // Dragging the splitter left results in a negative HorizontalChange.
+                // Subtracting that negative value INCREASES the Right Sidebar's width.
+                double newRightWidth = _rightSidebarWidthBeforeDrag - _dragAccumulator;
+
+                // Clamp the new width to ensure it doesn't violate your XAML constraints
+                newRightWidth = Math.Max(RightSidebarColumn.MinWidth, Math.Min(newRightWidth, RightSidebarColumn.MaxWidth));
+
+                // Manually apply widths to force the correct layout behaviors
+                RightSidebarColumn.Width = new GridLength(newRightWidth);
+                LayersColumn.Width = new GridLength(_layersColumnWidthBeforeDrag);
+            }
+
+            // FIX: Restore Canvas star sizing so it fluidly absorbs space adjustments
+            if (!CanvasColumn.Width.IsStar)
+            {
+                CanvasColumn.Width = new GridLength(1, GridUnitType.Star);
+            }
+
+            #region agent log
+            LogPanelWidths($"splitter-delta:{splitterName}", "H3");
+            #endregion
+        }
+
+        private void PanelSplitter_DragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            string splitterName = (sender as FrameworkElement)?.Name ?? "unknown";
+
+            // Guarantee final layout state for the Layers panel
+            if (sender == RightPanelSplitter)
+            {
+                LayersColumn.Width = new GridLength(_layersColumnWidthBeforeDrag);
+            }
+
+            // Ensure Star sizing is securely restored after drag completion
+            if (!CanvasColumn.Width.IsStar)
+            {
+                CanvasColumn.Width = new GridLength(1, GridUnitType.Star);
+            }
+
+            #region agent log
+            LogPanelWidths($"splitter-complete:{splitterName}", "H4");
+            #endregion
+        }
+
+        private void LogPanelWidths(string message, string hypothesisId)
+        {
+            try
+            {
+                var payload = new
+                {
+                    sessionId = "4d8f4c",
+                    runId = "pre-fix",
+                    hypothesisId,
+                    location = "MainWindow.xaml.cs:panel-splitter",
+                    message,
+                    data = new
+                    {
+                        canvasColumnWidth = CanvasColumn.ActualWidth,
+                        layersColumnWidth = LayersColumn.ActualWidth,
+                        rightSidebarColumnWidth = RightSidebarColumn.ActualWidth,
+                        layersPanelWidth = LayersPanel.ActualWidth,
+                        rightSidebarPanelWidth = RightSidebarPanel.ActualWidth,
+                        windowWidth = ActualWidth
+                    },
+                    timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                };
+
+                #region agent log
+                string line = JsonSerializer.Serialize(payload) + Environment.NewLine;
+                File.AppendAllText(DebugLogPath, line);
+                #endregion
+            }
+            catch
+            {
+                // Intentionally swallowed for debug-only telemetry.
+            }
         }
 
         private void OnActiveTabChanged()

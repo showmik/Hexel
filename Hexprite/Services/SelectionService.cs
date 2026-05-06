@@ -473,20 +473,8 @@ namespace Hexprite.Services
 
             if (IsFloating)
             {
-                // Just drop the floating pixels — nothing stamps back to the canvas
-                MinX = FloatingX;
-                MinY = FloatingY;
-                MaxX = FloatingX + FloatingWidth - 1;
-                MaxY = FloatingY + FloatingHeight - 1;
-
-                FloatingPixels = null;
-                IsFloating = false;
-                FloatingX = FloatingY = FloatingWidth = FloatingHeight = 0;
-                
-                _baseMask = null;
-                _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
-                _dragMinX = _dragMaxX = _dragMinY = _dragMaxY = -1;
-                _lassoPoints.Clear();
+                // Just drop the floating pixels — lifting already cleared pixels from the canvas.
+                ResetState(notify: false);
             }
             else
             {
@@ -498,15 +486,16 @@ namespace Hexprite.Services
                     if (IsPixelInSelection(x, y))
                         state.Pixels[i] = false;
                 }
+
+                // Match expected UX: deleting a selection should also clear
+                // selection state (marquee/lasso preview goes away).
+                ResetState(notify: false);
             }
 
             Notify();
         }
 
-        public void Cancel()
-        {
-            ResetState();
-        }
+        public void Cancel() => ResetState(notify: true);
 
         // ── Drag ─────────────────────────────────────────────────────────
 
@@ -570,7 +559,7 @@ namespace Hexprite.Services
             if (data == null) return;
 
             // Reset any existing selection state
-            ResetState();
+            ResetState(notify: false);
 
             // Center the pasted content on the canvas
             FloatingX = (canvasWidth - data.Width) / 2;
@@ -648,7 +637,7 @@ namespace Hexprite.Services
 
         // ── Private helpers ───────────────────────────────────────────────
 
-        private void ResetState()
+        private void ResetState(bool notify)
         {
             HasActiveSelection = false;
             IsSelecting = false;
@@ -664,7 +653,8 @@ namespace Hexprite.Services
             _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
             _dragMinX = _dragMaxX = _dragMinY = _dragMaxY = -1;
 
-            Notify();
+            if (notify)
+                Notify();
         }
 
         /// <summary>

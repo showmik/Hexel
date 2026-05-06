@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using System.Collections.Generic;
+using System;
 
 namespace Hexprite.Core
 {
@@ -10,6 +12,8 @@ namespace Hexprite.Core
         public int Width { get; }
         public int Height { get; }
         public bool[] Pixels { get; set; }
+        public List<LayerState> Layers { get; set; } = new();
+        public int ActiveLayerIndex { get; set; }
 
         /// <summary>
         /// Stored alongside pixels so that Undo/Redo can restore the visual invert
@@ -36,18 +40,84 @@ namespace Hexprite.Core
             Width = width;
             Height = height;
             Pixels = new bool[width * height];
+            Layers.Add(new LayerState
+            {
+                Name = "Layer 1",
+                IsVisible = true,
+                Pixels = Pixels
+            });
+            ActiveLayerIndex = 0;
         }
 
         [JsonIgnore]
         public SelectionSnapshot? SelectionSnapshot { get; set; }
 
-        public SpriteState Clone() => new SpriteState(Width, Height)
+        public void EnsureLayers()
         {
-            Pixels = (bool[])Pixels.Clone(),
-            IsDisplayInverted = IsDisplayInverted,
-            SelectionSnapshot = SelectionSnapshot?.Clone()
-            // ExportSettings intentionally NOT cloned: settings tweaks
-            // should not be undone when the user hits Ctrl+Z.
-        };
+            int pixelCount = Width * Height;
+
+            if (Layers == null || Layers.Count == 0)
+            {
+                Layers = new List<LayerState>
+                {
+                    new LayerState
+                    {
+                        Name = "Layer 1",
+                        IsVisible = true,
+                        Pixels = Pixels?.Length == pixelCount ? (bool[])Pixels.Clone() : new bool[pixelCount]
+                    }
+                };
+                ActiveLayerIndex = 0;
+            }
+
+            for (int i = 0; i < Layers.Count; i++)
+            {
+                Layers[i].Name = string.IsNullOrWhiteSpace(Layers[i].Name) ? $"Layer {i + 1}" : Layers[i].Name;
+                if (Layers[i].Pixels == null || Layers[i].Pixels.Length != pixelCount)
+                    Layers[i].Pixels = new bool[pixelCount];
+            }
+
+            ActiveLayerIndex = Math.Clamp(ActiveLayerIndex, 0, Layers.Count - 1);
+            Pixels = Layers[ActiveLayerIndex].Pixels;
+        }
+
+        public void SetActiveLayer(int index)
+        {
+            EnsureLayers();
+            ActiveLayerIndex = Math.Clamp(index, 0, Layers.Count - 1);
+            Pixels = Layers[ActiveLayerIndex].Pixels;
+        }
+
+        public bool[] CompositeVisiblePixels()
+        {
+            EnsureLayers();
+            var composite = new bool[Width * Height];
+            foreach (var layer in Layers)
+            {
+                if (!layer.IsVisible) continue;
+                for (int i = 0; i < composite.Length; i++)
+                {
+                    if (layer.Pixels[i])
+                        composite[i] = true;
+                }
+            }
+            return composite;
+        }
+
+        public SpriteState Clone()
+        {
+            EnsureLayers();
+            var clone = new SpriteState(Width, Height)
+            {
+                Layers = Layers.ConvertAll(l => l.Clone()),
+                ActiveLayerIndex = ActiveLayerIndex,
+                IsDisplayInverted = IsDisplayInverted,
+                SelectionSnapshot = SelectionSnapshot?.Clone()
+                // ExportSettings intentionally NOT cloned: settings tweaks
+                // should not be undone when the user hits Ctrl+Z.
+            };
+            clone.EnsureLayers();
+            return clone;
+        }
     }
 }

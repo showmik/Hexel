@@ -8,9 +8,10 @@
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="320">
 
-    <Border Background="{DynamicResource Brush.Surface.RightSidebar}"
-            BorderBrush="{DynamicResource Brush.Border.Base}"
-            BorderThickness="1,0,0,0">
+    <Border Background="Transparent"
+            BorderThickness="0"
+            CornerRadius="8"
+            Padding="4,8,10,10">
         <DockPanel LastChildFill="True">
 
             <ScrollViewer x:Name="MainScroll"
@@ -26,7 +27,7 @@
                         CornerRadius="8"
                         BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
-                        Margin="10,10,10,0"
+                        Margin="0,0,0,10"
                         Padding="12,10,12,12">
                 <Border.Effect>
                     <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
@@ -140,7 +141,7 @@
                         CornerRadius="8"
                         BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
-                        Margin="10,10,10,0"
+                        Margin="0,0,0,10"
                         Padding="12,14,12,14">
                     <Border.Effect>
                         <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
@@ -414,7 +415,7 @@
                         CornerRadius="8"
                         BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
-                        Margin="10,10,10,10"
+                        Margin="0"
                         Padding="12,14,12,14">
                     <Border.Effect>
                         <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
@@ -437,6 +438,13 @@
                             ToolTip="Open the Import from Code dialog (Ctrl+Shift+I)"
                             Padding="8,8"
                             FontSize="11.5"/>
+                    <Button Content="Import Bitmap…"
+                            Style="{StaticResource ModernButtonStyle}"
+                            HorizontalAlignment="Stretch"
+                            Click="ImportBitmap_Click"
+                            Padding="8,8"
+                            FontSize="11.5"
+                            Margin="0,8,0,0"/>
                 </StackPanel>
                 </Border>
 

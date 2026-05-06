@@ -82,6 +82,12 @@ namespace Hexprite.Services
             return null;
         }
 
+        public BitmapImportSettings? ShowImportBitmapDialog(string fileName, BitmapImportSettings initialSettings)
+        {
+            var dlg = new ImportBitmapDialog(fileName, initialSettings) { Owner = Application.Current.MainWindow };
+            return dlg.ShowDialog() == true ? dlg.Result : null;
+        }
+
         public BugReportInput? ShowBugReportDialog()
         {
             var dlg = new ReportBugDialog { Owner = Application.Current.MainWindow };

@@ -7,6 +7,8 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Serilog;
 
 namespace Hexprite.ViewModels
@@ -68,6 +70,8 @@ namespace Hexprite.ViewModels
         public IRelayCommand SendFeedbackCommand { get; }
         /// <summary>Opens the Import from Code dialog and creates a new tab.</summary>
         public IRelayCommand ImportFromCodeMenuCommand { get; }
+        /// <summary>Imports a bitmap image into a new canvas tab.</summary>
+        public IRelayCommand ImportBitmapMenuCommand { get; }
         /// <summary>Copies the active document's exported code to the clipboard.</summary>
         public IRelayCommand CopyExportCodeMenuCommand { get; }
         /// <summary>Switches the theme between Dark and Light.</summary>
@@ -132,6 +136,7 @@ namespace Hexprite.ViewModels
             ReportBugCommand = new RelayCommand(ExecuteReportBug);
             SendFeedbackCommand = new RelayCommand(ExecuteSendFeedback);
             ImportFromCodeMenuCommand = new RelayCommand(ExecuteImportFromCode);
+            ImportBitmapMenuCommand = new RelayCommand(ExecuteImportBitmap);
             CopyExportCodeMenuCommand = new RelayCommand(
                 () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
                 () => HasOpenDocument);
@@ -210,9 +215,13 @@ namespace Hexprite.ViewModels
                 string json = File.ReadAllText(path);
                 var loaded = JsonSerializer.Deserialize<SpriteState>(json);
                 if (loaded?.Pixels == null) return;
+                loaded.EnsureLayers();
 
                 var doc = CreateDocument(loaded.Width, loaded.Height);
-                doc.SpriteState.Pixels = (bool[])loaded.Pixels.Clone();
+                doc.SpriteState.Layers = loaded.Layers.ConvertAll(l => l.Clone());
+                doc.SpriteState.ActiveLayerIndex = loaded.ActiveLayerIndex;
+                doc.SpriteState.EnsureLayers();
+                doc.ReloadLayersFromState();
                 doc.SpriteState.IsDisplayInverted = loaded.IsDisplayInverted;
                 doc.IsDisplayInverted = loaded.IsDisplayInverted;
                 doc.FilePath = path;
@@ -405,6 +414,151 @@ namespace Hexprite.ViewModels
             }
         }
 
+        // ── Import bitmap ─────────────────────────────────────────────────
+
+        private const string BitmapImageFileFilter =
+            "Image Files (*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif)|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif|All Files (*.*)|*.*";
+        private static readonly string UserSettingsDirectory =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hexprite");
+        private static readonly string BitmapImportSettingsFile =
+            Path.Combine(UserSettingsDirectory, "bitmap-import-settings.json");
+
+        private static Task<T> RunOnStaThreadAsync<T>(Func<T> func)
+        {
+            var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    T result = func();
+                    tcs.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+
+            thread.IsBackground = true;
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+
+            return tcs.Task;
+        }
+
+        private async void ExecuteImportBitmap()
+        {
+            using var operation = LoggingService.BeginOperation("Shell.ImportBitmap");
+
+            if (OpenDocuments.Count >= MaxTabs)
+            {
+                _dialogService.ShowMessage($"Maximum of {MaxTabs} tabs reached. Close a tab first.");
+                Logger.Warning("Import blocked because max tabs reached. MaxTabs={MaxTabs}", MaxTabs);
+                return;
+            }
+
+            string? selectedPath = null;
+
+            try
+            {
+                selectedPath = _dialogService.ShowOpenFileDialog(BitmapImageFileFilter, "Import Bitmap");
+                if (selectedPath == null) return;
+
+                var importSettings = _dialogService.ShowImportBitmapDialog(
+                    Path.GetFileName(selectedPath),
+                    LoadBitmapImportSettings());
+                if (importSettings == null) return;
+                SaveBitmapImportSettings(importSettings);
+
+                // WPF image decode pipelines are STA-affine; run conversion on a dedicated STA thread
+                // so large imports don't block the UI thread.
+                var (pixels, w, h, wasScaled) = await RunOnStaThreadAsync(() =>
+                    BitmapToMonochromeConverter.ConvertTo1Bit(selectedPath, importSettings));
+
+                var doc = CreateDocument(w, h, redrawImmediately: false);
+                doc.SpriteState.Pixels = pixels;
+                doc.SpriteState.Layers[doc.SpriteState.ActiveLayerIndex].Pixels = pixels;
+
+                doc.RedrawGridFromMemory();
+
+                // Set name so export panel picks it up
+                doc.SetSpriteNameWithoutGenerating(CodeGeneratorService.SanitiseName(
+                    Path.GetFileNameWithoutExtension(selectedPath)));
+
+                if (wasScaled)
+                    doc.ShowStatus("Imported image (scaled to max canvas size)");
+
+                // Generating export code for large imports can be expensive and may
+                // cause UI stalls due to downstream syntax highlighting. Defer it
+                // until the user explicitly clicks "Generate Code".
+                doc.MarkCodeStale();
+
+                OpenDocuments.Add(doc);
+                ActiveDocument = doc;
+                TabAdded?.Invoke(this, doc);
+                RaiseActiveTabChanged();
+
+                Logger.Information(
+                    "Imported bitmap image. Scaled={WasScaled} Size={Width}x{Height} Dither={Dither} Threshold={Threshold}",
+                    wasScaled, w, h, importSettings.DitheringAlgorithm, importSettings.Threshold);
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "ShellViewModel.ImportBitmap", new { path = selectedPath });
+                if (ex is NotSupportedException)
+                    _dialogService.ShowMessage("This image format is not supported on your system.");
+                else
+                    _dialogService.ShowMessage($"Error importing image: {ex.Message}");
+            }
+        }
+
+        private static BitmapImportSettings LoadBitmapImportSettings()
+        {
+            var defaults = new BitmapImportSettings
+            {
+                DitheringAlgorithm = BitmapDitheringAlgorithm.Atkinson,
+                Threshold = 128,
+                AlphaThreshold = 128,
+                MaxDimension = SpriteState.MaxDimension
+            };
+
+            try
+            {
+                if (!File.Exists(BitmapImportSettingsFile))
+                    return defaults;
+
+                string json = File.ReadAllText(BitmapImportSettingsFile);
+                BitmapImportSettings? saved = JsonSerializer.Deserialize<BitmapImportSettings>(json);
+                if (saved == null)
+                    return defaults;
+
+                saved.Threshold = Math.Clamp(saved.Threshold, 0, 255);
+                saved.AlphaThreshold = Math.Clamp(saved.AlphaThreshold, 0, 255);
+                saved.MaxDimension = Math.Clamp(saved.MaxDimension, 1, SpriteState.MaxDimension);
+                return saved;
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Warning(ex, "ShellViewModel.LoadBitmapImportSettings", new { BitmapImportSettingsFile });
+                return defaults;
+            }
+        }
+
+        private static void SaveBitmapImportSettings(BitmapImportSettings settings)
+        {
+            try
+            {
+                Directory.CreateDirectory(UserSettingsDirectory);
+                string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(BitmapImportSettingsFile, json);
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Warning(ex, "ShellViewModel.SaveBitmapImportSettings", new { BitmapImportSettingsFile });
+            }
+        }
+
         // ── Help ──────────────────────────────────────────────────────────
 
         private void ExecuteOpenDocumentation()
@@ -511,7 +665,7 @@ namespace Hexprite.ViewModels
             RaiseActiveTabChanged();
         }
 
-        private MainViewModel CreateDocument(int width, int height)
+        private MainViewModel CreateDocument(int width, int height, bool redrawImmediately = true)
         {
             var history = new HistoryService();
             var selection = new SelectionService();
@@ -520,7 +674,7 @@ namespace Hexprite.ViewModels
                 _codeGen, _drawingService, history, selection,
                 _clipboardService, _pixelClipboard, _dialogService);
 
-            doc.InitializeGrid(width, height);
+            doc.InitializeGrid(width, height, redrawImmediately);
             return doc;
         }
 

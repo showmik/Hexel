@@ -31,7 +31,7 @@
 
             <!-- TITLE BAR -->
             <Border Grid.Row="0" Background="{DynamicResource Brush.Surface.MenuBar}">
-                <Grid>
+                <Grid x:Name="AnchorGrid">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>

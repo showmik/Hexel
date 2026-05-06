@@ -2,6 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
+using Hexprite.Services;
 
 namespace Hexprite.Views
 {
@@ -30,6 +31,14 @@ namespace Hexprite.Views
         public ImportFromCodeDialog()
         {
             InitializeComponent();
+            var prefs = UserPreferencesService.Get();
+            _suppressAutoDetect = true;
+            TxtWidth.Text = prefs.ImportFromCodeWidth.ToString();
+            TxtHeight.Text = prefs.ImportFromCodeHeight.ToString();
+            _suppressAutoDetect = false;
+            _dimensionsAutoDetected = false;
+            if (TxtDetectionHint != null)
+                TxtDetectionHint.Text = "(last used)";
         }
 
         // ── Auto-detect dimensions from pasted code ──────────────────────
@@ -374,6 +383,11 @@ namespace Hexprite.Views
             if (!int.TryParse(TxtHeight.Text, out int h) || h < 1 || h > 256) return;
 
             Result = (w, h, TxtCode.Text, _detectedSpriteName, _isXbm);
+            UserPreferencesService.Update(p =>
+            {
+                p.ImportFromCodeWidth = w;
+                p.ImportFromCodeHeight = h;
+            });
             DialogResult = true;
         }
 
