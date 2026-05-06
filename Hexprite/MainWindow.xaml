@@ -11,6 +11,10 @@
         Width="1150"
         Background="{DynamicResource Brush.Surface.Base}"
         FontFamily="{DynamicResource Font.Primary}"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="False"
@@ -93,7 +97,7 @@
              ═══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0"
                 Background="{DynamicResource Brush.Surface.MenuBar}">
-            <Grid>
+            <Grid Margin="0,0,0,1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -102,8 +106,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- App icon -->
-                <Border Grid.Column="0" Margin="8,0,4,0"
-                        Width="22" Height="22" CornerRadius="5"
+                <Border Grid.Column="0" Margin="10,0,6,0"
+                        Width="20" Height="20" CornerRadius="5"
                         VerticalAlignment="Center"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Border.Background>
@@ -113,6 +117,7 @@
 
                 <!-- Menu bar -->
                 <Menu Grid.Column="1" WindowChrome.IsHitTestVisibleInChrome="True"
+                      Margin="0,0,6,0"
                       VerticalAlignment="Center">
                     <MenuItem Header="_File">
                         <MenuItem Header="_New Canvas" Command="{Binding NewCanvasCommand}" InputGestureText="Ctrl+N"/>
@@ -180,21 +185,23 @@
                 <!-- Title -->
                 <TextBlock Grid.Column="2" Text="Hexprite"
                            Foreground="{DynamicResource Brush.Text.Muted}"
-                           FontSize="12" VerticalAlignment="Center"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
                            HorizontalAlignment="Center" IsHitTestVisible="False"/>
 
                 <!-- Caption buttons -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal"
                             WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Button Click="CaptionMinimize_Click" ToolTip="Minimize" Width="46" Height="34"
+                    <Button Click="CaptionMinimize_Click" ToolTip="Minimize" Width="44" Height="34"
                             Style="{StaticResource CaptionButtonStyle}">
                         <TextBlock Text="&#xE921;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
                     </Button>
-                    <Button Click="CaptionMaximize_Click" ToolTip="Maximize" Width="46" Height="34"
+                    <Button Click="CaptionMaximize_Click" ToolTip="Maximize" Width="44" Height="34"
                             Style="{StaticResource CaptionButtonStyle}">
                         <TextBlock x:Name="MaximizeIcon" Text="&#xE922;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
                     </Button>
-                    <Button Click="CaptionClose_Click" ToolTip="Close" Width="46" Height="34"
+                    <Button Click="CaptionClose_Click" ToolTip="Close" Width="44" Height="34"
                             Style="{StaticResource CaptionCloseButtonStyle}">
                         <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
                     </Button>
@@ -209,7 +216,7 @@
                 Background="{DynamicResource Brush.Surface.MenuBar}"
                 BorderBrush="{DynamicResource Brush.Border.Separator}"
                 BorderThickness="0,0,0,1"
-                Padding="4,0">
+                Padding="8,0">
             <StackPanel Orientation="Horizontal">
                 <ItemsControl ItemsSource="{Binding OpenDocuments}">
                     <ItemsControl.ItemsPanel>
@@ -220,8 +227,8 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border x:Name="TabBorder"
-                                    Margin="0,4,2,4"
-                                    CornerRadius="6"
+                                    Margin="0,3,4,3"
+                                    CornerRadius="8"
                                     Cursor="Hand"
                                     MouseLeftButtonDown="Tab_MouseLeftButtonDown">
                                 <Border.Style>
@@ -245,17 +252,18 @@
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,6,10,4">
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="12,5,10,5">
                                         <TextBlock Text="{Binding Title}"
                                                    Foreground="{DynamicResource Brush.Text.Primary}"
                                                    VerticalAlignment="Center"
                                                    FontSize="12"
-                                                   Margin="0,0,8,0" />
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,6,0" />
                                         <Button x:Name="CloseBtn"
                                                 Content="✕"
                                                 FontSize="10"
-                                                Padding="2,0"
-                                                MinWidth="16" MinHeight="16"
+                                                Padding="2,1"
+                                                MinWidth="18" MinHeight="18"
                                                 VerticalAlignment="Center"
                                                 Cursor="Hand"
                                                 Click="TabClose_Click"
@@ -311,10 +319,10 @@
 
                 <!-- New tab button -->
                 <Button Content="+"
-                        FontSize="14"
+                        FontSize="13"
                         FontWeight="Bold"
-                        Padding="8,4"
-                        Margin="4,4"
+                        Padding="9,4"
+                        Margin="0,3,0,3"
                         VerticalAlignment="Center"
                         Command="{Binding NewCanvasCommand}"
                         ToolTip="New canvas (Ctrl+N)">
@@ -367,7 +375,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid Grid.RowSpan="2" Margin="8,8,8,8">
+            <Grid Grid.RowSpan="2" Margin="10,10,10,10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
@@ -376,19 +384,19 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="1.05*"
-                                      MinWidth="220"
+                    <ColumnDefinition Width="200"
+                                      MinWidth="180"
                                       MaxWidth="520" />
                     <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="1.25*"
-                                      MinWidth="280"
+                    <ColumnDefinition Width="260"
+                                      MinWidth="220"
                                       MaxWidth="760" />
                 </Grid.ColumnDefinitions>
 
-                <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Row="0" Grid.Column="0" Margin="0,8,8,8" />
+                <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Row="0" Grid.Column="0" Margin="0,6,8,8" />
 
                 <views:CanvasPanel x:Name="Canvas" Grid.Row="0" Grid.Column="1" 
-                                   Margin="8,8,6,8"
+                                   Margin="8,6,8,8"
                                    ZoomInClicked="BtnZoomIn_Click"
                                    ZoomOutClicked="BtnZoomOut_Click"
                                    ZoomResetClicked="BtnZoomReset_Click" />
@@ -414,7 +422,7 @@
 
                 <views:SidebarPanel Grid.RowSpan="2" Grid.Column="5" Margin="0" />
 
-                <views:TimelinePanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,6,0" />
+                <views:TimelinePanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,8,0" />
             </Grid>
         </Grid>
         <!-- /Main content -->
@@ -437,14 +445,14 @@
             </Grid.Style>
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Padding="24,24,24,24">
+                          Padding="20,18,20,20">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                        MaxWidth="600">
+                        MaxWidth="560">
                 <!-- App branding -->
-                <Border Width="72" Height="72"
-                        CornerRadius="18"
+                <Border Width="64" Height="64"
+                        CornerRadius="16"
                         HorizontalAlignment="Center"
-                        Margin="0,0,0,20">
+                        Margin="0,0,0,16">
                     <Border.Background>
                         <ImageBrush ImageSource="pack://application:,,,/Assets/AppIcon.png" Stretch="UniformToFill" />
                     </Border.Background>
@@ -454,24 +462,24 @@
                     </Border.Effect>
                 </Border>
                 <TextBlock Text="Welcome to Hexprite" 
-                           FontSize="26" 
+                           FontSize="24" 
                            FontWeight="Bold" 
                            Foreground="{DynamicResource Brush.Text.Primary}" 
                            HorizontalAlignment="Center" 
-                           Margin="0,0,0,6" />
+                           Margin="0,0,0,4" />
                 <TextBlock Text="Monochrome pixel art editor for embedded displays" 
-                           FontSize="13"
+                           FontSize="12"
                            Foreground="{DynamicResource Brush.Text.Muted}" 
                            HorizontalAlignment="Center"
-                           Margin="0,0,0,32" />
+                           Margin="0,0,0,24" />
 
                 <!-- Quick-start presets -->
                 <TextBlock Text="QUICK START"
                            Style="{StaticResource HeaderStyle}"
                            HorizontalAlignment="Center"
                            FontSize="11"
-                           Margin="0,0,0,10"/>
-                <Grid HorizontalAlignment="Center" Margin="0,0,0,12">
+                           Margin="0,0,0,8"/>
+                <Grid HorizontalAlignment="Center" Margin="0,0,0,10">
                     <Grid.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
                             <Setter Property="Background" Value="Transparent" />
@@ -543,14 +551,14 @@
                 <!-- Divider -->
                 <Border Height="1" 
                         Background="{DynamicResource Brush.Border.Separator}" 
-                        Margin="40,2,40,16"/>
+                        Margin="40,2,40,14"/>
 
                 <!-- Actions -->
                 <TextBlock Text="START FROM FILE"
                            Style="{StaticResource HeaderStyle}"
                            HorizontalAlignment="Center"
                            FontSize="11"
-                           Margin="0,0,0,10"/>
+                           Margin="0,0,0,8"/>
                 <StackPanel HorizontalAlignment="Center" MinWidth="220">
                     <Button Content="Custom Size…" 
                             Command="{Binding NewCanvasCommand}" 
@@ -558,28 +566,28 @@
                             Width="220"
                             Padding="20,10" 
                             Style="{StaticResource AccentButtonStyle}"
-                            Margin="0,0,0,10" />
+                            Margin="0,0,0,8" />
                     <Button Content="Open File…" 
                             Command="{Binding OpenCommand}" 
                             HorizontalAlignment="Center" 
                             Width="220"
                             Padding="20,10" 
                             Style="{StaticResource ModernButtonStyle}"
-                            Margin="0,0,0,10" />
+                            Margin="0,0,0,8" />
                     <Button Content="Import from Code…"
                             Command="{Binding ImportFromCodeMenuCommand}"
                             HorizontalAlignment="Center"
                             Width="220"
                             Padding="20,10"
                             Style="{StaticResource ModernButtonStyle}"
-                            Margin="0,0,0,10" />
+                            Margin="0,0,0,8" />
                     <Button Content="Import Bitmap…"
                             Command="{Binding ImportBitmapMenuCommand}"
                             HorizontalAlignment="Center"
                             Width="220"
                             Padding="20,10"
                             Style="{StaticResource ModernButtonStyle}"
-                            Margin="0,0,0,20" />
+                            Margin="0,0,0,16" />
                 </StackPanel>
 
                 <!-- Shortcut hints -->
