@@ -4,6 +4,7 @@ using Hexprite.Controllers;
 using Hexprite.Core;
 using Hexprite.Rendering;
 using Hexprite.Services;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -498,12 +499,21 @@ namespace Hexprite.ViewModels
                     ShowStatus("✓ Canvas updated from import");
                     ImportCode = string.Empty;
                 }
-                catch
+                catch (Exception ex) when (ex is ArgumentException or FormatException or InvalidOperationException)
                 {
                     SpriteState = backup;
                     RedrawGridFromMemory();
                     UpdateTextOutputs();
                     ShowStatus("⚠ Could not parse the pasted code");
+                    HandledErrorReporter.Warning(ex, "MainViewModel.ImportFromCodePanel", new { ExportFormat });
+                }
+                catch (Exception ex)
+                {
+                    SpriteState = backup;
+                    RedrawGridFromMemory();
+                    UpdateTextOutputs();
+                    ShowStatus("⚠ Could not parse the pasted code");
+                    HandledErrorReporter.Error(ex, "MainViewModel.ImportFromCodePanel", new { ExportFormat });
                 }
             });
 
@@ -895,9 +905,18 @@ namespace Hexprite.ViewModels
                     _isUpdatingProgrammatically = false;
                 }, null);
             }
-            catch
+            catch (OperationCanceledException)
             {
-                _isUpdatingProgrammatically = false;
+                _uiContext.Post(_ => { _isUpdatingProgrammatically = false; }, null);
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "MainViewModel.UpdateTextOutputsAsync");
+                _uiContext.Post(_ =>
+                {
+                    _isUpdatingProgrammatically = false;
+                    ShowStatus("⚠ Could not generate export code");
+                }, null);
             }
         }
 

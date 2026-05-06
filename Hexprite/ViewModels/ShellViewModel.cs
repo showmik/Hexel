@@ -213,6 +213,7 @@ namespace Hexprite.ViewModels
             }
             catch (Exception ex)
             {
+                HandledErrorReporter.Error(ex, "ShellViewModel.OpenFile", new { path });
                 _dialogService.ShowMessage($"Error opening file: {ex.Message}");
             }
         }
@@ -256,6 +257,7 @@ namespace Hexprite.ViewModels
             }
             catch (Exception ex)
             {
+                HandledErrorReporter.Error(ex, "ShellViewModel.SaveFile", new { path });
                 _dialogService.ShowMessage($"Error saving: {ex.Message}");
             }
         }
@@ -367,6 +369,7 @@ namespace Hexprite.ViewModels
             }
             catch (Exception ex)
             {
+                HandledErrorReporter.Error(ex, "ShellViewModel.ImportFromCode", new { w, h, isXbm });
                 _dialogService.ShowMessage($"Error importing: {ex.Message}");
             }
         }
@@ -375,7 +378,15 @@ namespace Hexprite.ViewModels
 
         private void ExecuteOpenDocumentation()
         {
-            Process.Start(new ProcessStartInfo("https://hexprite.com") { UseShellExecute = true });
+            try
+            {
+                Process.Start(new ProcessStartInfo("https://hexprite.com") { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "ShellViewModel.OpenDocumentation", new { url = "https://hexprite.com" });
+                _dialogService.ShowMessage("Could not open the documentation website.");
+            }
         }
 
         private void ExecuteShowAbout()

@@ -43,7 +43,7 @@ namespace Hexprite.Services
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Manual bug report submission failed.");
+                HandledErrorReporter.Error(ex, "BugReportService.SubmitReport");
                 return new BugReportResult
                 {
                     Success = false,

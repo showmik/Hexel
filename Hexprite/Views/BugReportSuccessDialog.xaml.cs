@@ -1,4 +1,5 @@
 using System.Windows;
+using Hexprite.Services;
 
 namespace Hexprite.Views
 {
@@ -33,8 +34,9 @@ namespace Hexprite.Views
                 Clipboard.SetText(_reportId);
                 TxtCopiedHint.Visibility = Visibility.Visible;
             }
-            catch
+            catch (Exception ex)
             {
+                HandledErrorReporter.Warning(ex, "BugReportSuccessDialog.CopyReportId");
                 TxtCopiedHint.Text = "Could not copy to clipboard.";
                 TxtCopiedHint.Visibility = Visibility.Visible;
             }

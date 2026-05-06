@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Hexprite.Services;
 using Hexprite.ViewModels;
 using Serilog;
-using Sentry;
 
 namespace Hexprite
 {
@@ -23,16 +22,30 @@ namespace Hexprite
 
             base.OnStartup(e);
 
-            var services = new ServiceCollection();
-            ConfigureServices(services);
-            _serviceProvider = services.BuildServiceProvider();
+            try
+            {
+                var services = new ServiceCollection();
+                ConfigureServices(services);
+                _serviceProvider = services.BuildServiceProvider();
 
-            // Apply the persisted theme before showing any UI
-            // FIX: Use the interface directly without downcasting to the concrete type.
-            var themeService = _serviceProvider.GetRequiredService<IThemeService>();
-            themeService.Initialize();
+                // Apply the persisted theme before showing any UI
+                // FIX: Use the interface directly without downcasting to the concrete type.
+                var themeService = _serviceProvider.GetRequiredService<IThemeService>();
+                themeService.Initialize();
 
-            _serviceProvider.GetRequiredService<MainWindow>().Show();
+                _serviceProvider.GetRequiredService<MainWindow>().Show();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application startup failed");
+                SentryCrashFlush.TryFlushPendingEvents();
+                MessageBox.Show(
+                    $"The application could not start.\n\n{ex.Message}",
+                    "Hexel",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Shutdown(1);
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -65,8 +78,8 @@ namespace Hexprite
 
         private static void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
+            // Serilog Sentry sink forwards Fatal + exception to Sentry when configured.
             Log.Fatal(e.Exception, "Unhandled UI thread exception");
-            SentrySdk.CaptureException(e.Exception);
             SentryCrashFlush.TryFlushPendingEvents();
 
             MessageBox.Show(
@@ -84,7 +97,6 @@ namespace Hexprite
             if (e.ExceptionObject is Exception ex)
             {
                 Log.Fatal(ex, "Unhandled non-UI exception. IsTerminating={IsTerminating}", e.IsTerminating);
-                SentrySdk.CaptureException(ex);
                 if (e.IsTerminating)
                 {
                     SentryCrashFlush.TryFlushPendingEvents();
@@ -93,8 +105,10 @@ namespace Hexprite
                 return;
             }
 
-            Log.Fatal("Unhandled non-UI exception was a non-Exception object. IsTerminating={IsTerminating}", e.IsTerminating);
-            SentrySdk.CaptureMessage("Unhandled non-UI exception object was not Exception.", SentryLevel.Fatal);
+            Log.Fatal(
+                "Unhandled non-UI exception was a non-Exception object. IsTerminating={IsTerminating} Type={ExceptionType}",
+                e.IsTerminating,
+                e.ExceptionObject?.GetType().FullName ?? "null");
             if (e.IsTerminating)
             {
                 SentryCrashFlush.TryFlushPendingEvents();
@@ -104,7 +118,6 @@ namespace Hexprite
         private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
             Log.Error(e.Exception, "Unobserved task exception");
-            SentrySdk.CaptureException(e.Exception);
             e.SetObserved();
         }
     }
