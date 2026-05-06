@@ -15,5 +15,8 @@ namespace Hexprite.ViewModels
 
         [ObservableProperty]
         private bool _isActive;
+
+        [ObservableProperty]
+        private bool _isRenaming;
     }
 }

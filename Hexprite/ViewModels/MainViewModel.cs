@@ -143,11 +143,21 @@ namespace Hexprite.ViewModels
         public ObservableCollection<LayerItemViewModel> Layers { get; } = new();
 
         private int _selectedLayerIndex;
+        /// <summary>
+        /// While rebuilding <see cref="Layers"/>, the ListBox two-way binds <see cref="SelectedLayerIndex"/>
+        /// and may push index 0 when the collection is cleared — that would incorrectly call
+        /// <see cref="SetActiveLayer"/> and reset the sprite's active layer. Ignore inbound binding
+        /// updates during rebuild.
+        /// </summary>
+        private bool _suppressSelectedLayerBindingToState;
+
         public int SelectedLayerIndex
         {
             get => _selectedLayerIndex;
             set
             {
+                if (_suppressSelectedLayerBindingToState)
+                    return;
                 if (SetProperty(ref _selectedLayerIndex, value))
                     SetActiveLayer(value, shouldRedraw: true);
             }
@@ -950,6 +960,14 @@ namespace Hexprite.ViewModels
             });
         }
 
+        public void BeginLayerRename(int index)
+        {
+            SpriteState.EnsureLayers();
+            if (index < 0 || index >= Layers.Count) return;
+            for (int i = 0; i < Layers.Count; i++)
+                Layers[i].IsRenaming = i == index;
+        }
+
         public void UpdateLayerName(int index, string? name)
         {
             SpriteState.EnsureLayers();
@@ -1553,20 +1571,29 @@ namespace Hexprite.ViewModels
         private void RebuildLayerViewModels()
         {
             if (SpriteState == null) return;
-            Layers.Clear();
-            for (int i = 0; i < SpriteState.Layers.Count; i++)
+            _suppressSelectedLayerBindingToState = true;
+            try
             {
-                var layer = SpriteState.Layers[i];
-                Layers.Add(new LayerItemViewModel
+                Layers.Clear();
+                for (int i = 0; i < SpriteState.Layers.Count; i++)
                 {
-                    Name = layer.Name,
-                    IsVisible = layer.IsVisible,
-                    IsLocked = layer.IsLocked,
-                    IsActive = i == SpriteState.ActiveLayerIndex
-                });
+                    var layer = SpriteState.Layers[i];
+                    Layers.Add(new LayerItemViewModel
+                    {
+                        Name = layer.Name,
+                        IsVisible = layer.IsVisible,
+                        IsLocked = layer.IsLocked,
+                        IsActive = i == SpriteState.ActiveLayerIndex
+                    });
+                }
+                _selectedLayerIndex = SpriteState.ActiveLayerIndex;
+                OnPropertyChanged(nameof(SelectedLayerIndex));
             }
-            _selectedLayerIndex = SpriteState.ActiveLayerIndex;
-            OnPropertyChanged(nameof(SelectedLayerIndex));
+            finally
+            {
+                _suppressSelectedLayerBindingToState = false;
+            }
+
             OnPropertyChanged(nameof(IsActiveLayerLocked));
         }
 

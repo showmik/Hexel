@@ -236,6 +236,23 @@
         </Setter>
     </Style>
 
+    <Style x:Key="CompactIconButtonStyle"
+           TargetType="Button"
+           BasedOn="{StaticResource ModernButtonStyle}">
+        <Setter Property="Padding"
+                Value="0" />
+        <Setter Property="FontWeight"
+                Value="Normal" />
+        <Setter Property="MinWidth"
+                Value="34" />
+        <Setter Property="MinHeight"
+                Value="34" />
+        <Setter Property="Width"
+                Value="34" />
+        <Setter Property="Height"
+                Value="34" />
+    </Style>
+
     <Style x:Key="ModernTextBoxStyle"
            TargetType="TextBox">
         <Setter Property="Background"
