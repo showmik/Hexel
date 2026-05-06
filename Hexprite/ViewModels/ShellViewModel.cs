@@ -89,6 +89,11 @@ namespace Hexprite.ViewModels
         /// </summary>
         public bool IsDimTheme => _themeService.CurrentTheme == "Dim";
 
+        /// <summary>
+        /// Gets whether the current theme is Flipper. Used for menu radio-button binding.
+        /// </summary>
+        public bool IsFlipperTheme => _themeService.CurrentTheme == "Flipper";
+
         public ShellViewModel(
             ICodeGeneratorService codeGen,
             IDrawingService drawingService,
@@ -122,6 +127,7 @@ namespace Hexprite.ViewModels
                 OnPropertyChanged(nameof(IsDarkTheme));
                 OnPropertyChanged(nameof(IsLightTheme));
                 OnPropertyChanged(nameof(IsDimTheme));
+                OnPropertyChanged(nameof(IsFlipperTheme));
 
                 // Re-read pixel colors from the new theme and redraw all open canvases
                 foreach (var doc in OpenDocuments)
