@@ -24,6 +24,9 @@ namespace Hexprite.Services
         public int BrushAngle { get; set; } = 0;
         public int PreviewScale { get; set; } = 2;
         public int PreviewDisplayTypeIndex { get; set; } = 0;
+        public bool UseRealisticPreview { get; set; } = false;
+        public int PreviewRealismStrength { get; set; } = 65;
+        public int PreviewQuality { get; set; } = 1;
     }
 
     public static class UserPreferencesService
@@ -110,7 +113,10 @@ namespace Hexprite.Services
                 BrushShape = prefs.BrushShape,
                 BrushAngle = prefs.BrushAngle,
                 PreviewScale = prefs.PreviewScale,
-                PreviewDisplayTypeIndex = prefs.PreviewDisplayTypeIndex
+                PreviewDisplayTypeIndex = prefs.PreviewDisplayTypeIndex,
+                UseRealisticPreview = prefs.UseRealisticPreview,
+                PreviewRealismStrength = prefs.PreviewRealismStrength,
+                PreviewQuality = prefs.PreviewQuality
             });
         }
 
@@ -133,6 +139,8 @@ namespace Hexprite.Services
             prefs.BrushAngle = ((prefs.BrushAngle % 360) + 360) % 360;
             prefs.PreviewScale = Math.Max(1, prefs.PreviewScale);
             prefs.PreviewDisplayTypeIndex = Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 3);
+            prefs.PreviewRealismStrength = Math.Clamp(prefs.PreviewRealismStrength, 0, 100);
+            prefs.PreviewQuality = Math.Clamp(prefs.PreviewQuality, 0, 2);
             if (!Enum.IsDefined(typeof(ToolMode), prefs.LastTool))
                 prefs.LastTool = ToolMode.Pencil;
 

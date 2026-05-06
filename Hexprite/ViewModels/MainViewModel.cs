@@ -24,6 +24,22 @@ namespace Hexprite.ViewModels
         ePaper
     }
 
+    public enum DisplaySimulationPreset
+    {
+        Flat = 0,
+        GenericLcd = 1,
+        Ssd1306OledBlue = 2,
+        Ssd1306OledGreen = 3,
+        EPaper = 4,
+    }
+
+    public enum PreviewQuality
+    {
+        Fast = 0,
+        Balanced = 1,
+        High = 2
+    }
+
     public class MainViewModel : ObservableObject, IBitmapBufferContext
     {
         // ── Services ──────────────────────────────────────────────────────
@@ -445,6 +461,8 @@ namespace Hexprite.ViewModels
                     OnPropertyChanged(nameof(PreviewWidth));
                     OnPropertyChanged(nameof(PreviewHeight));
                     OnPropertyChanged(nameof(PreviewScaleText));
+                    EnsurePreviewSimBitmap();
+                    UpdatePreviewSimulation();
                     SaveEditorPreferences();
                 }
             }
@@ -464,6 +482,53 @@ namespace Hexprite.ViewModels
                     _previewDisplayType = (DisplayType)value;
                     OnPropertyChanged();
                     RefreshCanvasColors();
+                    UpdatePreviewSimulation();
+                    SaveEditorPreferences();
+                }
+            }
+        }
+
+        private bool _useRealisticPreview;
+        public bool UseRealisticPreview
+        {
+            get => _useRealisticPreview;
+            set
+            {
+                if (SetProperty(ref _useRealisticPreview, value))
+                {
+                    OnPropertyChanged(nameof(DisplayPreviewBitmap));
+                    UpdatePreviewSimulation();
+                    SaveEditorPreferences();
+                }
+            }
+        }
+
+        private int _previewRealismStrength = 65;
+        public int PreviewRealismStrength
+        {
+            get => _previewRealismStrength;
+            set
+            {
+                if (SetProperty(ref _previewRealismStrength, Math.Clamp(value, 0, 100)))
+                {
+                    UpdatePreviewSimulation();
+                    SaveEditorPreferences();
+                }
+            }
+        }
+
+        private PreviewQuality _previewQuality = PreviewQuality.Balanced;
+        public int PreviewQualityIndex
+        {
+            get => (int)_previewQuality;
+            set
+            {
+                var v = (PreviewQuality)Math.Clamp(value, 0, 2);
+                if (_previewQuality != v)
+                {
+                    _previewQuality = v;
+                    OnPropertyChanged();
+                    UpdatePreviewSimulation();
                     SaveEditorPreferences();
                 }
             }
@@ -484,8 +549,27 @@ namespace Hexprite.ViewModels
             set => SetProperty(ref _previewBitmap, value);
         }
 
+        private WriteableBitmap? _previewSimBitmap;
+        public WriteableBitmap PreviewSimBitmap
+        {
+            get
+            {
+                _previewSimBitmap ??= new WriteableBitmap(
+                    Math.Max(1, PreviewWidth),
+                    Math.Max(1, PreviewHeight),
+                    96, 96,
+                    PixelFormats.Bgra32,
+                    null);
+                return _previewSimBitmap;
+            }
+            private set => SetProperty(ref _previewSimBitmap, value);
+        }
+
+        public ImageSource DisplayPreviewBitmap => UseRealisticPreview ? PreviewSimBitmap : PreviewBitmap;
+
         private uint[] _canvasBuffer = Array.Empty<uint>();
         private uint[] _previewBuffer = Array.Empty<uint>();
+        private uint[] _previewSimBuffer = Array.Empty<uint>();
 
         private uint _colorOffUint, _colorOnUint, _previewOffUint, _previewOnUint;
         private static uint ToBgra32(Color c) =>
@@ -501,6 +585,7 @@ namespace Hexprite.ViewModels
         uint IBitmapBufferContext.PreviewOnUint => _previewOnUint;
         uint IBitmapBufferContext.PreviewOffUint => _previewOffUint;
         ISelectionService IBitmapBufferContext.SelectionService => _selectionService;
+        void IBitmapBufferContext.UpdatePreviewSimulation() => UpdatePreviewSimulation();
 
         // ── Extracted subsystems ──────────────────────────────────────────
         private ToolInputController _toolInput = null!;
@@ -1003,6 +1088,7 @@ namespace Hexprite.ViewModels
             var rect = new Int32Rect(0, 0, w, h);
             CanvasBitmap.WritePixels(rect, _canvasBuffer, w * 4, 0);
             PreviewBitmap.WritePixels(rect, _previewBuffer, w * 4, 0);
+            UpdatePreviewSimulation();
         }
 
         /// <summary>
@@ -1067,6 +1153,7 @@ namespace Hexprite.ViewModels
             var srcRect = new Int32Rect(x0, y0, regionW, regionH);
             CanvasBitmap.WritePixels(srcRect, _canvasBuffer, w * 4, x0, y0);
             PreviewBitmap.WritePixels(srcRect, _previewBuffer, w * 4, x0, y0);
+            UpdatePreviewSimulation();
         }
 
         /// <summary>
@@ -1451,6 +1538,7 @@ namespace Hexprite.ViewModels
             PreviewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
             _canvasBuffer = new uint[width * height];
             _previewBuffer = new uint[width * height];
+            EnsurePreviewSimBitmap();
         }
 
         /// <summary>
@@ -1480,6 +1568,9 @@ namespace Hexprite.ViewModels
             _brushAngle = ((prefs.BrushAngle % 360) + 360) % 360;
             _previewScale = Math.Max(1, prefs.PreviewScale);
             _previewDisplayType = (DisplayType)Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 3);
+            _useRealisticPreview = prefs.UseRealisticPreview;
+            _previewRealismStrength = Math.Clamp(prefs.PreviewRealismStrength, 0, 100);
+            _previewQuality = (PreviewQuality)Math.Clamp(prefs.PreviewQuality, 0, 2);
             UpdatePreviewColors();
         }
 
@@ -1494,7 +1585,78 @@ namespace Hexprite.ViewModels
                 p.BrushAngle = _brushAngle;
                 p.PreviewScale = _previewScale;
                 p.PreviewDisplayTypeIndex = (int)_previewDisplayType;
+                p.UseRealisticPreview = _useRealisticPreview;
+                p.PreviewRealismStrength = _previewRealismStrength;
+                p.PreviewQuality = (int)_previewQuality;
             });
+        }
+
+        private DisplaySimulationPreset GetDisplaySimulationPreset()
+        {
+            return _previewDisplayType switch
+            {
+                DisplayType.SSD1306_Blue => DisplaySimulationPreset.Ssd1306OledBlue,
+                DisplayType.SSD1306_Green => DisplaySimulationPreset.Ssd1306OledGreen,
+                DisplayType.ePaper => DisplaySimulationPreset.EPaper,
+                _ => DisplaySimulationPreset.GenericLcd
+            };
+        }
+
+        private void EnsurePreviewSimBitmap()
+        {
+            int w = Math.Max(1, PreviewWidth);
+            int h = Math.Max(1, PreviewHeight);
+
+            if (_previewSimBitmap == null || _previewSimBitmap.PixelWidth != w || _previewSimBitmap.PixelHeight != h)
+            {
+                PreviewSimBitmap = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
+                _previewSimBuffer = new uint[w * h];
+                OnPropertyChanged(nameof(DisplayPreviewBitmap));
+            }
+            else if (_previewSimBuffer.Length != w * h)
+            {
+                _previewSimBuffer = new uint[w * h];
+            }
+        }
+
+        public void UpdatePreviewSimulation()
+        {
+            if (!UseRealisticPreview)
+                return;
+
+            if (SpriteState == null)
+                return;
+
+            EnsurePreviewSimBitmap();
+
+            var res = Application.Current.Resources;
+            Color bg;
+            Color fg;
+            if (res.Contains("Brush.Preview.Base") && res.Contains("Brush.Preview.Drawing"))
+            {
+                bg = ((SolidColorBrush)res["Brush.Preview.Base"]).Color;
+                fg = ((SolidColorBrush)res["Brush.Preview.Drawing"]).Color;
+            }
+            else
+            {
+                bg = ((SolidColorBrush)res["Brush.Canvas.Base"]).Color;
+                fg = ((SolidColorBrush)res["Brush.Canvas.Drawing"]).Color;
+            }
+
+            Hexprite.Rendering.DisplaySimulationRenderer.Render(
+                SpriteState,
+                _selectionService,
+                PreviewSimBitmap.PixelWidth,
+                PreviewSimBitmap.PixelHeight,
+                bg,
+                fg,
+                GetDisplaySimulationPreset(),
+                _previewQuality,
+                PreviewRealismStrength / 100.0,
+                _previewSimBuffer);
+
+            var rect = new Int32Rect(0, 0, PreviewSimBitmap.PixelWidth, PreviewSimBitmap.PixelHeight);
+            PreviewSimBitmap.WritePixels(rect, _previewSimBuffer, PreviewSimBitmap.PixelWidth * 4, 0);
         }
     }
 }

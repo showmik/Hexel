@@ -49,8 +49,12 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                                <ComboBox Grid.Column="0"
+                                <ComboBox Grid.Row="0" Grid.Column="0"
                                           Height="26"
                                           Style="{StaticResource ModernComboBoxStyle}"
                                           SelectedIndex="{Binding PreviewDisplayTypeIndex}">
@@ -60,7 +64,7 @@
                                     <ComboBoxItem Content="e-Paper"/>
                                 </ComboBox>
 
-                                <Border Grid.Column="1"
+                                <Border Grid.Row="0" Grid.Column="1"
                                         Background="{DynamicResource Brush.Surface.Base}"
                                         BorderBrush="{DynamicResource Brush.Border.Base}"
                                         BorderThickness="1"
@@ -72,6 +76,38 @@
                                         <Button Content="+" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.Text.Primary}" Command="{Binding IncreasePreviewScaleCommand}"/>
                                     </StackPanel>
                                 </Border>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
+                                    <CheckBox Content="Realistic"
+                                              IsChecked="{Binding UseRealisticPreview}"
+                                              Foreground="{DynamicResource Brush.Text.Muted}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,10,0"/>
+
+                                    <TextBlock Text="Strength"
+                                               Foreground="{DynamicResource Brush.Text.Muted}"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,6,0"/>
+                                    <Slider Minimum="0" Maximum="100"
+                                            Value="{Binding PreviewRealismStrength}"
+                                            Width="90"
+                                            TickFrequency="10"
+                                            IsSnapToTickEnabled="False"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,10,0"
+                                            IsEnabled="{Binding UseRealisticPreview}"/>
+
+                                    <ComboBox Height="24"
+                                              Width="95"
+                                              Style="{StaticResource ModernComboBoxStyle}"
+                                              SelectedIndex="{Binding PreviewQualityIndex}"
+                                              IsEnabled="{Binding UseRealisticPreview}">
+                                        <ComboBoxItem Content="Fast"/>
+                                        <ComboBoxItem Content="Balanced"/>
+                                        <ComboBoxItem Content="High"/>
+                                    </ComboBox>
+                                </StackPanel>
                             </Grid>
 
                             <!-- Dynamic canvas preview -->
@@ -108,13 +144,23 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </Grid.Style>
-                                        <Image Source="{Binding PreviewBitmap}"
-                                               RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                        <Image Source="{Binding DisplayPreviewBitmap}"
                                                Stretch="Fill"
                                                Width="{Binding PreviewWidth}"
                                                Height="{Binding PreviewHeight}"
                                                HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="RenderOptions.BitmapScalingMode" Value="NearestNeighbor"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding UseRealisticPreview}" Value="True">
+                                                            <Setter Property="RenderOptions.BitmapScalingMode" Value="Linear"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
                                     </Grid>
                                 </Border>
                             </Grid>

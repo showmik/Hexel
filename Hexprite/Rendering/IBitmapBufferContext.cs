@@ -22,5 +22,6 @@ namespace Hexprite.Rendering
         WriteableBitmap PreviewBitmap { get; }
         ISelectionService SelectionService { get; }
         void RedrawGridFromMemory();
+        void UpdatePreviewSimulation();
     }
 }

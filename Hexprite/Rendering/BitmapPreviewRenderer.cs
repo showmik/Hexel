@@ -169,6 +169,7 @@ namespace Hexprite.Rendering
             var rect = new Int32Rect(0, 0, _ctx.SpriteState.Width, _ctx.SpriteState.Height);
             _ctx.CanvasBitmap.WritePixels(rect, _ctx.CanvasBuffer, _ctx.SpriteState.Width * 4, 0);
             _ctx.PreviewBitmap.WritePixels(rect, _ctx.PreviewBuffer, _ctx.SpriteState.Width * 4, 0);
+            _ctx.UpdatePreviewSimulation();
         }
     }
 }
