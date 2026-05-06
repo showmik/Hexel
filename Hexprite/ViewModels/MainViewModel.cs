@@ -976,6 +976,9 @@ namespace Hexprite.ViewModels
                 if (visibleCount <= 1)
                 {
                     _dialogService.ShowMessage("At least one layer must remain visible.");
+                    // IsChecked TwoWay-binding may have flipped the row VM already; SpriteState stays visible.
+                    if (index < Layers.Count)
+                        Layers[index].IsVisible = SpriteState.Layers[index].IsVisible;
                     return;
                 }
             }
