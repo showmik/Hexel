@@ -158,12 +158,59 @@
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource Brush.Text.Muted}" />
                                 </Border>
-                                <CheckBox Grid.Column="1"
-                                          Margin="0,0,6,0"
-                                          IsChecked="{Binding IsVisible}"
-                                          Checked="LayerVisible_CheckedChanged"
-                                          Unchecked="LayerVisible_CheckedChanged"
-                                          ToolTip="Toggle visibility" />
+                                <ToggleButton Grid.Column="1"
+                                              Margin="0,0,6,0"
+                                              Style="{StaticResource LayerToggleIconButtonStyle}"
+                                              IsChecked="{Binding IsVisible}"
+                                              Checked="LayerVisible_CheckedChanged"
+                                              Unchecked="LayerVisible_CheckedChanged"
+                                              AutomationProperties.Name="Layer visibility">
+                                    <ToggleButton.ToolTip>
+                                        <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                            <TextBlock>
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text"
+                                                                Value="Show layer" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsVisible}"
+                                                                         Value="True">
+                                                                <Setter Property="Text"
+                                                                        Value="Hide layer" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </ToolTip>
+                                    </ToggleButton.ToolTip>
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               FontSize="14"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text"
+                                                        Value="&#xED1A;" />
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource Brush.Text.Muted}" />
+                                                <Setter Property="Opacity"
+                                                        Value="0.4" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsVisible}"
+                                                                 Value="True">
+                                                        <Setter Property="Text"
+                                                                Value="&#xE7B3;" />
+                                                        <Setter Property="Foreground"
+                                                                Value="{DynamicResource Brush.Text.Primary}" />
+                                                        <Setter Property="Opacity"
+                                                                Value="1" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </ToggleButton>
                                 <Grid Grid.Column="2"
                                       Margin="0,0,6,0"
                                       Background="Transparent"
@@ -191,12 +238,63 @@
                                         </TextBox.Style>
                                     </TextBox>
                                 </Grid>
-                                <CheckBox Grid.Column="3"
-                                          Margin="0,0,2,0"
-                                          IsChecked="{Binding IsLocked}"
-                                          Checked="LayerLocked_CheckedChanged"
-                                          Unchecked="LayerLocked_CheckedChanged"
-                                          ToolTip="Toggle lock" />
+                                <ToggleButton Grid.Column="3"
+                                              Margin="0,0,2,0"
+                                              Style="{StaticResource LayerToggleIconButtonStyle}"
+                                              IsChecked="{Binding IsLocked}"
+                                              Checked="LayerLocked_CheckedChanged"
+                                              Unchecked="LayerLocked_CheckedChanged"
+                                              AutomationProperties.Name="Layer lock">
+                                    <ToggleButton.ToolTip>
+                                        <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                            <TextBlock>
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text"
+                                                                Value="Lock layer" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsLocked}"
+                                                                         Value="True">
+                                                                <Setter Property="Text"
+                                                                        Value="Unlock layer" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </ToolTip>
+                                    </ToggleButton.ToolTip>
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               FontSize="14"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text"
+                                                        Value="&#xE785;" />
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource Brush.Text.Muted}" />
+                                                <Setter Property="FontWeight"
+                                                        Value="Normal" />
+                                                <Setter Property="FontSize"
+                                                        Value="14" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsLocked}"
+                                                                 Value="True">
+                                                        <Setter Property="Text"
+                                                                Value="&#xE72E;" />
+                                                        <Setter Property="Foreground"
+                                                                Value="{DynamicResource Brush.Text.Primary}" />
+                                                        <Setter Property="FontWeight"
+                                                                Value="SemiBold" />
+                                                        <Setter Property="FontSize"
+                                                                Value="15.5" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </ToggleButton>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

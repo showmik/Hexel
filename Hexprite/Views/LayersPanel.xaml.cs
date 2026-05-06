@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -82,7 +83,7 @@ namespace Hexprite.Views
             if (index < 0 && fe.DataContext is LayerItemViewModel item)
                 index = LayerList.Items.IndexOf(item);
             if (index < 0) return;
-            bool isVisible = (fe as CheckBox)?.IsChecked ?? true;
+            bool isVisible = (fe as ToggleButton)?.IsChecked ?? true;
             ViewModel.SetLayerVisibility(index, isVisible);
         }
 
@@ -94,7 +95,7 @@ namespace Hexprite.Views
             if (index < 0 && fe.DataContext is LayerItemViewModel item)
                 index = LayerList.Items.IndexOf(item);
             if (index < 0) return;
-            bool isLocked = (fe as CheckBox)?.IsChecked ?? false;
+            bool isLocked = (fe as ToggleButton)?.IsChecked ?? false;
             ViewModel.SetLayerLocked(index, isLocked);
         }
 
