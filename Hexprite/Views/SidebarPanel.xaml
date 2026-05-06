@@ -62,6 +62,7 @@
                                     <ComboBoxItem Content="SSD1306 (Blue)"/>
                                     <ComboBoxItem Content="SSD1306 (Green)"/>
                                     <ComboBoxItem Content="e-Paper"/>
+                                    <ComboBoxItem Content="Flipper Zero"/>
                                 </ComboBox>
 
                                 <Border Grid.Row="0" Grid.Column="1"
@@ -120,56 +121,86 @@
 
                             <!-- Dynamic canvas preview -->
                             <Grid MinHeight="140">
-                                <Border BorderBrush="{DynamicResource Brush.Surface.Base}"
-                                        BorderThickness="3"
-                                        CornerRadius="5"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background"
-                                                    Value="{DynamicResource Brush.Canvas.Base}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDisplayInverted}"
-                                                             Value="True">
-                                                    <Setter Property="Background"
-                                                            Value="{DynamicResource Brush.Accent.Base}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <Grid>
-                                        <Grid.Style>
-                                            <Style TargetType="Grid">
-                                                <Setter Property="Background"
-                                                        Value="{DynamicResource Brush.Preview.Base}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsDisplayInverted}"
-                                                                 Value="True">
+                                <Border HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        CornerRadius="9"
+                                        Padding="7"
+                                        Background="#1C212A"
+                                        BorderBrush="#343C49"
+                                        BorderThickness="1">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="12" ShadowDepth="3" Direction="270"/>
+                                    </Border.Effect>
+
+                                    <!-- Inner bezel/frame -->
+                                    <Border CornerRadius="6"
+                                            Padding="5"
+                                            Background="#11151C"
+                                            BorderBrush="#4C5566"
+                                            BorderThickness="0.9">
+                                        <Grid>
+                                            <!-- Subtle glass highlight -->
+                                            <Border CornerRadius="4"
+                                                    BorderBrush="#22FFFFFF"
+                                                    BorderThickness="0,0,0,1"
+                                                    IsHitTestVisible="False"
+                                                    VerticalAlignment="Top"
+                                                    Height="9"
+                                                    Margin="1,1,1,0"/>
+
+                                            <Border BorderBrush="{DynamicResource Brush.Surface.Base}"
+                                                    BorderThickness="2"
+                                                    CornerRadius="3"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
                                                         <Setter Property="Background"
-                                                                Value="{DynamicResource Brush.Preview.Drawing}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Grid.Style>
-                                        <Image Source="{Binding DisplayPreviewBitmap}"
-                                               Stretch="Fill"
-                                               Width="{Binding PreviewWidth}"
-                                               Height="{Binding PreviewHeight}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="RenderOptions.BitmapScalingMode" Value="NearestNeighbor"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding UseRealisticPreview}" Value="True">
-                                                            <Setter Property="RenderOptions.BitmapScalingMode" Value="Linear"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Grid>
+                                                                Value="{DynamicResource Brush.Canvas.Base}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDisplayInverted}"
+                                                                         Value="True">
+                                                                <Setter Property="Background"
+                                                                        Value="{DynamicResource Brush.Accent.Base}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.Style>
+                                                        <Style TargetType="Grid">
+                                                            <Setter Property="Background"
+                                                                    Value="{DynamicResource Brush.Preview.Base}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDisplayInverted}"
+                                                                             Value="True">
+                                                                    <Setter Property="Background"
+                                                                            Value="{DynamicResource Brush.Preview.Drawing}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Grid.Style>
+                                                    <Image Source="{Binding DisplayPreviewBitmap}"
+                                                           Stretch="Fill"
+                                                           Width="{Binding PreviewWidth}"
+                                                           Height="{Binding PreviewHeight}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center">
+                                                        <Image.Style>
+                                                            <Style TargetType="Image">
+                                                                <Setter Property="RenderOptions.BitmapScalingMode" Value="NearestNeighbor"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding UseRealisticPreview}" Value="True">
+                                                                        <Setter Property="RenderOptions.BitmapScalingMode" Value="Linear"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
                                 </Border>
                             </Grid>
                             <TextBlock Margin="0,8,0,0"

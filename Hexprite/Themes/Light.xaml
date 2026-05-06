@@ -113,6 +113,10 @@
     <Color x:Key="Palette.Preview.EPaper.FG">#0F172A</Color>
     <!-- Darker e-ink slate -->
 
+    <!-- Flipper Zero (monochrome LCD with orange backlight) -->
+    <Color x:Key="Palette.Preview.FlipperZero.BG">#000000</Color>
+    <Color x:Key="Palette.Preview.FlipperZero.FG">#FF8200</Color>
+
     <!-- ═══════════════════════════════════════════════════════════
          BRUSHES
          ═══════════════════════════════════════════════════════════ -->

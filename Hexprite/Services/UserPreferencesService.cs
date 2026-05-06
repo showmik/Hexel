@@ -138,7 +138,7 @@ namespace Hexprite.Services
                 prefs.BrushShape = BrushShape.Circle;
             prefs.BrushAngle = ((prefs.BrushAngle % 360) + 360) % 360;
             prefs.PreviewScale = Math.Max(1, prefs.PreviewScale);
-            prefs.PreviewDisplayTypeIndex = Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 3);
+            prefs.PreviewDisplayTypeIndex = Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 4);
             prefs.PreviewRealismStrength = Math.Clamp(prefs.PreviewRealismStrength, 0, 100);
             prefs.PreviewQuality = Math.Clamp(prefs.PreviewQuality, 0, 2);
             if (!Enum.IsDefined(typeof(ToolMode), prefs.LastTool))

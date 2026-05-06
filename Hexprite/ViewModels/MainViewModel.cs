@@ -21,7 +21,8 @@ namespace Hexprite.ViewModels
         Generic_White,
         SSD1306_Blue,
         SSD1306_Green,
-        ePaper
+        ePaper,
+        FlipperZero
     }
 
     public enum DisplaySimulationPreset
@@ -1542,6 +1543,10 @@ namespace Hexprite.ViewModels
                     bgKey = "Palette.Preview.EPaper.BG";
                     fgKey = "Palette.Preview.EPaper.FG";
                     break;
+                case DisplayType.FlipperZero:
+                    bgKey = "Palette.Preview.FlipperZero.BG";
+                    fgKey = "Palette.Preview.FlipperZero.FG";
+                    break;
                 case DisplayType.Generic_White:
                 default:
                     // Keep Generic preview theme-independent so it remains visually
@@ -1608,7 +1613,7 @@ namespace Hexprite.ViewModels
             _brushShape = prefs.BrushShape;
             _brushAngle = ((prefs.BrushAngle % 360) + 360) % 360;
             _previewScale = Math.Max(1, prefs.PreviewScale);
-            _previewDisplayType = (DisplayType)Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 3);
+            _previewDisplayType = (DisplayType)Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 4);
             _useRealisticPreview = prefs.UseRealisticPreview;
             _previewRealismStrength = Math.Clamp(prefs.PreviewRealismStrength, 0, 100);
             _previewQuality = (PreviewQuality)Math.Clamp(prefs.PreviewQuality, 0, 2);
