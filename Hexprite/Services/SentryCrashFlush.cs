@@ -46,6 +46,7 @@ namespace Hexprite.Services
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile(AppSettingsFile, optional: true, reloadOnChange: false)
+                .AddUserSecrets(typeof(SentryCrashFlush).Assembly, optional: true)
                 .AddEnvironmentVariables(prefix: "HEXEL_")
                 .Build();
 

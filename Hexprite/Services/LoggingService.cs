@@ -71,7 +71,7 @@ namespace Hexprite.Services
             if (string.IsNullOrWhiteSpace(sentryDsn))
             {
                 Log.Warning(
-                    "Sentry DSN is not configured. Set Sentry:Dsn in appsettings.json or environment variable HEXEL_Sentry__Dsn to enable cloud crash reporting. Optional: Sentry:CrashFlushTimeoutSeconds (1–30) or HEXEL_Sentry__CrashFlushTimeoutSeconds for terminating-crash upload wait.");
+                    "Sentry DSN is not configured. Set Sentry:Dsn via dotnet user-secrets (dev), environment variable HEXEL_Sentry__Dsn, or appsettings.json. Optional: Sentry:CrashFlushTimeoutSeconds (1–30) or HEXEL_Sentry__CrashFlushTimeoutSeconds for terminating-crash upload wait.");
             }
         }
 
@@ -126,6 +126,7 @@ namespace Hexprite.Services
             return new ConfigurationBuilder()
                 .SetBasePath(basePath)
                 .AddJsonFile(AppSettingsFile, optional: true, reloadOnChange: false)
+                .AddUserSecrets(typeof(LoggingService).Assembly, optional: true)
                 .AddEnvironmentVariables(prefix: "HEXEL_")
                 .Build();
         }
