@@ -457,10 +457,21 @@ namespace Hexprite.ViewModels
                 selectedPath = _dialogService.ShowOpenFileDialog(BitmapImageFileFilter, "Import Bitmap");
                 if (selectedPath == null) return;
 
+                var importSettings = _dialogService.ShowImportBitmapDialog(
+                    Path.GetFileName(selectedPath),
+                    new BitmapImportSettings
+                    {
+                        DitheringAlgorithm = BitmapDitheringAlgorithm.Atkinson,
+                        Threshold = 128,
+                        AlphaThreshold = 128,
+                        MaxDimension = SpriteState.MaxDimension
+                    });
+                if (importSettings == null) return;
+
                 // WPF image decode pipelines are STA-affine; run conversion on a dedicated STA thread
                 // so large imports don't block the UI thread.
                 var (pixels, w, h, wasScaled) = await RunOnStaThreadAsync(() =>
-                    BitmapToMonochromeConverter.ConvertTo1Bit(selectedPath, SpriteState.MaxDimension));
+                    BitmapToMonochromeConverter.ConvertTo1Bit(selectedPath, importSettings));
 
                 var doc = CreateDocument(w, h, redrawImmediately: false);
                 doc.SpriteState.Pixels = pixels;
@@ -484,7 +495,9 @@ namespace Hexprite.ViewModels
                 TabAdded?.Invoke(this, doc);
                 RaiseActiveTabChanged();
 
-                Logger.Information("Imported bitmap image. Scaled={WasScaled} Size={Width}x{Height}", wasScaled, w, h);
+                Logger.Information(
+                    "Imported bitmap image. Scaled={WasScaled} Size={Width}x{Height} Dither={Dither} Threshold={Threshold}",
+                    wasScaled, w, h, importSettings.DitheringAlgorithm, importSettings.Threshold);
             }
             catch (Exception ex)
             {
