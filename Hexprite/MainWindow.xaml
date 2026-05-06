@@ -163,6 +163,14 @@
                                       Command="{Binding SwitchThemeCommand}" CommandParameter="Flipper"/>
                         </MenuItem>
                     </MenuItem>
+                    <MenuItem Header="_Window">
+                        <MenuItem Header="Tool _Sidebar" IsCheckable="True" IsChecked="{Binding IsToolSidebarVisible, Mode=TwoWay}"/>
+                        <MenuItem Header="_Layers Panel" IsCheckable="True" IsChecked="{Binding IsLayersPanelVisible, Mode=TwoWay}"/>
+                        <MenuItem Header="_Right Sidebar" IsCheckable="True" IsChecked="{Binding IsRightSidebarVisible, Mode=TwoWay}"/>
+                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_Timeline" IsCheckable="True" IsChecked="{Binding IsTimelineVisible, Mode=TwoWay}"/>
+                        <MenuItem Header="_Status Bar" IsCheckable="True" IsChecked="{Binding IsStatusBarVisible, Mode=TwoWay}"/>
+                    </MenuItem>
                     <MenuItem Header="_Selection">
                         <MenuItem Header="Cu_t" Command="{Binding ActiveDocument.CutSelectionCommand}" InputGestureText="Ctrl+X"/>
                         <MenuItem Header="_Copy" Command="{Binding ActiveDocument.CopySelectionCommand}" InputGestureText="Ctrl+C"/>
@@ -438,12 +446,12 @@
 
                 <views:SidebarPanel x:Name="RightSidebarPanel" Grid.RowSpan="2" Grid.Column="5" Margin="0" />
 
-                <views:TimelinePanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,8,0" />
+                <views:TimelinePanel x:Name="TimelinePanel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,8,0" />
             </Grid>
         </Grid>
         <!-- /Main content -->
 
-        <views:StatusBarPanel Grid.Row="3" DataContext="{Binding ActiveDocument}" />
+        <views:StatusBarPanel x:Name="StatusBarPanel" Grid.Row="3" DataContext="{Binding ActiveDocument}" />
 
         <!-- ═══════════════════════════════════════════════════════════════
              WELCOME SCREEN (shown when no documents are open)

@@ -6,6 +6,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.ComponentModel;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,47 @@ namespace Hexprite.ViewModels
         private const string FileFilter = "Hexprite Sprite (*.hexprite)|*.hexprite|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
 
         public const int MaxTabs = 10;
+
+        // ── Window layout (panel visibility) ──────────────────────────────
+        // Important: compute this lazily to avoid static init order issues.
+        private static string WindowLayoutSettingsFile => Path.Combine(UserSettingsDirectory, "window-layout.json");
+
+        private bool _isLoadingWindowLayout;
+
+        private bool _isToolSidebarVisible = true;
+        public bool IsToolSidebarVisible
+        {
+            get => _isToolSidebarVisible;
+            set => SetProperty(ref _isToolSidebarVisible, value);
+        }
+
+        private bool _isLayersPanelVisible = true;
+        public bool IsLayersPanelVisible
+        {
+            get => _isLayersPanelVisible;
+            set => SetProperty(ref _isLayersPanelVisible, value);
+        }
+
+        private bool _isRightSidebarVisible = true;
+        public bool IsRightSidebarVisible
+        {
+            get => _isRightSidebarVisible;
+            set => SetProperty(ref _isRightSidebarVisible, value);
+        }
+
+        private bool _isTimelineVisible = true;
+        public bool IsTimelineVisible
+        {
+            get => _isTimelineVisible;
+            set => SetProperty(ref _isTimelineVisible, value);
+        }
+
+        private bool _isStatusBarVisible = true;
+        public bool IsStatusBarVisible
+        {
+            get => _isStatusBarVisible;
+            set => SetProperty(ref _isStatusBarVisible, value);
+        }
 
         // ── Tab collection ────────────────────────────────────────────────
         public ObservableCollection<MainViewModel> OpenDocuments { get; } = new();
@@ -124,6 +166,9 @@ namespace Hexprite.ViewModels
             _bugReportService = bugReportService;
             _userFeedbackService = userFeedbackService;
 
+            LoadWindowLayoutSettings();
+            PropertyChanged += OnShellPropertyChanged;
+
             NewCanvasCommand = new RelayCommand<object?>(ExecuteNewCanvas);
             OpenCommand = new RelayCommand(ExecuteOpen);
             SaveCommand = new RelayCommand(ExecuteSave, () => HasOpenDocument);
@@ -158,6 +203,79 @@ namespace Hexprite.ViewModels
             };
 
             // No auto-created document — the welcome screen is shown instead
+        }
+
+        private void OnShellPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (_isLoadingWindowLayout) return;
+
+            if (e.PropertyName == nameof(IsToolSidebarVisible) ||
+                e.PropertyName == nameof(IsLayersPanelVisible) ||
+                e.PropertyName == nameof(IsRightSidebarVisible) ||
+                e.PropertyName == nameof(IsTimelineVisible) ||
+                e.PropertyName == nameof(IsStatusBarVisible))
+            {
+                SaveWindowLayoutSettings();
+            }
+        }
+
+        private sealed class WindowLayoutSettings
+        {
+            public bool IsToolSidebarVisible { get; set; } = true;
+            public bool IsLayersPanelVisible { get; set; } = true;
+            public bool IsRightSidebarVisible { get; set; } = true;
+            public bool IsTimelineVisible { get; set; } = true;
+            public bool IsStatusBarVisible { get; set; } = true;
+        }
+
+        private void LoadWindowLayoutSettings()
+        {
+            _isLoadingWindowLayout = true;
+            try
+            {
+                if (!File.Exists(WindowLayoutSettingsFile))
+                    return;
+
+                string json = File.ReadAllText(WindowLayoutSettingsFile);
+                var saved = JsonSerializer.Deserialize<WindowLayoutSettings>(json);
+                if (saved == null) return;
+
+                IsToolSidebarVisible = saved.IsToolSidebarVisible;
+                IsLayersPanelVisible = saved.IsLayersPanelVisible;
+                IsRightSidebarVisible = saved.IsRightSidebarVisible;
+                IsTimelineVisible = saved.IsTimelineVisible;
+                IsStatusBarVisible = saved.IsStatusBarVisible;
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Warning(ex, "ShellViewModel.LoadWindowLayoutSettings", new { WindowLayoutSettingsFile });
+            }
+            finally
+            {
+                _isLoadingWindowLayout = false;
+            }
+        }
+
+        private void SaveWindowLayoutSettings()
+        {
+            try
+            {
+                Directory.CreateDirectory(UserSettingsDirectory);
+                var payload = new WindowLayoutSettings
+                {
+                    IsToolSidebarVisible = IsToolSidebarVisible,
+                    IsLayersPanelVisible = IsLayersPanelVisible,
+                    IsRightSidebarVisible = IsRightSidebarVisible,
+                    IsTimelineVisible = IsTimelineVisible,
+                    IsStatusBarVisible = IsStatusBarVisible
+                };
+                string json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(WindowLayoutSettingsFile, json);
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Warning(ex, "ShellViewModel.SaveWindowLayoutSettings", new { WindowLayoutSettingsFile });
+            }
         }
 
         // ── New Canvas ────────────────────────────────────────────────────

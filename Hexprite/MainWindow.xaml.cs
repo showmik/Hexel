@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.ComponentModel;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -36,6 +37,12 @@ namespace Hexprite
         private double _layersColumnWidthBeforeDrag;
         private double _rightSidebarWidthBeforeDrag;
         private double _dragAccumulator;
+
+        // ── Panel layout state (restore widths when re-showing) ───────────
+        private double _lastLayersColumnWidth = 200;
+        private double _lastRightSidebarColumnWidth = 260;
+        private double _layersColumnMinWidth;
+        private double _rightSidebarColumnMinWidth;
 
         // ── Last hovered pixel (avoids spamming ViewModel on same pixel) ──
         private int _lastHoveredX = -1;
@@ -84,6 +91,7 @@ namespace Hexprite
             // Wire up events
             _shell.ActiveTabChanged += (_, _) => OnActiveTabChanged();
             _shell.ThemeChanged += (_, _) => _brushCursor.Refresh();
+            _shell.PropertyChanged += Shell_PropertyChanged;
 
             // Zoom keyboard shortcuts
             CommandBindings.Add(new CommandBinding(NavigationCommands.IncreaseZoom,
@@ -101,7 +109,88 @@ namespace Hexprite
             Canvas.CanvasImage.MouseLeave += CanvasImage_MouseLeave;
             Loaded += MainWindow_Loaded;
 
+            // Capture initial constraints so we can restore after collapsing.
+            _layersColumnMinWidth = LayersColumn.MinWidth;
+            _rightSidebarColumnMinWidth = RightSidebarColumn.MinWidth;
+
+            ApplyPanelLayoutFromShell();
             OnActiveTabChanged();
+        }
+
+        private void Shell_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModels.ShellViewModel.IsToolSidebarVisible) ||
+                e.PropertyName == nameof(ViewModels.ShellViewModel.IsLayersPanelVisible) ||
+                e.PropertyName == nameof(ViewModels.ShellViewModel.IsRightSidebarVisible) ||
+                e.PropertyName == nameof(ViewModels.ShellViewModel.IsTimelineVisible) ||
+                e.PropertyName == nameof(ViewModels.ShellViewModel.IsStatusBarVisible))
+            {
+                ApplyPanelLayoutFromShell();
+            }
+        }
+
+        private void ApplyPanelLayoutFromShell()
+        {
+            // Tool sidebar (column 0 is Auto so Visibility collapse is sufficient)
+            ToolSidebar.Visibility = _shell.IsToolSidebarVisible ? Visibility.Visible : Visibility.Collapsed;
+
+            // Layers panel (column 3 + splitter column 2)
+            if (_shell.IsLayersPanelVisible)
+            {
+                LayersPanel.Visibility = Visibility.Visible;
+                LeftPanelSplitter.Visibility = Visibility.Visible;
+
+                LayersColumn.MinWidth = _layersColumnMinWidth;
+                double widthToRestore = _lastLayersColumnWidth;
+                if (widthToRestore < LayersColumn.MinWidth) widthToRestore = LayersColumn.MinWidth;
+                LayersColumn.Width = new GridLength(widthToRestore);
+            }
+            else
+            {
+                if (LayersColumn.ActualWidth > 0)
+                    _lastLayersColumnWidth = LayersColumn.ActualWidth;
+
+                LayersPanel.Visibility = Visibility.Collapsed;
+                LeftPanelSplitter.Visibility = Visibility.Collapsed;
+
+                LayersColumn.MinWidth = 0;
+                LayersColumn.Width = new GridLength(0);
+            }
+
+            // Right sidebar (column 5 + splitter column 4)
+            if (_shell.IsRightSidebarVisible)
+            {
+                RightSidebarPanel.Visibility = Visibility.Visible;
+                RightPanelSplitter.Visibility = Visibility.Visible;
+
+                RightSidebarColumn.MinWidth = _rightSidebarColumnMinWidth;
+                double widthToRestore = _lastRightSidebarColumnWidth;
+                if (widthToRestore < RightSidebarColumn.MinWidth) widthToRestore = RightSidebarColumn.MinWidth;
+                RightSidebarColumn.Width = new GridLength(widthToRestore);
+            }
+            else
+            {
+                if (RightSidebarColumn.ActualWidth > 0)
+                    _lastRightSidebarColumnWidth = RightSidebarColumn.ActualWidth;
+
+                RightSidebarPanel.Visibility = Visibility.Collapsed;
+                RightPanelSplitter.Visibility = Visibility.Collapsed;
+
+                RightSidebarColumn.MinWidth = 0;
+                RightSidebarColumn.Width = new GridLength(0);
+            }
+
+            // Timeline / Status bar (simple visibility)
+            // Use FindName so this stays resilient even if XAML field generation lags in the IDE.
+            if (FindName("TimelinePanel") is UIElement timeline)
+                timeline.Visibility = _shell.IsTimelineVisible ? Visibility.Visible : Visibility.Collapsed;
+
+            if (FindName("StatusBarPanel") is UIElement statusBar)
+                statusBar.Visibility = _shell.IsStatusBarVisible ? Visibility.Visible : Visibility.Collapsed;
+
+            // Ensure Canvas remains fluidly sized.
+            if (!CanvasColumn.Width.IsStar)
+                CanvasColumn.Width = new GridLength(1, GridUnitType.Star);
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
