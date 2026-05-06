@@ -46,6 +46,8 @@
         <KeyBinding Key="W"
                     Modifiers="Ctrl"
                     Command="{Binding CloseTabCommand}" />
+        <KeyBinding Key="F5"
+                    Command="{Binding RefreshThemeCommand}" />
         <KeyBinding Key="OemPlus"
                     Modifiers="Ctrl"
                     Command="{x:Static NavigationCommands.IncreaseZoom}" />

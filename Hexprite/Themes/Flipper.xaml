@@ -2,79 +2,113 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ═══════════════════════════════════════════════════════════
-         PALETTE (Colors)
+         PALETTE (Colors) - FLIPPER ZERO THEME
          ═══════════════════════════════════════════════════════════ -->
 
-    <!-- Surfaces & Backgrounds -->
-    <Color x:Key="Palette.Surface.Base">#000000</Color>
-    <Color x:Key="Palette.Surface.Panel">#121212</Color>
-    <Color x:Key="Palette.Surface.Overlay">#121212</Color>
-    <Color x:Key="Palette.Surface.MenuBar">#090909</Color>
-    <Color x:Key="Palette.Surface.Toolbar">#0D0D0D</Color>
+    <!-- Surfaces & Backgrounds (Sleek Matte Black & Dark Grays) -->
+    <Color x:Key="Palette.Surface.Base">#050505</Color>
+    <!-- Pitch black background -->
+    <Color x:Key="Palette.Surface.MenuBar">#050505</Color>
     <Color x:Key="Palette.Surface.StatusBar">#050505</Color>
-    <Color x:Key="Palette.Surface.ToolSidebar">#050505</Color>
-    <Color x:Key="Palette.Surface.Active">#1A0D00</Color>
-    <Color x:Key="Palette.Surface.Hover">#1A0D00</Color>
+
+    <Color x:Key="Palette.Surface.ToolSidebar">#0A0A0A</Color>
+    <!-- Slightly raised -->
+    <Color x:Key="Palette.Surface.RightSidebar">#0A0A0A</Color>
+
+    <Color x:Key="Palette.Surface.Panel">#121212</Color>
+    <!-- Standard dark panels -->
+    <Color x:Key="Palette.Surface.Toolbar">#1A1A1A</Color>
+    <Color x:Key="Palette.Surface.Overlay">#1E1E1E</Color>
+    <!-- Floating dropdowns -->
+
+    <!-- Interaction States -->
+    <Color x:Key="Palette.Surface.Hover">#222222</Color>
+    <!-- Clean gray hover (fixed muddy orange) -->
+    <Color x:Key="Palette.Surface.Active">#2D2D2D</Color>
 
     <!-- Borders & Separators -->
-    <Color x:Key="Palette.Border.Base">#333333</Color>
-    <Color x:Key="Palette.Border.Separator">#333333</Color>
-    <Color x:Key="Palette.Border.StatusBar">#222222</Color>
+    <Color x:Key="Palette.Border.Base">#262626</Color>
+    <Color x:Key="Palette.Border.Separator">#1A1A1A</Color>
+    <Color x:Key="Palette.Border.StatusBar">#1A1A1A</Color>
     <Color x:Key="Palette.Border.Focus">#FF8200</Color>
+    <!-- Flipper Orange focus ring -->
 
-    <!-- Typography -->
-    <Color x:Key="Palette.Text.Primary">#FF8200</Color>
-    <Color x:Key="Palette.Text.Muted">#6B6B6B</Color>
+    <!-- Typography (Highly legible White/Gray with Black on Accents) -->
+    <Color x:Key="Palette.Text.Primary">#F5F5F5</Color>
+    <!-- Crisp White (Fixed from Orange) -->
+    <Color x:Key="Palette.Text.Muted">#888888</Color>
+    <!-- Medium Gray -->
     <Color x:Key="Palette.Text.Inverse">#000000</Color>
     <Color x:Key="Palette.Text.OnAccent">#000000</Color>
-    <Color x:Key="Palette.Text.Code">#6B6B6B</Color>
+    <!-- Black text on Orange looks amazing -->
+    <Color x:Key="Palette.Text.Code">#D4D4D4</Color>
 
     <!-- Accent & Selection -->
     <Color x:Key="Palette.Accent.Base">#FF8200</Color>
-    <Color x:Key="Palette.Accent.Selection">#CC6800</Color>
-    <Color x:Key="Palette.Accent.PreviewBorder">#FFAA55</Color>
+    <!-- Iconic Flipper Orange -->
+    <Color x:Key="Palette.Accent.Selection">#663400</Color>
+    <!-- Dark burned orange for text highlight -->
+    <Color x:Key="Palette.Accent.PreviewBorder">#FF8200</Color>
     <Color x:Key="Palette.Accent.GradientStart">#FF8200</Color>
-    <Color x:Key="Palette.Accent.GradientEnd">#CC6800</Color>
+    <Color x:Key="Palette.Accent.GradientEnd">#FF3300</Color>
+    <!-- Orange to deep Red-Orange -->
 
     <!-- Status & Feedback -->
     <Color x:Key="Palette.Status.Success">#32D74B</Color>
+    <!-- Bright Terminal Green -->
     <Color x:Key="Palette.Status.Warning">#FFD60A</Color>
+    <!-- Vivid Yellow -->
     <Color x:Key="Palette.Status.Danger">#FF453A</Color>
+    <!-- Bright Red -->
 
-    <!-- Canvas & Drawing -->
-    <Color x:Key="Palette.Canvas.Base">#000000</Color>
+    <!-- Canvas & Drawing (High Contrast Revision) -->
+    <Color x:Key="Palette.Canvas.Base">#1A1A1A</Color>
+    <!-- Elevated dark gray "bezel" clearly visible against the #050505 workspace -->
     <Color x:Key="Palette.Canvas.Pixel">#000000</Color>
+    <!-- Visible drawing cells -->
     <Color x:Key="Palette.Canvas.Drawing">#FF8200</Color>
-    <Color x:Key="Palette.Canvas.Grid">#1A0D00</Color>
-    <Color x:Key="Palette.Canvas.Crosshair">#CCFF8200</Color>
+    <!-- Flipper Orange ink -->
+    <Color x:Key="Palette.Canvas.Grid">#262626</Color>
+    <!-- Etched grid lines -->
+    <Color x:Key="Palette.Canvas.Crosshair">#80FFFFFF</Color>
+    <!-- Clear translucent white -->
 
     <!-- Common Elements -->
     <Color x:Key="Palette.Common.Shadow">#000000</Color>
-    <Color x:Key="Palette.Common.LassoFill">#40FFAA55</Color>
-    <Color x:Key="Palette.Common.BrushEdge">#DDFF8200</Color>
+    <Color x:Key="Palette.Common.LassoFill">#33FF8200</Color>
+    <!-- 20% Flipper Orange -->
+    <Color x:Key="Palette.Common.BrushEdge">#DDFFFFFF</Color>
+    <!-- White brush bounds for visibility -->
     <Color x:Key="Palette.Common.BrushFill">#40FF8200</Color>
+    <!-- Orange brush fill -->
 
     <!-- Controls -->
     <Color x:Key="Palette.Control.Background">#1A1A1A</Color>
-    <Color x:Key="Palette.Control.Thumb">#404040</Color>
-    <Color x:Key="Palette.Control.ScrollBar">#121212</Color>
-    <Color x:Key="Palette.Control.TextBox">#000000</Color>
-    <Color x:Key="Palette.Control.CheckBoxBorder">#444444</Color>
+    <Color x:Key="Palette.Control.Thumb">#333333</Color>
+    <Color x:Key="Palette.Control.ScrollBar">#0A0A0A</Color>
+    <Color x:Key="Palette.Control.TextBox">#0A0A0A</Color>
+    <!-- Inset pitch-black inputs -->
+    <Color x:Key="Palette.Control.CheckBoxBorder">#404040</Color>
 
-    <!-- Code / Syntax -->
+    <!-- Code / Syntax (Hacker / Terminal styling) -->
     <Color x:Key="Palette.Code.Keyword">#FF8200</Color>
-    <Color x:Key="Palette.Code.Literal">#FFAA55</Color>
+    <!-- Flipper Orange -->
+    <Color x:Key="Palette.Code.Literal">#32D74B</Color>
+    <!-- Terminal Green -->
     <Color x:Key="Palette.Code.Comment">#6B6B6B</Color>
-    <Color x:Key="Palette.Code.Identifier">#EAEAEA</Color>
+    <!-- Dim Gray -->
+    <Color x:Key="Palette.Code.Identifier">#F5F5F5</Color>
+    <!-- Pure White -->
     <Color x:Key="Palette.Code.Punctuation">#A3A3A3</Color>
 
     <!-- Hardware Previews -->
     <Color x:Key="Palette.Preview.Base">#000000</Color>
     <Color x:Key="Palette.Preview.Drawing">#FF8200</Color>
+    <!-- Simulates drawing orange on black -->
     <Color x:Key="Palette.Preview.OLED.Blue.BG">#000A1A</Color>
-    <Color x:Key="Palette.Preview.OLED.Blue.FG">#82C9FF</Color>
-    <Color x:Key="Palette.Preview.OLED.Green.BG">#051105</Color>
-    <Color x:Key="Palette.Preview.OLED.Green.FG">#72FF72</Color>
+    <Color x:Key="Palette.Preview.OLED.Blue.FG">#40C4FF</Color>
+    <Color x:Key="Palette.Preview.OLED.Green.BG">#001100</Color>
+    <Color x:Key="Palette.Preview.OLED.Green.FG">#32D74B</Color>
     <Color x:Key="Palette.Preview.EPaper.BG">#D3D3D3</Color>
     <Color x:Key="Palette.Preview.EPaper.FG">#1A1A1A</Color>
 
@@ -83,70 +117,111 @@
          ═══════════════════════════════════════════════════════════ -->
 
     <!-- Surfaces -->
-    <SolidColorBrush x:Key="Brush.Surface.Base" Color="{StaticResource Palette.Surface.Base}" />
-    <SolidColorBrush x:Key="Brush.Surface.Panel" Color="{StaticResource Palette.Surface.Panel}" />
-    <SolidColorBrush x:Key="Brush.Surface.Overlay" Color="{StaticResource Palette.Surface.Overlay}" />
-    <SolidColorBrush x:Key="Brush.Surface.MenuBar" Color="{StaticResource Palette.Surface.MenuBar}" />
-    <SolidColorBrush x:Key="Brush.Surface.Toolbar" Color="{StaticResource Palette.Surface.Toolbar}" />
-    <SolidColorBrush x:Key="Brush.Surface.StatusBar" Color="{StaticResource Palette.Surface.StatusBar}" />
-    <SolidColorBrush x:Key="Brush.Surface.ToolSidebar" Color="{StaticResource Palette.Surface.ToolSidebar}" />
-    <SolidColorBrush x:Key="Brush.Surface.Active" Color="{StaticResource Palette.Surface.Active}" />
-    <SolidColorBrush x:Key="Brush.Surface.Hover" Color="{StaticResource Palette.Surface.Hover}" />
-    <LinearGradientBrush x:Key="Brush.Surface.RightSidebar" StartPoint="0,0" EndPoint="0.8,1">
-        <GradientStop Color="{StaticResource Palette.Surface.StatusBar}" Offset="0" />
-        <GradientStop Color="{StaticResource Palette.Surface.StatusBar}" Offset="1" />
-    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Brush.Surface.Base"
+                     Color="{DynamicResource Palette.Surface.Base}" />
+    <SolidColorBrush x:Key="Brush.Surface.Panel"
+                     Color="{DynamicResource Palette.Surface.Panel}" />
+    <SolidColorBrush x:Key="Brush.Surface.Overlay"
+                     Color="{DynamicResource Palette.Surface.Overlay}" />
+    <SolidColorBrush x:Key="Brush.Surface.MenuBar"
+                     Color="{DynamicResource Palette.Surface.MenuBar}" />
+    <SolidColorBrush x:Key="Brush.Surface.Toolbar"
+                     Color="{DynamicResource Palette.Surface.Toolbar}" />
+    <SolidColorBrush x:Key="Brush.Surface.StatusBar"
+                     Color="{DynamicResource Palette.Surface.StatusBar}" />
+    <SolidColorBrush x:Key="Brush.Surface.ToolSidebar"
+                     Color="{DynamicResource Palette.Surface.ToolSidebar}" />
+    <SolidColorBrush x:Key="Brush.Surface.Active"
+                     Color="{DynamicResource Palette.Surface.Active}" />
+    <SolidColorBrush x:Key="Brush.Surface.Hover"
+                     Color="{DynamicResource Palette.Surface.Hover}" />
+    <SolidColorBrush x:Key="Brush.Surface.RightSidebar"
+                     Color="{DynamicResource Palette.Surface.RightSidebar}" />
 
     <!-- Borders -->
-    <SolidColorBrush x:Key="Brush.Border.Base" Color="{StaticResource Palette.Border.Base}" />
-    <SolidColorBrush x:Key="Brush.Border.Separator" Color="{StaticResource Palette.Border.Separator}" />
-    <SolidColorBrush x:Key="Brush.Border.StatusBar" Color="{StaticResource Palette.Border.StatusBar}" />
-    <SolidColorBrush x:Key="Brush.Border.Focus" Color="{StaticResource Palette.Border.Focus}" />
+    <SolidColorBrush x:Key="Brush.Border.Base"
+                     Color="{DynamicResource Palette.Border.Base}" />
+    <SolidColorBrush x:Key="Brush.Border.Separator"
+                     Color="{DynamicResource Palette.Border.Separator}" />
+    <SolidColorBrush x:Key="Brush.Border.StatusBar"
+                     Color="{DynamicResource Palette.Border.StatusBar}" />
+    <SolidColorBrush x:Key="Brush.Border.Focus"
+                     Color="{DynamicResource Palette.Border.Focus}" />
 
     <!-- Typography -->
-    <SolidColorBrush x:Key="Brush.Text.Primary" Color="{StaticResource Palette.Text.Primary}" />
-    <SolidColorBrush x:Key="Brush.Text.Muted" Color="{StaticResource Palette.Text.Muted}" />
-    <SolidColorBrush x:Key="Brush.Text.Inverse" Color="{StaticResource Palette.Text.Inverse}" />
-    <SolidColorBrush x:Key="Brush.Text.OnAccent" Color="{StaticResource Palette.Text.OnAccent}" />
-    <SolidColorBrush x:Key="Brush.Text.Code" Color="{StaticResource Palette.Text.Code}" />
+    <SolidColorBrush x:Key="Brush.Text.Primary"
+                     Color="{DynamicResource Palette.Text.Primary}" />
+    <SolidColorBrush x:Key="Brush.Text.Muted"
+                     Color="{DynamicResource Palette.Text.Muted}" />
+    <SolidColorBrush x:Key="Brush.Text.Inverse"
+                     Color="{DynamicResource Palette.Text.Inverse}" />
+    <SolidColorBrush x:Key="Brush.Text.OnAccent"
+                     Color="{DynamicResource Palette.Text.OnAccent}" />
+    <SolidColorBrush x:Key="Brush.Text.Code"
+                     Color="{DynamicResource Palette.Text.Code}" />
 
     <!-- Accent -->
-    <SolidColorBrush x:Key="Brush.Accent.Base" Color="{StaticResource Palette.Accent.Base}" />
-    <SolidColorBrush x:Key="Brush.Accent.Selection" Color="{StaticResource Palette.Accent.Selection}" />
-    <SolidColorBrush x:Key="Brush.Accent.PreviewBorder" Color="{StaticResource Palette.Accent.PreviewBorder}" />
+    <SolidColorBrush x:Key="Brush.Accent.Base"
+                     Color="{DynamicResource Palette.Accent.Base}" />
+    <SolidColorBrush x:Key="Brush.Accent.Selection"
+                     Color="{DynamicResource Palette.Accent.Selection}" />
+    <SolidColorBrush x:Key="Brush.Accent.PreviewBorder"
+                     Color="{DynamicResource Palette.Accent.PreviewBorder}" />
 
     <!-- Status -->
-    <SolidColorBrush x:Key="Brush.Status.Success" Color="{StaticResource Palette.Status.Success}" />
-    <SolidColorBrush x:Key="Brush.Status.Warning" Color="{StaticResource Palette.Status.Warning}" />
-    <SolidColorBrush x:Key="Brush.Status.Danger" Color="{StaticResource Palette.Status.Danger}" />
+    <SolidColorBrush x:Key="Brush.Status.Success"
+                     Color="{DynamicResource Palette.Status.Success}" />
+    <SolidColorBrush x:Key="Brush.Status.Warning"
+                     Color="{DynamicResource Palette.Status.Warning}" />
+    <SolidColorBrush x:Key="Brush.Status.Danger"
+                     Color="{DynamicResource Palette.Status.Danger}" />
 
     <!-- Canvas -->
-    <SolidColorBrush x:Key="Brush.Canvas.Base" Color="{StaticResource Palette.Canvas.Base}" />
-    <SolidColorBrush x:Key="Brush.Canvas.Pixel" Color="{StaticResource Palette.Canvas.Pixel}" />
-    <SolidColorBrush x:Key="Brush.Canvas.Drawing" Color="{StaticResource Palette.Canvas.Drawing}" />
-    <SolidColorBrush x:Key="Brush.Canvas.Grid" Color="{StaticResource Palette.Canvas.Grid}" />
-    <SolidColorBrush x:Key="Brush.Canvas.Crosshair" Color="{StaticResource Palette.Canvas.Crosshair}" />
+    <SolidColorBrush x:Key="Brush.Canvas.Base"
+                     Color="{DynamicResource Palette.Canvas.Base}" />
+    <SolidColorBrush x:Key="Brush.Canvas.Pixel"
+                     Color="{DynamicResource Palette.Canvas.Pixel}" />
+    <SolidColorBrush x:Key="Brush.Canvas.Drawing"
+                     Color="{DynamicResource Palette.Canvas.Drawing}" />
+    <SolidColorBrush x:Key="Brush.Canvas.Grid"
+                     Color="{DynamicResource Palette.Canvas.Grid}" />
+    <SolidColorBrush x:Key="Brush.Canvas.Crosshair"
+                     Color="{DynamicResource Palette.Canvas.Crosshair}" />
 
     <!-- Common -->
-    <SolidColorBrush x:Key="Brush.Common.Shadow" Color="{StaticResource Palette.Common.Shadow}" />
-    <SolidColorBrush x:Key="Brush.Common.LassoFill" Color="{StaticResource Palette.Common.LassoFill}" />
+    <SolidColorBrush x:Key="Brush.Common.Shadow"
+                     Color="{DynamicResource Palette.Common.Shadow}" />
+    <SolidColorBrush x:Key="Brush.Common.LassoFill"
+                     Color="{DynamicResource Palette.Common.LassoFill}" />
 
     <!-- Controls -->
-    <SolidColorBrush x:Key="Brush.Control.Background" Color="{StaticResource Palette.Control.Background}" />
-    <SolidColorBrush x:Key="Brush.Control.Thumb" Color="{StaticResource Palette.Control.Thumb}" />
-    <SolidColorBrush x:Key="Brush.Control.ScrollBar" Color="{StaticResource Palette.Control.ScrollBar}" />
-    <SolidColorBrush x:Key="Brush.Control.TextBox" Color="{StaticResource Palette.Control.TextBox}" />
-    <SolidColorBrush x:Key="Brush.Control.CheckBoxBorder" Color="{StaticResource Palette.Control.CheckBoxBorder}" />
+    <SolidColorBrush x:Key="Brush.Control.Background"
+                     Color="{DynamicResource Palette.Control.Background}" />
+    <SolidColorBrush x:Key="Brush.Control.Thumb"
+                     Color="{DynamicResource Palette.Control.Thumb}" />
+    <SolidColorBrush x:Key="Brush.Control.ScrollBar"
+                     Color="{DynamicResource Palette.Control.ScrollBar}" />
+    <SolidColorBrush x:Key="Brush.Control.TextBox"
+                     Color="{DynamicResource Palette.Control.TextBox}" />
+    <SolidColorBrush x:Key="Brush.Control.CheckBoxBorder"
+                     Color="{DynamicResource Palette.Control.CheckBoxBorder}" />
 
     <!-- Code / Syntax -->
-    <SolidColorBrush x:Key="Brush.Code.Keyword" Color="{StaticResource Palette.Code.Keyword}" />
-    <SolidColorBrush x:Key="Brush.Code.Literal" Color="{StaticResource Palette.Code.Literal}" />
-    <SolidColorBrush x:Key="Brush.Code.Comment" Color="{StaticResource Palette.Code.Comment}" />
-    <SolidColorBrush x:Key="Brush.Code.Identifier" Color="{StaticResource Palette.Code.Identifier}" />
-    <SolidColorBrush x:Key="Brush.Code.Punctuation" Color="{StaticResource Palette.Code.Punctuation}" />
+    <SolidColorBrush x:Key="Brush.Code.Keyword"
+                     Color="{DynamicResource Palette.Code.Keyword}" />
+    <SolidColorBrush x:Key="Brush.Code.Literal"
+                     Color="{DynamicResource Palette.Code.Literal}" />
+    <SolidColorBrush x:Key="Brush.Code.Comment"
+                     Color="{DynamicResource Palette.Code.Comment}" />
+    <SolidColorBrush x:Key="Brush.Code.Identifier"
+                     Color="{DynamicResource Palette.Code.Identifier}" />
+    <SolidColorBrush x:Key="Brush.Code.Punctuation"
+                     Color="{DynamicResource Palette.Code.Punctuation}" />
 
     <!-- Hardware Preview Brushes -->
-    <SolidColorBrush x:Key="Brush.Preview.Base" Color="{StaticResource Palette.Preview.Base}" />
-    <SolidColorBrush x:Key="Brush.Preview.Drawing" Color="{StaticResource Palette.Preview.Drawing}" />
+    <SolidColorBrush x:Key="Brush.Preview.Base"
+                     Color="{DynamicResource Palette.Preview.Base}" />
+    <SolidColorBrush x:Key="Brush.Preview.Drawing"
+                     Color="{DynamicResource Palette.Preview.Drawing}" />
 
 </ResourceDictionary>

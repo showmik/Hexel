@@ -65,6 +65,7 @@ namespace Hexprite.ViewModels
         public IRelayCommand CopyExportCodeMenuCommand { get; }
         /// <summary>Switches the theme between Dark and Light.</summary>
         public IRelayCommand<string> SwitchThemeCommand { get; }
+        public IRelayCommand RefreshThemeCommand { get; }
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>Raised when a tab is added so the View can wire events.</summary>
@@ -121,6 +122,7 @@ namespace Hexprite.ViewModels
                 () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
                 () => HasOpenDocument);
             SwitchThemeCommand = new RelayCommand<string>(ExecuteSwitchTheme);
+            RefreshThemeCommand = new RelayCommand(ExecuteRefreshTheme);
 
             _themeService.ThemeChanged += (_, _) =>
             {
@@ -381,6 +383,15 @@ namespace Hexprite.ViewModels
         {
             if (themeName != null)
                 _themeService.ApplyTheme(themeName);
+        }
+
+        private void ExecuteRefreshTheme()
+        {
+            // Force redraw of all open documents with current theme colors
+            foreach (var doc in OpenDocuments)
+                doc.RefreshCanvasColors();
+
+            ThemeChanged?.Invoke(this, EventArgs.Empty);
         }
 
         // ── Helpers ───────────────────────────────────────────────────────
