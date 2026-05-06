@@ -362,9 +362,9 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2" />
-                <ColumnDefinition Width="400"
-                                  MinWidth="300"
-                                  MaxWidth="600" />
+                <ColumnDefinition Width="360"
+                                  MinWidth="280"
+                                  MaxWidth="520" />
             </Grid.ColumnDefinitions>
 
             <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Column="0" />

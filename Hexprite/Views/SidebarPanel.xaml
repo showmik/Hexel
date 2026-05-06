@@ -26,8 +26,8 @@
                         CornerRadius="8"
                         BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
-                        Margin="12,12,12,0"
-                        Padding="16,12,16,16">
+                        Margin="10,10,10,0"
+                        Padding="12,10,12,12">
                 <Border.Effect>
                     <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
                 </Border.Effect>
@@ -140,8 +140,8 @@
                         CornerRadius="8"
                         BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
-                        Margin="12,12,12,0"
-                        Padding="16,20,16,20">
+                        Margin="10,10,10,0"
+                        Padding="12,14,12,14">
                     <Border.Effect>
                         <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
                     </Border.Effect>
@@ -307,7 +307,7 @@
                             BorderBrush="{DynamicResource Brush.Border.Base}"
                             BorderThickness="1"
                             ClipToBounds="True"
-                            Height="260">
+                            Height="240">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -414,8 +414,8 @@
                         CornerRadius="8"
                         BorderBrush="{DynamicResource Brush.Border.Base}"
                         BorderThickness="1"
-                        Margin="12,12,12,12"
-                        Padding="16,20,16,20">
+                        Margin="10,10,10,10"
+                        Padding="12,14,12,14">
                     <Border.Effect>
                         <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
                     </Border.Effect>
