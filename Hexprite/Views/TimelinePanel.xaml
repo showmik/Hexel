@@ -1,0 +1,166 @@
+<UserControl x:Class="Hexprite.Views.TimelinePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="170" d:DesignWidth="900">
+    <Border Background="{DynamicResource Brush.Surface.Panel}"
+            BorderBrush="{DynamicResource Brush.Border.Separator}"
+            BorderThickness="0,1,0,0"
+            Padding="6,6,6,6">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{DynamicResource Brush.Surface.Overlay}"
+                    BorderBrush="{DynamicResource Brush.Border.Base}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,6,8,8">
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="LAYERS"
+                               Style="{StaticResource HeaderStyle}"
+                               Margin="0,0,0,6" />
+
+                    <Grid DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Content="+ Add"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Margin="0,0,4,0"
+                                Command="{Binding AddLayerCommand}" />
+                        <Button Grid.Column="1"
+                                Content="- Delete"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Margin="4,0,0,0"
+                                Command="{Binding DeleteLayerCommand}" />
+                    </Grid>
+
+                    <ListBox x:Name="LayerList"
+                             ItemsSource="{Binding Layers}"
+                             SelectedIndex="{Binding SelectedLayerIndex, Mode=TwoWay}"
+                             Background="{DynamicResource Brush.Surface.Base}"
+                             BorderBrush="{DynamicResource Brush.Border.Base}"
+                             BorderThickness="1"
+                             AllowDrop="True"
+                             PreviewMouseLeftButtonDown="LayerList_PreviewMouseLeftButtonDown"
+                             PreviewMouseMove="LayerList_PreviewMouseMove"
+                             Drop="LayerList_Drop"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="≡"
+                                               Margin="2,0,6,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource Brush.Text.Muted}" />
+                                    <CheckBox Grid.Column="1"
+                                              Margin="0,0,6,0"
+                                              IsChecked="{Binding IsVisible}"
+                                              Checked="LayerVisible_CheckedChanged"
+                                              Unchecked="LayerVisible_CheckedChanged"
+                                              ToolTip="Toggle visibility" />
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding Name}"
+                                             Margin="0,1,6,1"
+                                             LostFocus="LayerName_LostFocus" />
+                                    <CheckBox Grid.Column="3"
+                                              Margin="0,0,2,0"
+                                              IsChecked="{Binding IsLocked}"
+                                              Checked="LayerLocked_CheckedChanged"
+                                              Unchecked="LayerLocked_CheckedChanged"
+                                              ToolTip="Toggle lock" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Width="1"
+                    Margin="3,0"
+                    Background="{DynamicResource Brush.Border.Separator}" />
+
+            <Border Grid.Column="2"
+                    Background="{DynamicResource Brush.Surface.Overlay}"
+                    BorderBrush="{DynamicResource Brush.Border.Base}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,6,8,8">
+                <DockPanel LastChildFill="True">
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="FRAMES"
+                                   Style="{StaticResource HeaderStyle}" />
+                        <TextBlock Grid.Column="1"
+                                   Text="(timeline area reserved for animation frames)"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.Text.Muted}"
+                                   FontSize="11" />
+                    </Grid>
+
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Background="{DynamicResource Brush.Surface.Base}">
+                        <Grid MinWidth="700" MinHeight="120" Margin="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="70" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Row="0" Grid.Column="0" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" Background="{DynamicResource Brush.Surface.Panel}">
+                                <TextBlock Text="Layer/Frame" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Text.Muted}" FontSize="10" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="1" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" />
+                            <Border Grid.Row="0" Grid.Column="2" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" />
+                            <Border Grid.Row="0" Grid.Column="3" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" />
+                            <Border Grid.Row="0" Grid.Column="4" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" />
+                            <Border Grid.Row="0" Grid.Column="5" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" />
+                            <Border Grid.Row="0" Grid.Column="6" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" />
+                            <Border Grid.Row="0" Grid.Column="7" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" />
+
+                            <Border Grid.Row="1" Grid.ColumnSpan="8" Margin="1" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1">
+                                <TextBlock Text="Frame timeline scaffold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush.Text.Muted}" />
+                            </Border>
+                        </Grid>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>
