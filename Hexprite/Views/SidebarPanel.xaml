@@ -125,23 +125,27 @@
                                         VerticalAlignment="Center"
                                         CornerRadius="9"
                                         Padding="7"
-                                        Background="#1C212A"
-                                        BorderBrush="#343C49"
+                                        Background="{DynamicResource Brush.DisplayPreview.FrameOuterBg}"
+                                        BorderBrush="{DynamicResource Brush.DisplayPreview.FrameOuterBorder}"
                                         BorderThickness="1">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="12" ShadowDepth="3" Direction="270"/>
+                                        <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}"
+                                                          Opacity="{DynamicResource DisplayPreview.FrameShadowOpacity}"
+                                                          BlurRadius="{DynamicResource DisplayPreview.FrameShadowBlur}"
+                                                          ShadowDepth="{DynamicResource DisplayPreview.FrameShadowDepth}"
+                                                          Direction="270"/>
                                     </Border.Effect>
 
                                     <!-- Inner bezel/frame -->
                                     <Border CornerRadius="6"
                                             Padding="5"
-                                            Background="#11151C"
-                                            BorderBrush="#4C5566"
+                                            Background="{DynamicResource Brush.DisplayPreview.FrameInnerBg}"
+                                            BorderBrush="{DynamicResource Brush.DisplayPreview.FrameInnerBorder}"
                                             BorderThickness="0.9">
                                         <Grid>
                                             <!-- Subtle glass highlight -->
                                             <Border CornerRadius="4"
-                                                    BorderBrush="#22FFFFFF"
+                                                    BorderBrush="{DynamicResource Brush.DisplayPreview.FrameHighlight}"
                                                     BorderThickness="0,0,0,1"
                                                     IsHitTestVisible="False"
                                                     VerticalAlignment="Top"

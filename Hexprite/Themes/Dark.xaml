@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <!-- ═══════════════════════════════════════════════════════════
          PALETTE (Colors)
@@ -231,5 +232,16 @@
                      Color="{DynamicResource Palette.Preview.Base}" />
     <SolidColorBrush x:Key="Brush.Preview.Drawing"
                      Color="{DynamicResource Palette.Preview.Drawing}" />
+
+    <!-- Display preview frame (bezel) -->
+    <SolidColorBrush x:Key="Brush.DisplayPreview.FrameOuterBg" Color="#262C37" />
+    <SolidColorBrush x:Key="Brush.DisplayPreview.FrameOuterBorder" Color="#3A4352" />
+    <SolidColorBrush x:Key="Brush.DisplayPreview.FrameInnerBg" Color="#171C25" />
+    <SolidColorBrush x:Key="Brush.DisplayPreview.FrameInnerBorder" Color="#4B5568" />
+    <SolidColorBrush x:Key="Brush.DisplayPreview.FrameHighlight" Color="#22FFFFFF" />
+    <SolidColorBrush x:Key="Brush.DisplayPreview.FrameShadowColor" Color="#000000" />
+    <sys:Double x:Key="DisplayPreview.FrameShadowOpacity">0.42</sys:Double>
+    <sys:Double x:Key="DisplayPreview.FrameShadowBlur">18</sys:Double>
+    <sys:Double x:Key="DisplayPreview.FrameShadowDepth">4</sys:Double>
 
 </ResourceDictionary>

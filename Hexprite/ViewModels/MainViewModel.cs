@@ -1689,6 +1689,20 @@ namespace Hexprite.ViewModels
                 fg = ((SolidColorBrush)res["Brush.Canvas.Drawing"]).Color;
             }
 
+            // Perceptual compensation: on light UI themes, the same emitted-pixel colors
+            // can look darker by contrast. Apply a subtle boost to the display colors
+            // (not the bezel) to keep the preview looking consistent across themes.
+            if (res.Contains("Brush.Surface.Base"))
+            {
+                var uiBase = ((SolidColorBrush)res["Brush.Surface.Base"]).Color;
+                if (GetRelativeLuminance(uiBase) > 0.55)
+                {
+                    fg = BoostTowardsWhite(fg, 0.10);
+                    // Keep OLED blacks mostly black; only a tiny lift to reduce crushing perception.
+                    bg = BoostTowardsWhite(bg, 0.02);
+                }
+            }
+
             Hexprite.Rendering.DisplaySimulationRenderer.Render(
                 SpriteState,
                 _selectionService,
@@ -1705,6 +1719,26 @@ namespace Hexprite.ViewModels
 
             var rect = new Int32Rect(0, 0, PreviewSimBitmap.PixelWidth, PreviewSimBitmap.PixelHeight);
             PreviewSimBitmap.WritePixels(rect, _previewSimBuffer, PreviewSimBitmap.PixelWidth * 4, 0);
+        }
+
+        private static double GetRelativeLuminance(Color c)
+        {
+            static double SrgbToLinear(double v)
+                => v <= 0.04045 ? (v / 12.92) : Math.Pow((v + 0.055) / 1.055, 2.4);
+
+            double r = SrgbToLinear(c.R / 255.0);
+            double g = SrgbToLinear(c.G / 255.0);
+            double b = SrgbToLinear(c.B / 255.0);
+            return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+        }
+
+        private static Color BoostTowardsWhite(Color c, double t)
+        {
+            t = Math.Clamp(t, 0.0, 1.0);
+            byte r = (byte)Math.Clamp((int)Math.Round(c.R + (255 - c.R) * t), 0, 255);
+            byte g = (byte)Math.Clamp((int)Math.Round(c.G + (255 - c.G) * t), 0, 255);
+            byte b = (byte)Math.Clamp((int)Math.Round(c.B + (255 - c.B) * t), 0, 255);
+            return Color.FromArgb(c.A, r, g, b);
         }
     }
 }
