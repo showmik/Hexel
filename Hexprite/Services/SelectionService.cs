@@ -395,9 +395,23 @@ namespace Hexprite.Services
                             state.Pixels[(gy * w) + gx] = true;
                     }
                 }
-            }
 
-            ResetState();
+                MinX = FloatingX;
+                MinY = FloatingY;
+                MaxX = FloatingX + FloatingWidth - 1;
+                MaxY = FloatingY + FloatingHeight - 1;
+
+                FloatingPixels = null;
+                IsFloating = false;
+                FloatingX = FloatingY = FloatingWidth = FloatingHeight = 0;
+
+                _baseMask = null;
+                _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
+                _dragMinX = _dragMaxX = _dragMinY = _dragMaxY = -1;
+                _lassoPoints.Clear();
+
+                Notify();
+            }
         }
 
         public void DeleteSelection(SpriteState state)
@@ -407,8 +421,19 @@ namespace Hexprite.Services
             if (IsFloating)
             {
                 // Just drop the floating pixels — nothing stamps back to the canvas
+                MinX = FloatingX;
+                MinY = FloatingY;
+                MaxX = FloatingX + FloatingWidth - 1;
+                MaxY = FloatingY + FloatingHeight - 1;
+
                 FloatingPixels = null;
                 IsFloating = false;
+                FloatingX = FloatingY = FloatingWidth = FloatingHeight = 0;
+                
+                _baseMask = null;
+                _baseMinX = _baseMaxX = _baseMinY = _baseMaxY = -1;
+                _dragMinX = _dragMaxX = _dragMinY = _dragMaxY = -1;
+                _lassoPoints.Clear();
             }
             else
             {
@@ -422,7 +447,7 @@ namespace Hexprite.Services
                 }
             }
 
-            ResetState();
+            Notify();
         }
 
         public void Cancel()
