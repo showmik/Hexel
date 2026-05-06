@@ -1,8 +1,11 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Hexprite.Services;
 using Hexprite.ViewModels;
+using Serilog;
+using Sentry;
 
 namespace Hexprite
 {
@@ -12,6 +15,12 @@ namespace Hexprite
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            LoggingService.Initialize();
+
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
             base.OnStartup(e);
 
             var services = new ServiceCollection();
@@ -26,6 +35,16 @@ namespace Hexprite
             _serviceProvider.GetRequiredService<MainWindow>().Show();
         }
 
+        protected override void OnExit(ExitEventArgs e)
+        {
+            DispatcherUnhandledException -= App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
+            TaskScheduler.UnobservedTaskException -= TaskScheduler_UnobservedTaskException;
+
+            LoggingService.Shutdown();
+            base.OnExit(e);
+        }
+
         private static void ConfigureServices(IServiceCollection services)
         {
             // Shared services (stateless or app-wide)
@@ -34,6 +53,7 @@ namespace Hexprite
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<IThemeService, ThemeService>();
+            services.AddSingleton<IBugReportService, BugReportService>();
 
             // ShellViewModel is the app-level VM that manages tabs
             services.AddSingleton<ShellViewModel>();
@@ -41,6 +61,51 @@ namespace Hexprite
             // MainWindow is transient (created once on startup)
             services.AddTransient<MainWindow>(sp => new MainWindow(
                 sp.GetRequiredService<ShellViewModel>()));
+        }
+
+        private static void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            Log.Fatal(e.Exception, "Unhandled UI thread exception");
+            SentrySdk.CaptureException(e.Exception);
+            SentryCrashFlush.TryFlushPendingEvents();
+
+            MessageBox.Show(
+                "An unexpected error occurred and the application must close.",
+                "Hexel",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            // Keep false so unrecoverable crashes terminate cleanly.
+            e.Handled = false;
+        }
+
+        private static void CurrentDomain_UnhandledException(object? sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.ExceptionObject is Exception ex)
+            {
+                Log.Fatal(ex, "Unhandled non-UI exception. IsTerminating={IsTerminating}", e.IsTerminating);
+                SentrySdk.CaptureException(ex);
+                if (e.IsTerminating)
+                {
+                    SentryCrashFlush.TryFlushPendingEvents();
+                }
+
+                return;
+            }
+
+            Log.Fatal("Unhandled non-UI exception was a non-Exception object. IsTerminating={IsTerminating}", e.IsTerminating);
+            SentrySdk.CaptureMessage("Unhandled non-UI exception object was not Exception.", SentryLevel.Fatal);
+            if (e.IsTerminating)
+            {
+                SentryCrashFlush.TryFlushPendingEvents();
+            }
+        }
+
+        private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            Log.Error(e.Exception, "Unobserved task exception");
+            SentrySdk.CaptureException(e.Exception);
+            e.SetObserved();
         }
     }
 }

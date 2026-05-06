@@ -2,6 +2,16 @@ using Hexprite.Core;
 
 namespace Hexprite.Services
 {
+    public sealed class BugReportInput
+    {
+        public string Summary { get; set; } = string.Empty;
+        public string StepsToReproduce { get; set; } = string.Empty;
+        public string ExpectedBehavior { get; set; } = string.Empty;
+        public string ActualBehavior { get; set; } = string.Empty;
+        public string? ContactEmail { get; set; }
+        public bool IncludeRecentLogs { get; set; } = true;
+    }
+
     public interface IClipboardService
     {
         void SetText(string text);
@@ -49,6 +59,16 @@ namespace Hexprite.Services
         /// Returns (width, height, code, spriteName, isXbm) if the user clicks Import, or null if cancelled.
         /// </summary>
         (int Width, int Height, string Code, string? SpriteName, bool IsXbm)? ShowImportFromCodeDialog();
+
+        /// <summary>
+        /// Shows the "Report a Bug" dialog and returns user-entered data, or null if cancelled.
+        /// </summary>
+        BugReportInput? ShowBugReportDialog();
+
+        /// <summary>
+        /// Shows confirmation after a bug report was submitted, with optional copyable reference ID.
+        /// </summary>
+        void ShowBugReportSuccessDialog(string message, string? reportId);
     }
 
 }
