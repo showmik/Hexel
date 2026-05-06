@@ -19,6 +19,78 @@
                           Style="{StaticResource {x:Type ScrollViewer}}">
                 <StackPanel>
 
+                <Border Background="{DynamicResource Brush.Surface.Overlay}"
+                        CornerRadius="8"
+                        BorderBrush="{DynamicResource Brush.Border.Base}"
+                        BorderThickness="1"
+                        Margin="10,10,10,0"
+                        Padding="12,10,12,12">
+                <Border.Effect>
+                    <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}" Opacity="0.15" BlurRadius="8" ShadowDepth="2" Direction="270" />
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="LAYERS"
+                               Style="{StaticResource HeaderStyle}"
+                               Margin="0,0,0,8"/>
+                    <ListBox x:Name="LayerList"
+                             ItemsSource="{Binding Layers}"
+                             SelectedIndex="{Binding SelectedLayerIndex, Mode=TwoWay}"
+                             Background="{DynamicResource Brush.Surface.Base}"
+                             BorderBrush="{DynamicResource Brush.Border.Base}"
+                             BorderThickness="1"
+                             AllowDrop="True"
+                             PreviewMouseLeftButtonDown="LayerList_PreviewMouseLeftButtonDown"
+                             PreviewMouseMove="LayerList_PreviewMouseMove"
+                             Drop="LayerList_Drop"
+                             MinHeight="120"
+                             MaxHeight="220">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0"
+                                              Margin="4,0,6,0"
+                                              IsChecked="{Binding IsVisible}"
+                                              Checked="LayerVisible_CheckedChanged"
+                                              Unchecked="LayerVisible_CheckedChanged"
+                                              ToolTip="Toggle visibility"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Name}"
+                                             Margin="0,2,6,2"
+                                             LostFocus="LayerName_LostFocus"/>
+                                    <CheckBox Grid.Column="2"
+                                              Margin="0,0,4,0"
+                                              IsChecked="{Binding IsLocked}"
+                                              Checked="LayerLocked_CheckedChanged"
+                                              Unchecked="LayerLocked_CheckedChanged"
+                                              ToolTip="Toggle lock"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Content="+ Add Layer"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Margin="0,0,4,0"
+                                Command="{Binding AddLayerCommand}"/>
+                        <Button Grid.Column="1"
+                                Content="- Delete Layer"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Margin="4,0,0,0"
+                                Command="{Binding DeleteLayerCommand}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
                 <!-- ═══════════════════════════════════════════════════════
                      OLED PREVIEW (collapsible, dynamic size)
                      ═══════════════════════════════════════════════════════ -->

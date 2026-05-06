@@ -215,9 +215,13 @@ namespace Hexprite.ViewModels
                 string json = File.ReadAllText(path);
                 var loaded = JsonSerializer.Deserialize<SpriteState>(json);
                 if (loaded?.Pixels == null) return;
+                loaded.EnsureLayers();
 
                 var doc = CreateDocument(loaded.Width, loaded.Height);
-                doc.SpriteState.Pixels = (bool[])loaded.Pixels.Clone();
+                doc.SpriteState.Layers = loaded.Layers.ConvertAll(l => l.Clone());
+                doc.SpriteState.ActiveLayerIndex = loaded.ActiveLayerIndex;
+                doc.SpriteState.EnsureLayers();
+                doc.ReloadLayersFromState();
                 doc.SpriteState.IsDisplayInverted = loaded.IsDisplayInverted;
                 doc.IsDisplayInverted = loaded.IsDisplayInverted;
                 doc.FilePath = path;
@@ -474,6 +478,7 @@ namespace Hexprite.ViewModels
 
                 var doc = CreateDocument(w, h, redrawImmediately: false);
                 doc.SpriteState.Pixels = pixels;
+                doc.SpriteState.Layers[doc.SpriteState.ActiveLayerIndex].Pixels = pixels;
 
                 doc.RedrawGridFromMemory();
 

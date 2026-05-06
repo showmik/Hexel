@@ -137,6 +137,9 @@ namespace Hexprite.Controllers
 
         private void HandleToolDown(int x, int y, DrawMode mode, bool isShiftDown)
         {
+            if (_vm.IsActiveLayerLocked)
+                return;
+
             bool newState = mode == DrawMode.Draw;
 
             // ── Shape tools (Line, Rectangle, Ellipse, FilledRectangle, FilledEllipse) ──
@@ -205,6 +208,9 @@ namespace Hexprite.Controllers
 
         private void HandleToolMove(int x, int y, DrawMode mode, bool isShiftDown, bool isAltDown)
         {
+            if (_vm.IsActiveLayerLocked)
+                return;
+
             bool newState = mode == DrawMode.Draw;
 
             // ── Shape tool move (generic for all shape tools) ──
