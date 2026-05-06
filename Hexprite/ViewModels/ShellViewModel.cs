@@ -414,6 +414,10 @@ namespace Hexprite.ViewModels
 
         private const string BitmapImageFileFilter =
             "Image Files (*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif)|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif|All Files (*.*)|*.*";
+        private static readonly string UserSettingsDirectory =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hexprite");
+        private static readonly string BitmapImportSettingsFile =
+            Path.Combine(UserSettingsDirectory, "bitmap-import-settings.json");
 
         private static Task<T> RunOnStaThreadAsync<T>(Func<T> func)
         {
@@ -459,14 +463,9 @@ namespace Hexprite.ViewModels
 
                 var importSettings = _dialogService.ShowImportBitmapDialog(
                     Path.GetFileName(selectedPath),
-                    new BitmapImportSettings
-                    {
-                        DitheringAlgorithm = BitmapDitheringAlgorithm.Atkinson,
-                        Threshold = 128,
-                        AlphaThreshold = 128,
-                        MaxDimension = SpriteState.MaxDimension
-                    });
+                    LoadBitmapImportSettings());
                 if (importSettings == null) return;
+                SaveBitmapImportSettings(importSettings);
 
                 // WPF image decode pipelines are STA-affine; run conversion on a dedicated STA thread
                 // so large imports don't block the UI thread.
@@ -506,6 +505,52 @@ namespace Hexprite.ViewModels
                     _dialogService.ShowMessage("This image format is not supported on your system.");
                 else
                     _dialogService.ShowMessage($"Error importing image: {ex.Message}");
+            }
+        }
+
+        private static BitmapImportSettings LoadBitmapImportSettings()
+        {
+            var defaults = new BitmapImportSettings
+            {
+                DitheringAlgorithm = BitmapDitheringAlgorithm.Atkinson,
+                Threshold = 128,
+                AlphaThreshold = 128,
+                MaxDimension = SpriteState.MaxDimension
+            };
+
+            try
+            {
+                if (!File.Exists(BitmapImportSettingsFile))
+                    return defaults;
+
+                string json = File.ReadAllText(BitmapImportSettingsFile);
+                BitmapImportSettings? saved = JsonSerializer.Deserialize<BitmapImportSettings>(json);
+                if (saved == null)
+                    return defaults;
+
+                saved.Threshold = Math.Clamp(saved.Threshold, 0, 255);
+                saved.AlphaThreshold = Math.Clamp(saved.AlphaThreshold, 0, 255);
+                saved.MaxDimension = Math.Clamp(saved.MaxDimension, 1, SpriteState.MaxDimension);
+                return saved;
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Warning(ex, "ShellViewModel.LoadBitmapImportSettings", new { BitmapImportSettingsFile });
+                return defaults;
+            }
+        }
+
+        private static void SaveBitmapImportSettings(BitmapImportSettings settings)
+        {
+            try
+            {
+                Directory.CreateDirectory(UserSettingsDirectory);
+                string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(BitmapImportSettingsFile, json);
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Warning(ex, "ShellViewModel.SaveBitmapImportSettings", new { BitmapImportSettingsFile });
             }
         }
 
