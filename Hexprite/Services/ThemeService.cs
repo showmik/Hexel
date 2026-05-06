@@ -17,7 +17,7 @@ namespace Hexprite.Services
         private static readonly string SettingsFile =
             Path.Combine(SettingsDir, "theme.txt");
 
-        private string _currentTheme = "Dark";
+        private string _currentTheme = "Dim";
 
         public string CurrentTheme => _currentTheme;
 
@@ -36,7 +36,7 @@ namespace Hexprite.Services
         public void ApplyTheme(string themeName)
         {
             if (themeName != "Dark" && themeName != "Light" && themeName != "Dim" && themeName != "Flipper")
-                themeName = "Dark";
+                themeName = "Dim";
 
             var dict = new ResourceDictionary
             {
@@ -73,7 +73,7 @@ namespace Hexprite.Services
             {
                 HandledErrorReporter.Warning(ex, "ThemeService.LoadSavedTheme");
             }
-            return "Dark";
+            return "Dim";
         }
 
         private static void PersistTheme(string themeName)

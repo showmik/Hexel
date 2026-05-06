@@ -1544,8 +1544,10 @@ namespace Hexprite.ViewModels
                     break;
                 case DisplayType.Generic_White:
                 default:
-                    res.Remove("Brush.Preview.Base");
-                    res.Remove("Brush.Preview.Drawing");
+                    // Keep Generic preview theme-independent so it remains visually
+                    // consistent when the app theme changes.
+                    res["Brush.Preview.Base"] = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x00));
+                    res["Brush.Preview.Drawing"] = new SolidColorBrush(Color.FromRgb(0xBC, 0xD0, 0xDD));
                     return;
             }
 

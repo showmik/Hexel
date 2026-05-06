@@ -114,6 +114,23 @@ namespace Hexprite.Rendering
             float invCellW = 1f / cellW;
             float invCellH = 1f / cellH;
 
+            // Native-ish scale (around 1x) should be maximally stable and readable.
+            // Avoid optical effects that can look broken at this footprint.
+            if (effectiveScale <= 1.10 || (cellW <= 1.10f && cellH <= 1.10f))
+            {
+                RenderNativeScale(
+                    state,
+                    selectionService,
+                    outW,
+                    outH,
+                    bgSrgb,
+                    fgSrgb,
+                    preset,
+                    strength,
+                    outBgra);
+                return;
+            }
+
             float cellMin = MathF.Min(cellW, cellH);
             // Progressive detail regime: 0 -> 1 as pixel footprint grows
             float detailRegime = Math.Clamp((cellMin - 1.15f) / 2.35f, 0f, 1f);
@@ -277,6 +294,132 @@ namespace Hexprite.Rendering
             pool.Return(intensity);
             if (blurred != null) pool.Return(blurred);
             if (bloom != null) pool.Return(bloom);
+        }
+
+        private static void RenderNativeScale(
+            SpriteState state,
+            ISelectionService selectionService,
+            int outW,
+            int outH,
+            Color bgSrgb,
+            Color fgSrgb,
+            DisplaySimulationPreset preset,
+            float strength,
+            uint[] outBgra)
+        {
+            int srcW = state.Width;
+            int srcH = state.Height;
+            float invScaleX = srcW / (float)outW;
+            float invScaleY = srcH / (float)outH;
+
+            bool hasFloating = selectionService.IsFloating && selectionService.FloatingPixels != null;
+            // Keep only a tiny touch of texture at native scale.
+            float noiseAmp = preset == DisplaySimulationPreset.EPaper ? 0.018f * strength : 0.0f;
+            float contrast = preset == DisplaySimulationPreset.EPaper ? 0.92f : 1f;
+
+            var bgLin = (
+                r: SrgbToLinear(bgSrgb.R / 255f),
+                g: SrgbToLinear(bgSrgb.G / 255f),
+                b: SrgbToLinear(bgSrgb.B / 255f));
+            var fgLin = (
+                r: SrgbToLinear(fgSrgb.R / 255f),
+                g: SrgbToLinear(fgSrgb.G / 255f),
+                b: SrgbToLinear(fgSrgb.B / 255f));
+
+            float microBloomStrength = preset switch
+            {
+                DisplaySimulationPreset.Ssd1306OledBlue or DisplaySimulationPreset.Ssd1306OledGreen => 0.18f * strength,
+                DisplaySimulationPreset.GenericLcd => 0.05f * strength,
+                _ => 0.0f
+            };
+
+            bool IsOnAt(int x, int y)
+            {
+                if (x < 0 || x >= srcW || y < 0 || y >= srcH) return false;
+                int i = (y * srcW) + x;
+                foreach (var layer in state.Layers)
+                {
+                    if (!layer.IsVisible) continue;
+                    if (layer.Pixels[i]) return true;
+                }
+                if (hasFloating)
+                {
+                    int fx = x - selectionService.FloatingX;
+                    int fy = y - selectionService.FloatingY;
+                    if (fx >= 0 && fx < selectionService.FloatingWidth &&
+                        fy >= 0 && fy < selectionService.FloatingHeight &&
+                        selectionService.FloatingPixels![fx, fy])
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            for (int oy = 0; oy < outH; oy++)
+            {
+                int sy = Math.Clamp((int)MathF.Round((oy + 0.5f) * invScaleY - 0.5f), 0, srcH - 1);
+                for (int ox = 0; ox < outW; ox++)
+                {
+                    int sx = Math.Clamp((int)MathF.Round((ox + 0.5f) * invScaleX - 0.5f), 0, srcW - 1);
+                    bool on = IsOnAt(sx, sy);
+
+                    float n = (Hash01(ox, oy) - 0.5f) * noiseAmp;
+                    float r = bgLin.r + n;
+                    float g = bgLin.g + n;
+                    float b = bgLin.b + n;
+                    if (on)
+                    {
+                        r = r + contrast * (fgLin.r - r);
+                        g = g + contrast * (fgLin.g - g);
+                        b = b + contrast * (fgLin.b - b);
+                        // Slightly lift lit pixels at native scale so the glow reads.
+                        float coreLift = microBloomStrength * 0.22f;
+                        r += coreLift * fgLin.r;
+                        g += coreLift * fgLin.g;
+                        b += coreLift * fgLin.b;
+                    }
+
+                    if (!on && microBloomStrength > 0f)
+                    {
+                        int ring1 = 0;
+                        int ring2 = 0;
+                        for (int dy = -1; dy <= 1; dy++)
+                        {
+                            for (int dx = -1; dx <= 1; dx++)
+                            {
+                                if (dx == 0 && dy == 0) continue;
+                                if (IsOnAt(sx + dx, sy + dy)) ring1++;
+                            }
+                        }
+                        for (int dy = -2; dy <= 2; dy++)
+                        {
+                            for (int dx = -2; dx <= 2; dx++)
+                            {
+                                if (Math.Abs(dx) <= 1 && Math.Abs(dy) <= 1) continue;
+                                if (dx == 0 && dy == 0) continue;
+                                if (IsOnAt(sx + dx, sy + dy)) ring2++;
+                            }
+                        }
+                        if (ring1 > 0 || ring2 > 0)
+                        {
+                            float halo = microBloomStrength * ((ring1 / 8f) * 0.85f + (ring2 / 16f) * 0.30f);
+                            r += halo * fgLin.r;
+                            g += halo * fgLin.g;
+                            b += halo * fgLin.b;
+                        }
+                    }
+
+                    r = Math.Clamp(r, 0f, 1f);
+                    g = Math.Clamp(g, 0f, 1f);
+                    b = Math.Clamp(b, 0f, 1f);
+
+                    byte R = (byte)Math.Clamp((int)MathF.Round(LinearToSrgb(r) * 255f), 0, 255);
+                    byte G = (byte)Math.Clamp((int)MathF.Round(LinearToSrgb(g) * 255f), 0, 255);
+                    byte B = (byte)Math.Clamp((int)MathF.Round(LinearToSrgb(b) * 255f), 0, 255);
+                    outBgra[(oy * outW) + ox] = PackBgra(255, R, G, B);
+                }
+            }
         }
 
         private static void RenderLowScaleFallback(
