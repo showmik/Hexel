@@ -301,5 +301,15 @@ namespace Hexprite.Views
                 shell.ImportFromCodeMenuCommand.Execute(null);
             }
         }
+
+        private void ImportBitmap_Click(object sender, RoutedEventArgs e)
+        {
+            // Reach up to the ShellViewModel (MainWindow's DataContext) and invoke its command
+            if (Application.Current.MainWindow?.DataContext is ShellViewModel shell &&
+                shell.ImportBitmapMenuCommand.CanExecute(null))
+            {
+                shell.ImportBitmapMenuCommand.Execute(null);
+            }
+        }
     }
 }

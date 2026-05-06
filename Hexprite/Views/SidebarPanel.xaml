@@ -437,6 +437,13 @@
                             ToolTip="Open the Import from Code dialog (Ctrl+Shift+I)"
                             Padding="8,8"
                             FontSize="11.5"/>
+                    <Button Content="Import Bitmap…"
+                            Style="{StaticResource ModernButtonStyle}"
+                            HorizontalAlignment="Stretch"
+                            Click="ImportBitmap_Click"
+                            Padding="8,8"
+                            FontSize="11.5"
+                            Margin="0,8,0,0"/>
                 </StackPanel>
                 </Border>
 

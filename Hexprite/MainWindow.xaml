@@ -118,6 +118,7 @@
                         <MenuItem Header="_New Canvas" Command="{Binding NewCanvasCommand}" InputGestureText="Ctrl+N"/>
                         <MenuItem Header="_Open" Command="{Binding OpenCommand}" InputGestureText="Ctrl+O"/>
                         <MenuItem Header="_Import from Code…" Command="{Binding ImportFromCodeMenuCommand}" InputGestureText="Ctrl+Shift+I"/>
+                        <MenuItem Header="_Import Bitmap…" Command="{Binding ImportBitmapMenuCommand}"/>
                         <Separator Style="{StaticResource MenuSeparatorStyle}"/>
                         <MenuItem Header="_Save" Command="{Binding SaveCommand}" InputGestureText="Ctrl+S"/>
                         <MenuItem Header="Save _As..." Command="{Binding SaveAsCommand}" InputGestureText="Ctrl+Shift+S"/>
@@ -537,6 +538,13 @@
                             Margin="0,0,0,10" />
                     <Button Content="Import from Code…"
                             Command="{Binding ImportFromCodeMenuCommand}"
+                            HorizontalAlignment="Center"
+                            Width="220"
+                            Padding="20,10"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="0,0,0,10" />
+                    <Button Content="Import Bitmap…"
+                            Command="{Binding ImportBitmapMenuCommand}"
                             HorizontalAlignment="Center"
                             Width="220"
                             Padding="20,10"

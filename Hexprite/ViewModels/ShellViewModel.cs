@@ -68,6 +68,8 @@ namespace Hexprite.ViewModels
         public IRelayCommand SendFeedbackCommand { get; }
         /// <summary>Opens the Import from Code dialog and creates a new tab.</summary>
         public IRelayCommand ImportFromCodeMenuCommand { get; }
+        /// <summary>Imports a bitmap image into a new canvas tab.</summary>
+        public IRelayCommand ImportBitmapMenuCommand { get; }
         /// <summary>Copies the active document's exported code to the clipboard.</summary>
         public IRelayCommand CopyExportCodeMenuCommand { get; }
         /// <summary>Switches the theme between Dark and Light.</summary>
@@ -132,6 +134,7 @@ namespace Hexprite.ViewModels
             ReportBugCommand = new RelayCommand(ExecuteReportBug);
             SendFeedbackCommand = new RelayCommand(ExecuteSendFeedback);
             ImportFromCodeMenuCommand = new RelayCommand(ExecuteImportFromCode);
+            ImportBitmapMenuCommand = new RelayCommand(ExecuteImportBitmap);
             CopyExportCodeMenuCommand = new RelayCommand(
                 () => ActiveDocument?.CopyExportedCodeCommand.Execute(null),
                 () => HasOpenDocument);
@@ -402,6 +405,58 @@ namespace Hexprite.ViewModels
             {
                 HandledErrorReporter.Error(ex, "ShellViewModel.ImportFromCode", new { w, h, isXbm });
                 _dialogService.ShowMessage($"Error importing: {ex.Message}");
+            }
+        }
+
+        // ── Import bitmap ─────────────────────────────────────────────────
+
+        private const string BitmapImageFileFilter =
+            "Image Files (*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.webp)|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.webp|All Files (*.*)|*.*";
+
+        private void ExecuteImportBitmap()
+        {
+            using var operation = LoggingService.BeginOperation("Shell.ImportBitmap");
+
+            if (OpenDocuments.Count >= MaxTabs)
+            {
+                _dialogService.ShowMessage($"Maximum of {MaxTabs} tabs reached. Close a tab first.");
+                Logger.Warning("Import blocked because max tabs reached. MaxTabs={MaxTabs}", MaxTabs);
+                return;
+            }
+
+            var path = _dialogService.ShowOpenFileDialog(BitmapImageFileFilter, "Import Bitmap");
+            if (path == null) return;
+
+            try
+            {
+                var (pixels, w, h, wasScaled) =
+                    BitmapToMonochromeConverter.ConvertTo1Bit(path, SpriteState.MaxDimension);
+
+                var doc = CreateDocument(w, h);
+                doc.SpriteState.Pixels = pixels;
+
+                doc.RedrawGridFromMemory();
+
+                // Set name so export panel picks it up
+                doc.SpriteName = CodeGeneratorService.SanitiseName(
+                    Path.GetFileNameWithoutExtension(path));
+
+                if (wasScaled)
+                    doc.ShowStatus("Imported image (scaled to max canvas size)");
+
+                doc.UpdateTextOutputs();
+
+                OpenDocuments.Add(doc);
+                ActiveDocument = doc;
+                TabAdded?.Invoke(this, doc);
+                RaiseActiveTabChanged();
+
+                Logger.Information("Imported bitmap image. Scaled={WasScaled} Size={Width}x{Height}", wasScaled, w, h);
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "ShellViewModel.ImportBitmap", new { path });
+                _dialogService.ShowMessage($"Error importing image: {ex.Message}");
             }
         }
 
