@@ -375,14 +375,14 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="6" />
-                    <ColumnDefinition Width="280"
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="1.05*"
                                       MinWidth="220"
-                                      MaxWidth="420" />
-                    <ColumnDefinition Width="2" />
-                    <ColumnDefinition Width="340"
+                                      MaxWidth="520" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="1.25*"
                                       MinWidth="280"
-                                      MaxWidth="640" />
+                                      MaxWidth="760" />
                 </Grid.ColumnDefinitions>
 
                 <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Row="0" Grid.Column="0" Margin="0,8,8,8" />
@@ -394,20 +394,22 @@
                                    ZoomResetClicked="BtnZoomReset_Click" />
 
                 <GridSplitter Grid.Row="0" Grid.Column="2"
-                              Width="6"
+                              Width="10"
                               HorizontalAlignment="Stretch"
                               Background="Transparent"
                               ShowsPreview="False"
+                              ResizeBehavior="PreviousAndNext"
                               Cursor="SizeWE" />
 
                 <views:LayersPanel Grid.RowSpan="2" Grid.Column="3" Margin="0" />
 
                 <GridSplitter Grid.RowSpan="2"
                               Grid.Column="4"
-                              Width="2"
+                              Width="10"
                               HorizontalAlignment="Stretch"
                               Background="Transparent"
                               ShowsPreview="False"
+                              ResizeBehavior="PreviousAndNext"
                               Cursor="SizeWE" />
 
                 <views:SidebarPanel Grid.RowSpan="2" Grid.Column="5" Margin="0" />
