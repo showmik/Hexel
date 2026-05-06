@@ -304,6 +304,34 @@ namespace Hexprite.Services
         {
             if (_lassoPoints.Count > 0)
             {
+                if (_lassoPoints.Count < 3)
+                {
+                    if (_currentMode == SelectionMode.Replace)
+                    {
+                        Cancel();
+                        return;
+                    }
+                    else
+                    {
+                        if (_baseMask != null)
+                        {
+                            MinX = _baseMinX; MaxX = _baseMaxX;
+                            MinY = _baseMinY; MaxY = _baseMaxY;
+                            Mask = _baseMask;
+                            HasActiveSelection = true;
+                        }
+                        else
+                        {
+                            Cancel();
+                            return;
+                        }
+                        IsSelecting = false;
+                        _lassoPoints.Clear();
+                        Notify();
+                        return;
+                    }
+                }
+                
                 RecomputeCombinedSelection();
             }
 
@@ -311,6 +339,31 @@ namespace Hexprite.Services
             {
                 Cancel();
                 return;
+            }
+
+            if (Mask != null && _currentMode == SelectionMode.Replace)
+            {
+                bool hasAnyPixel = false;
+                int w = Mask.GetLength(0);
+                int h = Mask.GetLength(1);
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        if (Mask[x, y])
+                        {
+                            hasAnyPixel = true;
+                            break;
+                        }
+                    }
+                    if (hasAnyPixel) break;
+                }
+
+                if (!hasAnyPixel)
+                {
+                    Cancel();
+                    return;
+                }
             }
 
             IsSelecting = false;
