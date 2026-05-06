@@ -52,13 +52,27 @@
                     Command="{Binding CloseTabCommand}" />
         <KeyBinding Key="F5"
                     Command="{Binding RefreshThemeCommand}" />
+        <!-- Zoom shortcuts: support both main keyboard and numpad variants.
+             Note: On most layouts '+' is Ctrl+Shift+OemPlus, not Ctrl+OemPlus. -->
         <KeyBinding Key="OemPlus"
+                    Modifiers="Ctrl"
+                    Command="{x:Static NavigationCommands.IncreaseZoom}" />
+        <KeyBinding Key="OemPlus"
+                    Modifiers="Ctrl+Shift"
+                    Command="{x:Static NavigationCommands.IncreaseZoom}" />
+        <KeyBinding Key="Add"
                     Modifiers="Ctrl"
                     Command="{x:Static NavigationCommands.IncreaseZoom}" />
         <KeyBinding Key="OemMinus"
                     Modifiers="Ctrl"
                     Command="{x:Static NavigationCommands.DecreaseZoom}" />
+        <KeyBinding Key="Subtract"
+                    Modifiers="Ctrl"
+                    Command="{x:Static NavigationCommands.DecreaseZoom}" />
         <KeyBinding Key="D0"
+                    Modifiers="Ctrl"
+                    Command="{x:Static NavigationCommands.Zoom}" />
+        <KeyBinding Key="NumPad0"
                     Modifiers="Ctrl"
                     Command="{x:Static NavigationCommands.Zoom}" />
         <KeyBinding Key="F1"
