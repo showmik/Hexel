@@ -1,0 +1,273 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Flipper Zero Theme (Improved)
+         True #FF8200 brand orange, optimized contrast, clean greys.
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Core palette -->
+    <Color x:Key="Color.Background">#2e2d2d</Color>
+    <!-- Slightly darker, closer to true black -->
+    <Color x:Key="Color.PanelBackground">#121212</Color>
+    <!-- Better distinction from background -->
+    <Color x:Key="Color.PanelBorder">#333333</Color>
+    <!-- Sharper border contrast -->
+    <Color x:Key="Color.CanvasBackground">#000000</Color>
+    <!-- Pure black for the "unlit" LCD canvas -->
+    <Color x:Key="Color.CanvasPixelBackground">#000000</Color>
+    <Color x:Key="Color.CanvasDrawingColor">#FF8200</Color>
+    <!-- True Flipper Orange -->
+
+    <Color x:Key="Color.TextMain">#EAEAEA</Color>
+    <!-- Clean off-white (removed muddy yellow) -->
+    <Color x:Key="Color.TextMuted">#888888</Color>
+    <!-- Neutral gray with passing WCAG contrast -->
+    <Color x:Key="Color.TextInverse">#090909</Color>
+    <Color x:Key="Color.CodeTxt">#D4D4D4</Color>
+    <!-- Brighter base text for code readability -->
+
+    <Color x:Key="Color.PrimaryAccent">#FF8200</Color>
+    <!-- True Flipper Orange -->
+    <Color x:Key="Color.SelectionBackground">#CC6800</Color>
+    <!-- Slightly dimmed orange for selections so text remains legible -->
+
+    <Color x:Key="Color.Danger">#FF453A</Color>
+    <!-- Brighter UI red -->
+    <Color x:Key="Color.Warning">#FFD60A</Color>
+    <Color x:Key="Color.SelectionPreviewBorder">#FFD60A</Color>
+    <Color x:Key="Color.PreviewBackground">#000000</Color>
+    <Color x:Key="Color.PreviewDrawingColor">#FF8200</Color>
+    <Color x:Key="Color.CanvasGridLines">#1A0D00</Color>
+    <!-- Faint orange tint for grid lines -->
+
+    <Color x:Key="Color.InvertButtonBackground">#CC6800</Color>
+    <Color x:Key="Color.ClearButtonBackground">#FF453A</Color>
+    <Color x:Key="Color.CopyButtonBackground">#32D74B</Color>
+    <!-- Brighter UI green -->
+    <Color x:Key="Color.ThumbBackground">#404040</Color>
+    <!-- More visible scrollbar thumb -->
+    <Color x:Key="Color.ScrollBar">#121212</Color>
+
+    <!-- UI shell palette -->
+    <Color x:Key="Color.MenuBarBackground">#090909</Color>
+    <Color x:Key="Color.MenuItemHover">#1A0D00</Color>
+    <!-- Subtle orange hover state -->
+    <Color x:Key="Color.StatusBarBackground">#050505</Color>
+    <Color x:Key="Color.ToolbarBackground">#0D0D0D</Color>
+    <Color x:Key="Color.ToolSidebarBackground">#050505</Color>
+    <Color x:Key="Color.ToolSidebarActive">#1A0D00</Color>
+    <Color x:Key="Color.Separator">#333333</Color>
+
+    <!-- Control specific palette -->
+    <Color x:Key="Color.ButtonBackground">#1F1F1F</Color>
+    <Color x:Key="Color.ButtonText">#EAEAEA</Color>
+    <Color x:Key="Color.TextBoxBackground">#090909</Color>
+    <Color x:Key="Color.TextBoxBorder">#3A3A3A</Color>
+    <!-- Clearer input boundaries -->
+    <Color x:Key="Color.TextBoxText">#EAEAEA</Color>
+    <Color x:Key="Color.TextBoxFocusBorder">#FF8200</Color>
+    <Color x:Key="Color.ComboBoxBackground">#090909</Color>
+    <Color x:Key="Color.ComboBoxBorder">#3A3A3A</Color>
+    <Color x:Key="Color.ComboBoxText">#EAEAEA</Color>
+    <Color x:Key="Color.ComboBoxDropDownBackground">#121212</Color>
+    <Color x:Key="Color.ComboBoxDropDownBorder">#333333</Color>
+    <Color x:Key="Color.ContextMenuBackground">#121212</Color>
+    <Color x:Key="Color.ContextMenuBorder">#333333</Color>
+    <Color x:Key="Color.ToolTipBackground">#1A1A1A</Color>
+    <Color x:Key="Color.ToolTipBorder">#FF8200</Color>
+    <Color x:Key="Color.ToolTipText">#EAEAEA</Color>
+    <Color x:Key="Color.MenuPopupBackground">#121212</Color>
+    <Color x:Key="Color.MenuPopupBorder">#333333</Color>
+    <Color x:Key="Color.ToolButtonHover">#1A0D00</Color>
+    <Color x:Key="Color.ToolButtonCheckedBackground">#FF8200</Color>
+    <Color x:Key="Color.ToolButtonCheckedBorder">#FF8200</Color>
+    <Color x:Key="Color.StatusBarBorder">#222222</Color>
+    <Color x:Key="Color.CheckBoxBackground">#090909</Color>
+    <Color x:Key="Color.CheckBoxBorder">#444444</Color>
+    <!-- Easier to see unchecked boxes -->
+
+    <!-- Semantic tokens -->
+    <Color x:Key="Color.TextOnAccent">#000000</Color>
+    <!-- Black text on Flipper Orange for max readability -->
+    <Color x:Key="Color.BrandGradientStart">#FF8200</Color>
+    <Color x:Key="Color.BrandGradientEnd">#D96F00</Color>
+    <Color x:Key="Color.CrosshairStroke">#CCFF8200</Color>
+    <Color x:Key="Color.LassoFill">#40FFD60A</Color>
+    <Color x:Key="Color.BrushCursorEdge">#DDFF8200</Color>
+    <Color x:Key="Color.BrushCursorFill">#30FF8200</Color>
+    <Color x:Key="Color.InputBackground">#090909</Color>
+    <Color x:Key="Color.ShadowColor">#000000</Color>
+    <Color x:Key="Color.SurfaceOverlay">#121212</Color>
+    <Color x:Key="Color.Success">#32D74B</Color>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Brushes
+         ═══════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="Theme.InvertButtonBackgroundBrush"
+                     Color="{StaticResource Color.InvertButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.ClearButtonBackgroundBrush"
+                     Color="{StaticResource Color.ClearButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.CopyButtonBackgroundBrush"
+                     Color="{StaticResource Color.CopyButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.BackgroundBrush"
+                     Color="{StaticResource Color.Background}" />
+    <SolidColorBrush x:Key="Theme.PanelBackgroundBrush"
+                     Color="{StaticResource Color.PanelBackground}" />
+
+    <LinearGradientBrush x:Key="Theme.RightSidebarBackgroundBrush"
+                         StartPoint="0,0"
+                         EndPoint="0.8,1">
+        <GradientStop Color="#2e2d2d"
+                      Offset="0" />
+        <GradientStop Color="#2e2d2d"
+                      Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="Theme.PanelBorderBrush"
+                     Color="{StaticResource Color.PanelBorder}" />
+    <SolidColorBrush x:Key="Theme.CanvasBackgroundBrush"
+                     Color="{StaticResource Color.CanvasBackground}" />
+    <SolidColorBrush x:Key="Theme.CanvasPixelBackgroundBrush"
+                     Color="{StaticResource Color.CanvasPixelBackground}" />
+    <SolidColorBrush x:Key="Theme.CanvasDrawingBrush"
+                     Color="{StaticResource Color.CanvasDrawingColor}" />
+
+    <SolidColorBrush x:Key="Theme.TextMainBrush"
+                     Color="{StaticResource Color.TextMain}" />
+    <SolidColorBrush x:Key="Theme.TextMutedBrush"
+                     Color="{StaticResource Color.TextMuted}" />
+    <SolidColorBrush x:Key="Theme.TextInverseBrush"
+                     Color="{StaticResource Color.TextInverse}" />
+    <SolidColorBrush x:Key="Theme.CodeTxtBrush"
+                     Color="{StaticResource Color.CodeTxt}" />
+
+    <SolidColorBrush x:Key="Theme.ThumbBackgroundBrush"
+                     Color="{StaticResource Color.ThumbBackground}" />
+    <SolidColorBrush x:Key="Theme.ScrollBarBrush"
+                     Color="{StaticResource Color.ScrollBar}" />
+
+    <SolidColorBrush x:Key="Theme.PrimaryAccentBrush"
+                     Color="{StaticResource Color.PrimaryAccent}" />
+    <SolidColorBrush x:Key="Theme.SelectionBackgroundBrush"
+                     Color="{StaticResource Color.SelectionBackground}" />
+
+    <SolidColorBrush x:Key="Theme.DangerBrush"
+                     Color="{StaticResource Color.Danger}" />
+    <SolidColorBrush x:Key="Theme.WarningBrush"
+                     Color="{StaticResource Color.Warning}" />
+    <SolidColorBrush x:Key="Theme.SelectionPreviewBorderBrush"
+                     Color="{StaticResource Color.SelectionPreviewBorder}" />
+
+    <SolidColorBrush x:Key="Theme.PreviewBackgroundBrush"
+                     Color="{StaticResource Color.PreviewBackground}" />
+    <SolidColorBrush x:Key="Theme.PreviewDrawingBrush"
+                     Color="{StaticResource Color.PreviewDrawingColor}" />
+    <SolidColorBrush x:Key="Theme.CanvasGridLinesBrush"
+                     Color="{StaticResource Color.CanvasGridLines}" />
+
+    <!-- UI shell brushes -->
+    <SolidColorBrush x:Key="Theme.MenuBarBackgroundBrush"
+                     Color="{StaticResource Color.MenuBarBackground}" />
+    <SolidColorBrush x:Key="Theme.MenuItemHoverBrush"
+                     Color="{StaticResource Color.MenuItemHover}" />
+    <SolidColorBrush x:Key="Theme.StatusBarBackgroundBrush"
+                     Color="{StaticResource Color.StatusBarBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolbarBackgroundBrush"
+                     Color="{StaticResource Color.ToolbarBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolSidebarBackgroundBrush"
+                     Color="{StaticResource Color.ToolSidebarBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolSidebarActiveBrush"
+                     Color="{StaticResource Color.ToolSidebarActive}" />
+    <SolidColorBrush x:Key="Theme.SeparatorBrush"
+                     Color="{StaticResource Color.Separator}" />
+
+    <!-- Control specific brushes -->
+    <SolidColorBrush x:Key="Theme.ButtonBackgroundBrush"
+                     Color="{StaticResource Color.ButtonBackground}" />
+    <SolidColorBrush x:Key="Theme.ButtonTextBrush"
+                     Color="{StaticResource Color.ButtonText}" />
+    <SolidColorBrush x:Key="Theme.TextBoxBackgroundBrush"
+                     Color="{StaticResource Color.TextBoxBackground}" />
+    <SolidColorBrush x:Key="Theme.TextBoxBorderBrush"
+                     Color="{StaticResource Color.TextBoxBorder}" />
+    <SolidColorBrush x:Key="Theme.TextBoxTextBrush"
+                     Color="{StaticResource Color.TextBoxText}" />
+    <SolidColorBrush x:Key="Theme.TextBoxFocusBorderBrush"
+                     Color="{StaticResource Color.TextBoxFocusBorder}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxBackgroundBrush"
+                     Color="{StaticResource Color.ComboBoxBackground}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxBorderBrush"
+                     Color="{StaticResource Color.ComboBoxBorder}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxTextBrush"
+                     Color="{StaticResource Color.ComboBoxText}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxDropDownBackgroundBrush"
+                     Color="{StaticResource Color.ComboBoxDropDownBackground}" />
+    <SolidColorBrush x:Key="Theme.ComboBoxDropDownBorderBrush"
+                     Color="{StaticResource Color.ComboBoxDropDownBorder}" />
+    <SolidColorBrush x:Key="Theme.ContextMenuBackgroundBrush"
+                     Color="{StaticResource Color.ContextMenuBackground}" />
+    <SolidColorBrush x:Key="Theme.ContextMenuBorderBrush"
+                     Color="{StaticResource Color.ContextMenuBorder}" />
+    <SolidColorBrush x:Key="Theme.ToolTipBackgroundBrush"
+                     Color="{StaticResource Color.ToolTipBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolTipBorderBrush"
+                     Color="{StaticResource Color.ToolTipBorder}" />
+    <SolidColorBrush x:Key="Theme.ToolTipTextBrush"
+                     Color="{StaticResource Color.ToolTipText}" />
+    <SolidColorBrush x:Key="Theme.MenuPopupBackgroundBrush"
+                     Color="{StaticResource Color.MenuPopupBackground}" />
+    <SolidColorBrush x:Key="Theme.MenuPopupBorderBrush"
+                     Color="{StaticResource Color.MenuPopupBorder}" />
+    <SolidColorBrush x:Key="Theme.ToolButtonHoverBrush"
+                     Color="{StaticResource Color.ToolButtonHover}" />
+    <SolidColorBrush x:Key="Theme.ToolButtonCheckedBackgroundBrush"
+                     Color="{StaticResource Color.ToolButtonCheckedBackground}" />
+    <SolidColorBrush x:Key="Theme.ToolButtonCheckedBorderBrush"
+                     Color="{StaticResource Color.ToolButtonCheckedBorder}" />
+    <SolidColorBrush x:Key="Theme.StatusBarBorderBrush"
+                     Color="{StaticResource Color.StatusBarBorder}" />
+    <SolidColorBrush x:Key="Theme.CheckBoxBackgroundBrush"
+                     Color="{StaticResource Color.CheckBoxBackground}" />
+    <SolidColorBrush x:Key="Theme.CheckBoxBorderBrush"
+                     Color="{StaticResource Color.CheckBoxBorder}" />
+
+    <!-- Semantic brushes -->
+    <SolidColorBrush x:Key="Theme.TextOnAccentBrush"
+                     Color="{StaticResource Color.TextOnAccent}" />
+    <SolidColorBrush x:Key="Theme.BrandGradientStartBrush"
+                     Color="{StaticResource Color.BrandGradientStart}" />
+    <SolidColorBrush x:Key="Theme.BrandGradientEndBrush"
+                     Color="{StaticResource Color.BrandGradientEnd}" />
+    <SolidColorBrush x:Key="Theme.CrosshairStrokeBrush"
+                     Color="{StaticResource Color.CrosshairStroke}" />
+    <SolidColorBrush x:Key="Theme.LassoFillBrush"
+                     Color="{StaticResource Color.LassoFill}" />
+    <SolidColorBrush x:Key="Theme.InputBackgroundBrush"
+                     Color="{StaticResource Color.InputBackground}" />
+    <SolidColorBrush x:Key="Theme.SurfaceOverlayBrush"
+                     Color="{StaticResource Color.SurfaceOverlay}" />
+    <SolidColorBrush x:Key="Theme.SuccessBrush"
+                     Color="{StaticResource Color.Success}" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Syntax highlighting (Flipper Orange-on-Black palette)
+         Redesigned for better legibility while maintaining the vibe.
+         ═══════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="Syntax.KeywordBrush"
+                     Color="#FF8200" />
+    <!-- Brand Orange -->
+    <SolidColorBrush x:Key="Syntax.LiteralBrush"
+                     Color="#FFAA55" />
+    <!-- Soft, lighter orange -->
+    <SolidColorBrush x:Key="Syntax.IdentifierBrush"
+                     Color="#EAEAEA" />
+    <!-- Clean white for variables/names -->
+    <SolidColorBrush x:Key="Syntax.CommentBrush"
+                     Color="#6B6B6B" />
+    <!-- Clean gray (much more readable than brown) -->
+    <SolidColorBrush x:Key="Syntax.PunctuationBrush"
+                     Color="#A3A3A3" />
+    <!-- Medium gray for brackets/operators -->
+
+</ResourceDictionary>

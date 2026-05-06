@@ -148,6 +148,8 @@
                                       Command="{Binding SwitchThemeCommand}" CommandParameter="Dim"/>
                             <MenuItem Header="_Light" IsCheckable="True" IsChecked="{Binding IsLightTheme, Mode=OneWay}"
                                       Command="{Binding SwitchThemeCommand}" CommandParameter="Light"/>
+                            <MenuItem Header="_Flipper" IsCheckable="True" IsChecked="{Binding IsFlipperTheme, Mode=OneWay}"
+                                      Command="{Binding SwitchThemeCommand}" CommandParameter="Flipper"/>
                         </MenuItem>
                     </MenuItem>
                     <MenuItem Header="_Selection">
