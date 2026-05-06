@@ -382,14 +382,18 @@
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="CanvasColumn"
+                                      Width="*"
+                                      MinWidth="420" />
                     <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="200"
-                                      MinWidth="180"
+                    <ColumnDefinition x:Name="LayersColumn"
+                                      Width="200"
+                                      MinWidth="120"
                                       MaxWidth="520" />
                     <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="260"
-                                      MinWidth="220"
+                    <ColumnDefinition x:Name="RightSidebarColumn"
+                                      Width="260"
+                                      MinWidth="130"
                                       MaxWidth="760" />
                 </Grid.ColumnDefinitions>
 
@@ -401,26 +405,38 @@
                                    ZoomOutClicked="BtnZoomOut_Click"
                                    ZoomResetClicked="BtnZoomReset_Click" />
 
-                <GridSplitter Grid.Row="0" Grid.Column="2"
+                <GridSplitter x:Name="LeftPanelSplitter"
+                              Grid.Row="0" Grid.Column="2"
                               Width="10"
                               HorizontalAlignment="Stretch"
-                              Background="Transparent"
-                              ShowsPreview="False"
+                              Background="{DynamicResource Brush.Surface.Hover}"
+                              Opacity="0.35"
+                              ShowsPreview="True"
+                              ResizeDirection="Columns"
                               ResizeBehavior="PreviousAndNext"
+                              DragStarted="PanelSplitter_DragStarted"
+                              DragDelta="PanelSplitter_DragDelta"
+                              DragCompleted="PanelSplitter_DragCompleted"
                               Cursor="SizeWE" />
 
-                <views:LayersPanel Grid.RowSpan="2" Grid.Column="3" Margin="0" />
+                <views:LayersPanel x:Name="LayersPanel" Grid.RowSpan="2" Grid.Column="3" Margin="0" />
 
-                <GridSplitter Grid.RowSpan="2"
+                <GridSplitter x:Name="RightPanelSplitter"
+                              Grid.RowSpan="2"
                               Grid.Column="4"
                               Width="10"
                               HorizontalAlignment="Stretch"
-                              Background="Transparent"
-                              ShowsPreview="False"
+                              Background="{DynamicResource Brush.Surface.Hover}"
+                              Opacity="0.35"
+                              ShowsPreview="True"
+                              ResizeDirection="Columns"
                               ResizeBehavior="PreviousAndNext"
+                              DragStarted="PanelSplitter_DragStarted"
+                              DragDelta="PanelSplitter_DragDelta"
+                              DragCompleted="PanelSplitter_DragCompleted"
                               Cursor="SizeWE" />
 
-                <views:SidebarPanel Grid.RowSpan="2" Grid.Column="5" Margin="0" />
+                <views:SidebarPanel x:Name="RightSidebarPanel" Grid.RowSpan="2" Grid.Column="5" Margin="0" />
 
                 <views:TimelinePanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,8,0" />
             </Grid>
