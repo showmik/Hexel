@@ -3,9 +3,87 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:views="clr-namespace:Hexprite.Views"
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="360">
-    <views:SidebarPanel DataContext="{Binding}" />
+    <Border Background="{DynamicResource Brush.Surface.Panel}"
+            BorderBrush="{DynamicResource Brush.Border.Separator}"
+            BorderThickness="1,0,0,0"
+            Padding="6,6,6,6">
+        <Border Background="{DynamicResource Brush.Surface.Overlay}"
+                BorderBrush="{DynamicResource Brush.Border.Base}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8,6,8,8">
+            <DockPanel LastChildFill="True">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="LAYERS"
+                           Style="{StaticResource HeaderStyle}"
+                           Margin="0,0,0,6" />
+
+                <Grid DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0"
+                            Content="+ Add"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="0,0,4,0"
+                            Command="{Binding AddLayerCommand}" />
+                    <Button Grid.Column="1"
+                            Content="- Delete"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="4,0,0,0"
+                            Command="{Binding DeleteLayerCommand}" />
+                </Grid>
+
+                <ListBox x:Name="LayerList"
+                         ItemsSource="{Binding Layers}"
+                         SelectedIndex="{Binding SelectedLayerIndex, Mode=TwoWay}"
+                         Background="{DynamicResource Brush.Surface.Base}"
+                         BorderBrush="{DynamicResource Brush.Border.Base}"
+                         BorderThickness="1"
+                         AllowDrop="True"
+                         PreviewMouseLeftButtonDown="LayerList_PreviewMouseLeftButtonDown"
+                         PreviewMouseMove="LayerList_PreviewMouseMove"
+                         Drop="LayerList_Drop"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="≡"
+                                           Margin="2,0,6,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush.Text.Muted}" />
+                                <CheckBox Grid.Column="1"
+                                          Margin="0,0,6,0"
+                                          IsChecked="{Binding IsVisible}"
+                                          Checked="LayerVisible_CheckedChanged"
+                                          Unchecked="LayerVisible_CheckedChanged"
+                                          ToolTip="Toggle visibility" />
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding Name}"
+                                         Margin="0,1,6,1"
+                                         LostFocus="LayerName_LostFocus" />
+                                <CheckBox Grid.Column="3"
+                                          Margin="0,0,2,0"
+                                          IsChecked="{Binding IsLocked}"
+                                          Checked="LayerLocked_CheckedChanged"
+                                          Unchecked="LayerLocked_CheckedChanged"
+                                          ToolTip="Toggle lock" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+    </Border>
 </UserControl>

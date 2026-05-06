@@ -367,34 +367,51 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
+            <Grid Grid.RowSpan="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="2" />
+                    <ColumnDefinition Width="280"
+                                      MinWidth="220"
+                                      MaxWidth="280" />
                     <ColumnDefinition Width="2" />
                     <ColumnDefinition Width="360"
                                       MinWidth="280"
                                       MaxWidth="520" />
                 </Grid.ColumnDefinitions>
 
-                <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Column="0" />
+                <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Row="0" Grid.Column="0" />
 
-                <views:CanvasPanel x:Name="Canvas" Grid.Column="1" 
+                <views:CanvasPanel x:Name="Canvas" Grid.Row="0" Grid.Column="1" 
                                    Margin="15,20,20,6"
                                    ZoomInClicked="BtnZoomIn_Click"
                                    ZoomOutClicked="BtnZoomOut_Click"
                                    ZoomResetClicked="BtnZoomReset_Click" />
 
-                <GridSplitter Grid.Column="2"
+                <GridSplitter Grid.Row="0" Grid.Column="2"
                               Width="2"
                               HorizontalAlignment="Stretch"
                               Background="{DynamicResource Brush.Surface.Panel}"
                               Cursor="SizeWE" />
 
-                <views:SidebarPanel Grid.Column="3" Margin="0" />
-            </Grid>
+                <views:LayersPanel Grid.RowSpan="2" Grid.Column="3" Margin="0" />
 
-            <views:TimelinePanel Grid.Row="1" Margin="0,0,0,0" />
+                <GridSplitter Grid.RowSpan="2"
+                              Grid.Column="4"
+                              Width="2"
+                              HorizontalAlignment="Stretch"
+                              Background="{DynamicResource Brush.Surface.Panel}"
+                              Cursor="SizeWE" />
+
+                <views:SidebarPanel Grid.RowSpan="2" Grid.Column="5" Margin="0" />
+
+                <views:TimelinePanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,0" />
+            </Grid>
         </Grid>
         <!-- /Main content -->
 
