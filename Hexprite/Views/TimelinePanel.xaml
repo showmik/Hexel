@@ -5,19 +5,24 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="170" d:DesignWidth="900">
-    <Border Background="{DynamicResource Brush.Surface.Panel}"
-            BorderBrush="{DynamicResource Brush.Border.Separator}"
-            BorderThickness="0,1,0,0"
-            Padding="6,6,6,6">
+    <Border Background="Transparent"
+            Padding="0">
         <Grid>
             <Border Grid.Column="0"
                     Background="{DynamicResource Brush.Surface.Overlay}"
                     BorderBrush="{DynamicResource Brush.Border.Base}"
                     BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="8,6,8,8">
+                    CornerRadius="8"
+                    Padding="10,8,10,10">
+                <Border.Effect>
+                    <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}"
+                                      Opacity="0.15"
+                                      BlurRadius="10"
+                                      ShadowDepth="2"
+                                      Direction="270" />
+                </Border.Effect>
                 <DockPanel LastChildFill="True">
-                    <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />

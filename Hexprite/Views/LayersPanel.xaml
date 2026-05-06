@@ -6,22 +6,27 @@
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="360">
-    <Border Background="{DynamicResource Brush.Surface.Panel}"
-            BorderBrush="{DynamicResource Brush.Border.Separator}"
-            BorderThickness="1,0,0,0"
-            Padding="6,6,6,6">
+    <Border Background="Transparent"
+            Padding="10,8,4,10">
         <Border Background="{DynamicResource Brush.Surface.Overlay}"
                 BorderBrush="{DynamicResource Brush.Border.Base}"
                 BorderThickness="1"
-                CornerRadius="4"
-                Padding="8,6,8,8">
+                CornerRadius="8"
+                Padding="10,8,10,10">
+            <Border.Effect>
+                <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}"
+                                  Opacity="0.15"
+                                  BlurRadius="10"
+                                  ShadowDepth="2"
+                                  Direction="270" />
+            </Border.Effect>
             <DockPanel LastChildFill="True">
                 <TextBlock DockPanel.Dock="Top"
                            Text="LAYERS"
                            Style="{StaticResource HeaderStyle}"
-                           Margin="0,0,0,6" />
+                           Margin="0,0,0,8" />
 
-                <Grid DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
@@ -29,19 +34,19 @@
                     <Button Grid.Column="0"
                             Content="+ Add"
                             Style="{StaticResource ModernButtonStyle}"
-                            Margin="0,0,4,0"
+                            Margin="0,0,6,0"
                             Command="{Binding AddLayerCommand}" />
                     <Button Grid.Column="1"
                             Content="- Delete"
                             Style="{StaticResource ModernButtonStyle}"
-                            Margin="4,0,0,0"
+                            Margin="6,0,0,0"
                             Command="{Binding DeleteLayerCommand}" />
                 </Grid>
 
                 <ListBox x:Name="LayerList"
                          ItemsSource="{Binding Layers}"
                          SelectedIndex="{Binding SelectedLayerIndex, Mode=TwoWay}"
-                         Background="{DynamicResource Brush.Surface.Base}"
+                         Background="{DynamicResource Brush.Surface.Panel}"
                          BorderBrush="{DynamicResource Brush.Border.Base}"
                          BorderThickness="1"
                          AllowDrop="True"
@@ -49,9 +54,43 @@
                          PreviewMouseMove="LayerList_PreviewMouseMove"
                          Drop="LayerList_Drop"
                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0,0,0,2" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="RowBg"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="4"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource Brush.Surface.Hover}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource Brush.Surface.Active}" />
+                                                <Setter TargetName="RowBg" Property="BorderBrush" Value="{DynamicResource Brush.Border.Separator}" />
+                                                <Setter TargetName="RowBg" Property="BorderThickness" Value="1" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0,1">
+                            <Grid Margin="4,3,4,3">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
@@ -71,7 +110,9 @@
                                           ToolTip="Toggle visibility" />
                                 <TextBox Grid.Column="2"
                                          Text="{Binding Name}"
-                                         Margin="0,1,6,1"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         Height="24"
+                                         Margin="0,0,6,0"
                                          LostFocus="LayerName_LostFocus" />
                                 <CheckBox Grid.Column="3"
                                           Margin="0,0,2,0"
