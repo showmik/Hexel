@@ -1,7 +1,9 @@
 using Hexprite.Core;
 using Hexprite.ViewModels;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,8 +31,16 @@ namespace Hexprite.Views
             @"|([a-zA-Z_][a-zA-Z0-9_]*)" +            // identifiers
             @"|([^a-zA-Z0-9_]+)",                      // punctuation / whitespace
             RegexOptions.Compiled);
+        private const int HighlightDebounceMs = 180;
+        private const int DefaultSyntaxHighlightMaxChars = 20000;
+        private const int MinSyntaxHighlightMaxChars = 2000;
+        private const int MaxSyntaxHighlightMaxChars = 500000;
 
         private MainViewModel? _vm;
+        private readonly DispatcherTimer _syntaxDebounceTimer;
+        private string _pendingCode = string.Empty;
+        private int _syntaxRequestId;
+        private readonly int _syntaxHighlightMaxChars = LoadSyntaxHighlightMaxChars();
 
         public SidebarPanel()
         {
@@ -38,6 +48,16 @@ namespace Hexprite.Views
             DataContextChanged += OnDataContextChanged;
             Loaded += SidebarPanel_Loaded;
             Unloaded += SidebarPanel_Unloaded;
+
+            _syntaxDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(HighlightDebounceMs)
+            };
+            _syntaxDebounceTimer.Tick += (_, _) =>
+            {
+                _syntaxDebounceTimer.Stop();
+                PerformSyntaxOutputUpdate(_pendingCode);
+            };
         }
 
         private ShellViewModel? _shell;
@@ -87,7 +107,7 @@ namespace Hexprite.Views
         {
             if (e.PropertyName == nameof(MainViewModel.ExportedCode))
             {
-                Dispatcher.BeginInvoke(() => UpdateSyntaxOutput(_vm?.ExportedCode ?? string.Empty));
+                ScheduleSyntaxOutputUpdate(_vm?.ExportedCode ?? string.Empty);
             }
             else if (e.PropertyName == nameof(MainViewModel.ExportFormat))
             {
@@ -189,6 +209,16 @@ namespace Hexprite.Views
         // ── Syntax highlighting ──────────────────────────────────────────────
 
         private void UpdateSyntaxOutput(string code)
+            => ScheduleSyntaxOutputUpdate(code);
+
+        private void ScheduleSyntaxOutputUpdate(string code)
+        {
+            _pendingCode = code;
+            _syntaxDebounceTimer.Stop();
+            _syntaxDebounceTimer.Start();
+        }
+
+        private void PerformSyntaxOutputUpdate(string code)
         {
             // Resolve brushes from theme resources (so they respect theme switches)
             TryLoadBrushes();
@@ -200,11 +230,24 @@ namespace Hexprite.Views
                 return;
             }
 
+            // Large output fallback: skip syntax tokenization to keep UI responsive.
+            if (code.Length > _syntaxHighlightMaxChars)
+            {
+                string note = "// Syntax highlighting disabled for large output.\n";
+                CodeOutputBox.UpdateCode(note + code, new List<Rendering.TokenSpan>
+                {
+                    new Rendering.TokenSpan(0, note.Length - 1, Rendering.TokenType.Comment)
+                }, _defaultBrush, _keywordBrush, _literalBrush, _commentBrush, _identifierBrush);
+                return;
+            }
+
+            int requestId = ++_syntaxRequestId;
             Task.Run(() =>
             {
                 var spans = TokenizeCode(code);
                 Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                 {
+                    if (requestId != _syntaxRequestId) return;
                     CodeOutputBox.UpdateCode(code, spans, _defaultBrush, _keywordBrush, _literalBrush, _commentBrush, _identifierBrush);
                 }));
             });
@@ -288,6 +331,30 @@ namespace Hexprite.Views
                 _defaultBrush = (SolidColorBrush)FindResource("Brush.Code.Punctuation");
             }
             catch { /* fallback colours already set in field initialisers */ }
+        }
+
+        private static int LoadSyntaxHighlightMaxChars()
+        {
+            try
+            {
+                string configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+                IConfigurationRoot config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile(configPath, optional: true, reloadOnChange: false)
+                    .AddEnvironmentVariables(prefix: "HEXEL_")
+                    .Build();
+
+                string? configured = config["Editor:SyntaxHighlightMaxChars"];
+                int value = int.TryParse(configured, out int parsed)
+                    ? parsed
+                    : DefaultSyntaxHighlightMaxChars;
+
+                return Math.Clamp(value, MinSyntaxHighlightMaxChars, MaxSyntaxHighlightMaxChars);
+            }
+            catch
+            {
+                return DefaultSyntaxHighlightMaxChars;
+            }
         }
 
         // ── Import button ────────────────────────────────────────────────────

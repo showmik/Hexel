@@ -237,6 +237,19 @@ namespace Hexprite.ViewModels
             }
         }
 
+        /// <summary>
+        /// Sets the sprite name without triggering export code generation.
+        /// Used by import paths to avoid UI stalls for large canvases.
+        /// </summary>
+        public void SetSpriteNameWithoutGenerating(string name)
+        {
+            if (_exportSettings.SpriteName != name)
+            {
+                _exportSettings.SpriteName = name;
+                OnPropertyChanged(nameof(SpriteName));
+            }
+        }
+
         public bool IncludeUsageComment
         {
             get => _exportSettings.IncludeUsageComment;
@@ -667,12 +680,17 @@ namespace Hexprite.ViewModels
         // ── Public methods called by the View ─────────────────────────────
 
         public void InitializeGrid(int width, int height)
+            => InitializeGrid(width, height, redrawImmediately: true);
+
+        public void InitializeGrid(int width, int height, bool redrawImmediately)
         {
             SpriteState = new SpriteState(width, height);
             RebuildBitmaps(width, height);
 
             MarkCodeStale();
-            RedrawGridFromMemory();
+            if (redrawImmediately)
+                RedrawGridFromMemory();
+
             NotifyCanvasLayoutChanged();
         }
 

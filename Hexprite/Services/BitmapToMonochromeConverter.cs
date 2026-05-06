@@ -31,16 +31,53 @@ namespace Hexprite.Services
             if (maxDimension <= 0)
                 throw new ArgumentOutOfRangeException(nameof(maxDimension), "maxDimension must be > 0");
 
-            // Load and normalize to BGRA32 for consistent CopyPixels reads.
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.UriSource = new Uri(path, UriKind.Absolute);
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-            bitmap.EndInit();
-            bitmap.Freeze();
+            // Robustness: downscale DURING decode so we never allocate gigantic source buffers.
+            int origW, origH;
+            using (var headerStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var headerDecoder = BitmapDecoder.Create(
+                    headerStream,
+                    BitmapCreateOptions.DelayCreation | BitmapCreateOptions.IgnoreColorProfile,
+                    BitmapCacheOption.None);
 
-            var bgra32 = new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0);
+                var headerFrame = headerDecoder.Frames[0];
+                origW = headerFrame.PixelWidth;
+                origH = headerFrame.PixelHeight;
+            }
+
+            if (origW <= 0 || origH <= 0)
+                throw new InvalidOperationException($"Invalid image dimensions: {origW}x{origH}");
+
+            int decodeW = origW;
+            int decodeH = origH;
+            int origMax = Math.Max(origW, origH);
+            bool wasScaled = false;
+
+            if (origMax > maxDimension)
+            {
+                double scale = maxDimension / (double)origMax;
+                decodeW = Math.Max(1, (int)Math.Round(origW * scale));
+                decodeH = Math.Max(1, (int)Math.Round(origH * scale));
+                wasScaled = decodeW != origW || decodeH != origH;
+            }
+
+            BitmapSource decoded;
+            using (var decodeStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = decodeStream;
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                bitmap.DecodePixelWidth = decodeW;
+                bitmap.DecodePixelHeight = decodeH;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                decoded = bitmap;
+            }
+
+            // Normalize to BGRA32 for consistent CopyPixels reads.
+            var bgra32 = new FormatConvertedBitmap(decoded, PixelFormats.Bgra32, null, 0);
             bgra32.Freeze();
 
             int srcW = bgra32.PixelWidth;
@@ -48,41 +85,25 @@ namespace Hexprite.Services
             if (srcW <= 0 || srcH <= 0)
                 throw new InvalidOperationException($"Invalid image dimensions: {srcW}x{srcH}");
 
-            // Scale down only when needed to respect the editor max dimension.
+            // After decode downscaling (if any), keep the decoded resolution as-is.
             int dstW = srcW;
             int dstH = srcH;
-            bool wasScaled = false;
-
-            int srcMax = Math.Max(srcW, srcH);
-            if (srcMax > maxDimension)
-            {
-                double scale = maxDimension / (double)srcMax;
-                dstW = Math.Max(1, (int)Math.Round(srcW * scale));
-                dstH = Math.Max(1, (int)Math.Round(srcH * scale));
-                wasScaled = dstW != srcW || dstH != srcH;
-            }
 
             int srcStride = srcW * 4;
             byte[] srcPixels = new byte[srcStride * srcH];
             bgra32.CopyPixels(srcPixels, srcStride, 0);
 
-            // Build a grayscale float buffer at the target resolution.
-            float[] gray = new float[dstW * dstH];
+            // Build a grayscale buffer. Because we already decode at the target size,
+            // we can read pixels 1:1 without per-pixel sampling math.
+            byte[] gray = new byte[dstW * dstH];
             for (int y = 0; y < dstH; y++)
             {
-                // Nearest-neighbor sample position in source pixel space.
-                int sy = (int)Math.Round((y + 0.5) * srcH / (double)dstH - 0.5);
-                sy = Math.Clamp(sy, 0, srcH - 1);
-
-                int dstRow = y * dstW;
-                int srcRow = sy * srcStride;
+                int row = y * dstW;
+                int srcRow = y * srcStride;
 
                 for (int x = 0; x < dstW; x++)
                 {
-                    int sx = (int)Math.Round((x + 0.5) * srcW / (double)dstW - 0.5);
-                    sx = Math.Clamp(sx, 0, srcW - 1);
-
-                    int srcIdx = srcRow + (sx * 4);
+                    int srcIdx = srcRow + (x * 4);
                     byte b = srcPixels[srcIdx + 0];
                     byte g = srcPixels[srcIdx + 1];
                     byte r = srcPixels[srcIdx + 2];
@@ -91,48 +112,55 @@ namespace Hexprite.Services
                     // Transparent pixels treated as white/off.
                     if (a < 128)
                     {
-                        gray[dstRow + x] = 255f;
+                        gray[row + x] = 255;
                         continue;
                     }
 
-                    // Standard luma formula.
-                    gray[dstRow + x] = (0.299f * r) + (0.587f * g) + (0.114f * b);
+                    // Standard luma formula (rounded).
+                    int luma = (int)(0.299 * r + 0.587 * g + 0.114 * b + 0.5);
+                    gray[row + x] = (byte)Math.Clamp(luma, 0, 255);
                 }
             }
 
             // Floyd–Steinberg dithering to {0,255} then map to bools.
             bool[] pixels = new bool[dstW * dstH];
+            int[] errRow = new int[dstW + 2];
+            int[] errNext = new int[dstW + 2];
 
             for (int y = 0; y < dstH; y++)
             {
+                Array.Clear(errNext, 0, errNext.Length);
                 int row = y * dstW;
+
                 for (int x = 0; x < dstW; x++)
                 {
                     int i = row + x;
-                    float oldVal = Math.Clamp(gray[i], 0f, 255f);
-                    float newVal = oldVal < 128f ? 0f : 255f;
-                    float err = oldVal - newVal;
 
-                    gray[i] = newVal;
-                    pixels[i] = newVal == 0f; // dark -> on
+                    // Apply propagated error (keep in int domain).
+                    int oldVal = gray[i] + errRow[x + 1];
+                    if (oldVal < 0) oldVal = 0;
+                    else if (oldVal > 255) oldVal = 255;
 
-                    // Distribute quantization error.
-                    if (x + 1 < dstW)
-                        gray[i + 1] = Math.Clamp(gray[i + 1] + err * (7f / 16f), 0f, 255f);
+                    int newVal = oldVal < 128 ? 0 : 255;
+                    int err = oldVal - newVal;
 
-                    if (y + 1 < dstH)
-                    {
-                        int nextRow = (y + 1) * dstW;
+                    // Hexprite's stored/exported bit polarity treats this branch as the
+                    // opposite visual state from what users expect during bitmap import.
+                    // Map dark source pixels to the imported "black" result.
+                    pixels[i] = newVal != 0;
 
-                        if (x > 0)
-                            gray[nextRow + (x - 1)] = Math.Clamp(gray[nextRow + (x - 1)] + err * (3f / 16f), 0f, 255f);
-
-                        gray[nextRow + x] = Math.Clamp(gray[nextRow + x] + err * (5f / 16f), 0f, 255f);
-
-                        if (x + 1 < dstW)
-                            gray[nextRow + (x + 1)] = Math.Clamp(gray[nextRow + (x + 1)] + err * (1f / 16f), 0f, 255f);
-                    }
+                    // Distribute quantization error (integer Floyd–Steinberg).
+                    // We store errors as "whole intensity units" (not scaled).
+                    if (x + 1 < dstW) errRow[x + 2] += (err * 7) / 16;
+                    errNext[x + 1] += (err * 5) / 16;
+                    if (x > 0) errNext[x] += (err * 3) / 16;
+                    if (x + 1 < dstW) errNext[x + 2] += (err * 1) / 16;
                 }
+
+                // Advance error buffers.
+                var tmp = errRow;
+                errRow = errNext;
+                errNext = tmp;
             }
 
             return (pixels, dstW, dstH, wasScaled);

@@ -7,6 +7,8 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Serilog;
 
 namespace Hexprite.ViewModels
@@ -411,9 +413,33 @@ namespace Hexprite.ViewModels
         // ── Import bitmap ─────────────────────────────────────────────────
 
         private const string BitmapImageFileFilter =
-            "Image Files (*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.webp)|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.webp|All Files (*.*)|*.*";
+            "Image Files (*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif)|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif|All Files (*.*)|*.*";
 
-        private void ExecuteImportBitmap()
+        private static Task<T> RunOnStaThreadAsync<T>(Func<T> func)
+        {
+            var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    T result = func();
+                    tcs.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+
+            thread.IsBackground = true;
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+
+            return tcs.Task;
+        }
+
+        private async void ExecuteImportBitmap()
         {
             using var operation = LoggingService.BeginOperation("Shell.ImportBitmap");
 
@@ -424,27 +450,34 @@ namespace Hexprite.ViewModels
                 return;
             }
 
-            var path = _dialogService.ShowOpenFileDialog(BitmapImageFileFilter, "Import Bitmap");
-            if (path == null) return;
+            string? selectedPath = null;
 
             try
             {
-                var (pixels, w, h, wasScaled) =
-                    BitmapToMonochromeConverter.ConvertTo1Bit(path, SpriteState.MaxDimension);
+                selectedPath = _dialogService.ShowOpenFileDialog(BitmapImageFileFilter, "Import Bitmap");
+                if (selectedPath == null) return;
 
-                var doc = CreateDocument(w, h);
+                // WPF image decode pipelines are STA-affine; run conversion on a dedicated STA thread
+                // so large imports don't block the UI thread.
+                var (pixels, w, h, wasScaled) = await RunOnStaThreadAsync(() =>
+                    BitmapToMonochromeConverter.ConvertTo1Bit(selectedPath, SpriteState.MaxDimension));
+
+                var doc = CreateDocument(w, h, redrawImmediately: false);
                 doc.SpriteState.Pixels = pixels;
 
                 doc.RedrawGridFromMemory();
 
                 // Set name so export panel picks it up
-                doc.SpriteName = CodeGeneratorService.SanitiseName(
-                    Path.GetFileNameWithoutExtension(path));
+                doc.SetSpriteNameWithoutGenerating(CodeGeneratorService.SanitiseName(
+                    Path.GetFileNameWithoutExtension(selectedPath)));
 
                 if (wasScaled)
                     doc.ShowStatus("Imported image (scaled to max canvas size)");
 
-                doc.UpdateTextOutputs();
+                // Generating export code for large imports can be expensive and may
+                // cause UI stalls due to downstream syntax highlighting. Defer it
+                // until the user explicitly clicks "Generate Code".
+                doc.MarkCodeStale();
 
                 OpenDocuments.Add(doc);
                 ActiveDocument = doc;
@@ -455,8 +488,11 @@ namespace Hexprite.ViewModels
             }
             catch (Exception ex)
             {
-                HandledErrorReporter.Error(ex, "ShellViewModel.ImportBitmap", new { path });
-                _dialogService.ShowMessage($"Error importing image: {ex.Message}");
+                HandledErrorReporter.Error(ex, "ShellViewModel.ImportBitmap", new { path = selectedPath });
+                if (ex is NotSupportedException)
+                    _dialogService.ShowMessage("This image format is not supported on your system.");
+                else
+                    _dialogService.ShowMessage($"Error importing image: {ex.Message}");
             }
         }
 
@@ -566,7 +602,7 @@ namespace Hexprite.ViewModels
             RaiseActiveTabChanged();
         }
 
-        private MainViewModel CreateDocument(int width, int height)
+        private MainViewModel CreateDocument(int width, int height, bool redrawImmediately = true)
         {
             var history = new HistoryService();
             var selection = new SelectionService();
@@ -575,7 +611,7 @@ namespace Hexprite.ViewModels
                 _codeGen, _drawingService, history, selection,
                 _clipboardService, _pixelClipboard, _dialogService);
 
-            doc.InitializeGrid(width, height);
+            doc.InitializeGrid(width, height, redrawImmediately);
             return doc;
         }
 
