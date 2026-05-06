@@ -344,8 +344,35 @@ namespace Hexprite.ViewModels
         public double SelectionStrokeThickness => SpriteState != null
             ? Math.Max(0.5, CellSize * 0.08)
             : 2.0;
-        public int PreviewWidth => (SpriteState?.Width ?? 16) * PreviewScale;
-        public int PreviewHeight => (SpriteState?.Height ?? 16) * PreviewScale;
+
+        // Keep the sidebar preview usable even for large canvases.
+        // Without this, `PreviewWidth/PreviewHeight` become enormous and WPF layout
+        // can get very slow / overflow horizontally.
+        private const int MaxPreviewDimensionPx = 280;
+
+        private double PreviewScaleEffective
+        {
+            get
+            {
+                if (SpriteState == null) return PreviewScale;
+
+                double requestedW = SpriteState.Width * (double)PreviewScale;
+                double requestedH = SpriteState.Height * (double)PreviewScale;
+                double maxRequested = Math.Max(requestedW, requestedH);
+
+                if (maxRequested <= MaxPreviewDimensionPx) return PreviewScale;
+
+                // Reduce effective scale to fit the sidebar preview box.
+                double fitRatio = MaxPreviewDimensionPx / maxRequested;
+                return PreviewScale * fitRatio;
+            }
+        }
+
+        public int PreviewWidth =>
+            Math.Max(1, (int)Math.Round((SpriteState?.Width ?? 16) * PreviewScaleEffective));
+
+        public int PreviewHeight =>
+            Math.Max(1, (int)Math.Round((SpriteState?.Height ?? 16) * PreviewScaleEffective));
 
         private int _previewScale = 2;
         public int PreviewScale
@@ -362,7 +389,8 @@ namespace Hexprite.ViewModels
             }
         }
 
-        public string PreviewScaleText => $"({PreviewScale}× scale)";
+        public string PreviewScaleText =>
+            $"({PreviewScale}× scale, fit {PreviewScaleEffective:F2}×)";
 
         private DisplayType _previewDisplayType = DisplayType.Generic_White;
         public int PreviewDisplayTypeIndex
@@ -1112,6 +1140,7 @@ namespace Hexprite.ViewModels
             OnPropertyChanged(nameof(CanvasDisplayHeight));
             OnPropertyChanged(nameof(DynamicStrokeThickness));
             OnPropertyChanged(nameof(SelectionStrokeThickness));
+            OnPropertyChanged(nameof(PreviewScaleText));
             OnPropertyChanged(nameof(CanvasDimensionText));
         }
     }
