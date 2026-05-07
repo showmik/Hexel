@@ -278,7 +278,9 @@ namespace Hexprite.Services
 
         public void ApplyMask(bool[,] mask, int minX, int minY, int maxX, int maxY, SelectionMode mode)
         {
-            if (mode == SelectionMode.Replace || (!HasActiveSelection && mode != SelectionMode.Add))
+            // When nothing is selected, ApplyMask(Add, …) should behave like Replace (magic wand etc.);
+            // rectangle/lasso never hits ApplyMask during drag—they use CombineWithBase only.
+            if (mode == SelectionMode.Replace || !HasActiveSelection)
             {
                 if (mode == SelectionMode.Intersect || mode == SelectionMode.Subtract)
                 {
