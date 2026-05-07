@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 
 namespace Hexprite
 {
@@ -50,6 +51,11 @@ namespace Hexprite
 
         // ── Draw mode locked for the duration of a stroke ─────────────────
         private DrawMode _activeDrawMode = DrawMode.None;
+        private bool _hasPendingToolMove;
+        private PendingToolMove _pendingToolMove;
+        private bool _toolMoveDispatchQueued;
+        private DateTime _lastToolMoveDispatchUtc = DateTime.MinValue;
+        private static readonly TimeSpan ToolMoveDispatchInterval = TimeSpan.FromMilliseconds(16);
 
         /// <summary>Floating selection resize via transform handles (preview coordinate deltas).</summary>
         private bool _activeTransformDrag;
@@ -462,6 +468,7 @@ namespace Hexprite
         {
             base.OnPreviewMouseUp(e);
             if (ViewModel == null || _selection == null) return;
+            FlushPendingToolMove();
 
             if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
                 ViewModel.IsDrawingFilledRectangle || ViewModel.IsDrawingFilledEllipse)
@@ -806,8 +813,9 @@ namespace Hexprite
                 if (mode != DrawMode.None || ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
                     ViewModel.IsDrawingFilledRectangle || ViewModel.IsDrawingFilledEllipse)
                 {
-                    ViewModel.ProcessToolInput(x, y, ToolAction.Move, mode,
-                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
+                    EnqueueToolMove(x, y, mode,
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
+                        Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                 }
             }
         }
@@ -816,6 +824,60 @@ namespace Hexprite
         {
             _zoomPan.TryEndPan((ScrollViewer)sender, e);
         }
+
+        private void EnqueueToolMove(int x, int y, DrawMode mode, bool isShiftDown, bool isAltDown)
+        {
+            if (ViewModel == null) return;
+
+            _pendingToolMove = new PendingToolMove(x, y, mode, isShiftDown, isAltDown);
+            _hasPendingToolMove = true;
+
+            if (_toolMoveDispatchQueued)
+                return;
+
+            _toolMoveDispatchQueued = true;
+            Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(DispatchPendingToolMove));
+        }
+
+        private void DispatchPendingToolMove()
+        {
+            _toolMoveDispatchQueued = false;
+            if (!_hasPendingToolMove || ViewModel == null)
+                return;
+
+            var now = DateTime.UtcNow;
+            var elapsed = now - _lastToolMoveDispatchUtc;
+            if (elapsed < ToolMoveDispatchInterval)
+            {
+                _toolMoveDispatchQueued = true;
+                Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(DispatchPendingToolMove));
+                return;
+            }
+
+            var pending = _pendingToolMove;
+            _hasPendingToolMove = false;
+            _lastToolMoveDispatchUtc = now;
+            ViewModel.ProcessToolInput(pending.X, pending.Y, ToolAction.Move, pending.Mode, pending.IsShiftDown, pending.IsAltDown);
+
+            if (_hasPendingToolMove && !_toolMoveDispatchQueued)
+            {
+                _toolMoveDispatchQueued = true;
+                Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(DispatchPendingToolMove));
+            }
+        }
+
+        private void FlushPendingToolMove()
+        {
+            if (!_hasPendingToolMove || ViewModel == null)
+                return;
+
+            var pending = _pendingToolMove;
+            _hasPendingToolMove = false;
+            _lastToolMoveDispatchUtc = DateTime.UtcNow;
+            ViewModel.ProcessToolInput(pending.X, pending.Y, ToolAction.Move, pending.Mode, pending.IsShiftDown, pending.IsAltDown);
+        }
+
+        private readonly record struct PendingToolMove(int X, int Y, DrawMode Mode, bool IsShiftDown, bool IsAltDown);
 
         // ── Utility ───────────────────────────────────────────────────────
 

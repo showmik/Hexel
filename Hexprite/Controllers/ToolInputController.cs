@@ -30,6 +30,8 @@ namespace Hexprite.Controllers
         private bool _pendingTextUpdateDuringDrag;
         private bool _lastShiftDown;
         private bool _lastAltDown;
+        private readonly List<(int x, int y)> _pixelPerfectStrokePath = new();
+        private readonly Dictionary<int, bool> _pixelPerfectOriginalStates = new();
 
         // ── Shape drawing state ───────────────────────────────────────────
         // Replaces the five individual IsDrawingXxx booleans with a single
@@ -131,6 +133,7 @@ namespace Hexprite.Controllers
                 ResetLineTracking();
                 _vm.RedrawGridFromMemory();  // remove any shape preview
             }
+            ClearPixelPerfectStrokeState();
             _pendingTextUpdateDuringDrag = false;
         }
 
@@ -172,20 +175,27 @@ namespace Hexprite.Controllers
                     break;
 
                 case ToolMode.Pencil:
+                    _vm.BeginStrokeRenderSession();
+                    ClearPixelPerfectStrokeState();
                     if (isShiftDown && _lastClickedX != NoPosition)
                     {
                         _vm.SaveStateForUndo();
-                        _drawingService.DrawLine(_vm.SpriteState, _lastClickedX, _lastClickedY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
+                        if (ShouldUsePixelPerfect())
+                        {
+                            ApplyPixelPerfectSegment(_lastClickedX, _lastClickedY, x, y, newState, skipFirstPoint: false);
+                        }
+                        else
+                        {
+                            _drawingService.DrawLine(_vm.SpriteState, _lastClickedX, _lastClickedY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
 
-                        // Partial redraw for the line segment — use full brush size
-                        // as margin to account for rotated Square/Line brush offsets
-                        int brushMargin1 = _vm.BrushSize + 1;
-                        _vm.RedrawRegion(
-                            Math.Min(_lastClickedX, x) - brushMargin1,
-                            Math.Min(_lastClickedY, y) - brushMargin1,
-                            Math.Max(_lastClickedX, x) + brushMargin1,
-                            Math.Max(_lastClickedY, y) + brushMargin1,
-                            updatePreviewSimulation: false);
+                            int brushMargin1 = ComputeDirtyMargin();
+                            _vm.RedrawRegion(
+                                Math.Min(_lastClickedX, x) - brushMargin1,
+                                Math.Min(_lastClickedY, y) - brushMargin1,
+                                Math.Max(_lastClickedX, x) + brushMargin1,
+                                Math.Max(_lastClickedY, y) + brushMargin1,
+                                updatePreviewSimulation: false);
+                        }
 
                         _lastClickedX = x;
                         _lastClickedY = y;
@@ -194,19 +204,27 @@ namespace Hexprite.Controllers
                     else
                     {
                         _vm.SaveStateForUndo();
-                        _drawingService.DrawBrushStamp(_vm.SpriteState, x, y, _vm.BrushSize, newState, _vm.BrushShape, _vm.BrushAngle);
+                        if (ShouldUsePixelPerfect())
+                        {
+                            PlotPixelPerfectPoint(x, y, newState);
+                        }
+                        else
+                        {
+                            _drawingService.DrawBrushStamp(_vm.SpriteState, x, y, _vm.BrushSize, newState, _vm.BrushShape, _vm.BrushAngle);
+                        }
                         _lastClickedX = x;
                         _lastClickedY = y;
 
-                        // Partial redraw for the single stamp — use full brush size
-                        // as margin to account for rotated Square/Line brush offsets
-                        int brushMargin2 = _vm.BrushSize + 1;
-                        _vm.RedrawRegion(
-                            x - brushMargin2,
-                            y - brushMargin2,
-                            x + brushMargin2,
-                            y + brushMargin2,
-                            updatePreviewSimulation: false);
+                        if (!ShouldUsePixelPerfect())
+                        {
+                            int brushMargin2 = ComputeDirtyMargin();
+                            _vm.RedrawRegion(
+                                x - brushMargin2,
+                                y - brushMargin2,
+                                x + brushMargin2,
+                                y + brushMargin2,
+                                updatePreviewSimulation: false);
+                        }
                         _pendingTextUpdateDuringDrag = true;
                     }
                     break;
@@ -215,6 +233,7 @@ namespace Hexprite.Controllers
 
         private void HandleToolMove(int x, int y, DrawMode mode, bool isShiftDown, bool isAltDown)
         {
+            using var perfScope = _vm.BeginMovePerfScope();
             if (_vm.IsActiveLayerLocked)
                 return;
 
@@ -244,19 +263,29 @@ namespace Hexprite.Controllers
 
                     // Continuous pencil drag: draw line segment but don't push undo
                     // (the undo entry was already pushed on Down)
-                    _drawingService.DrawLine(_vm.SpriteState, prevX, prevY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
+                    if (ShouldUsePixelPerfect())
+                    {
+                        ApplyPixelPerfectSegment(prevX, prevY, x, y, newState, skipFirstPoint: true);
+                    }
+                    else
+                    {
+                        _drawingService.DrawLine(_vm.SpriteState, prevX, prevY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
+                    }
                     _lastClickedX = x;
                     _lastClickedY = y;
                     _pendingTextUpdateDuringDrag = true;
 
-                    // Partial redraw: only update the bounding box of the stroke segment
-                    // Use full brush size as margin to handle rotated brush offsets
-                    int brushMargin = _vm.BrushSize + 1;
-                    int dirtyMinX = Math.Min(prevX, x) - brushMargin;
-                    int dirtyMinY = Math.Min(prevY, y) - brushMargin;
-                    int dirtyMaxX = Math.Max(prevX, x) + brushMargin;
-                    int dirtyMaxY = Math.Max(prevY, y) + brushMargin;
-                    _vm.RedrawRegion(dirtyMinX, dirtyMinY, dirtyMaxX, dirtyMaxY, updatePreviewSimulation: false);
+                    if (!ShouldUsePixelPerfect())
+                    {
+                        // Partial redraw: only update the stroke segment footprint plus
+                        // a conservative 1px safety margin for brush edge rounding.
+                        int brushMargin = ComputeDirtyMargin();
+                        int dirtyMinX = Math.Min(prevX, x) - brushMargin;
+                        int dirtyMinY = Math.Min(prevY, y) - brushMargin;
+                        int dirtyMaxX = Math.Max(prevX, x) + brushMargin;
+                        int dirtyMaxY = Math.Max(prevY, y) + brushMargin;
+                        _vm.RedrawRegion(dirtyMinX, dirtyMinY, dirtyMaxX, dirtyMaxY, updatePreviewSimulation: false);
+                    }
                 }
             }
         }
@@ -288,7 +317,9 @@ namespace Hexprite.Controllers
             if (_vm.CurrentTool == ToolMode.Pencil && _pendingTextUpdateDuringDrag)
             {
                 _pendingTextUpdateDuringDrag = false;
+                ClearPixelPerfectStrokeState();
                 _vm.MarkCodeStale();
+                _vm.EndStrokeRenderSession();
                 _vm.UpdatePreviewSimulation();
             }
         }
@@ -348,6 +379,110 @@ namespace Hexprite.Controllers
             _lineStartY = NoPosition;
             _lineCurrentX = NoPosition;
             _lineCurrentY = NoPosition;
+        }
+
+        private int ComputeDirtyMargin()
+        {
+            int brushRadius = (_vm.BrushSize - 1) / 2;
+            return Math.Max(2, brushRadius + 2);
+        }
+
+        private bool ShouldUsePixelPerfect()
+            => _vm.CurrentTool == ToolMode.Pencil && _vm.IsPixelPerfectEnabled && _vm.BrushSize == 1;
+
+        private void ClearPixelPerfectStrokeState()
+        {
+            _pixelPerfectStrokePath.Clear();
+            _pixelPerfectOriginalStates.Clear();
+        }
+
+        private void ApplyPixelPerfectSegment(int x0, int y0, int x1, int y1, bool newState, bool skipFirstPoint)
+        {
+            bool first = true;
+            foreach (var (x, y) in EnumerateLinePoints(x0, y0, x1, y1))
+            {
+                if (skipFirstPoint && first)
+                {
+                    first = false;
+                    continue;
+                }
+
+                first = false;
+                PlotPixelPerfectPoint(x, y, newState);
+            }
+        }
+
+        private void PlotPixelPerfectPoint(int x, int y, bool newState)
+        {
+            var state = _vm.SpriteState;
+            if (x < 0 || x >= state.Width || y < 0 || y >= state.Height)
+                return;
+
+            int index = (y * state.Width) + x;
+            bool before = state.Pixels[index];
+            if (!_pixelPerfectOriginalStates.ContainsKey(index))
+                _pixelPerfectOriginalStates[index] = before;
+
+            _drawingService.DrawBrushStamp(state, x, y, 1, newState);
+            bool after = state.Pixels[index];
+            if (after != newState)
+                return;
+
+            if (_pixelPerfectStrokePath.Count == 0 || _pixelPerfectStrokePath[^1] != (x, y))
+                _pixelPerfectStrokePath.Add((x, y));
+
+            _vm.RedrawRegion(x, y, x, y, updatePreviewSimulation: false);
+            TryRemovePixelPerfectCorner();
+        }
+
+        private void TryRemovePixelPerfectCorner()
+        {
+            if (_pixelPerfectStrokePath.Count < 3)
+                return;
+
+            var a = _pixelPerfectStrokePath[^3];
+            var b = _pixelPerfectStrokePath[^2];
+            var c = _pixelPerfectStrokePath[^1];
+
+            int abDx = b.x - a.x;
+            int abDy = b.y - a.y;
+            int bcDx = c.x - b.x;
+            int bcDy = c.y - b.y;
+            int acDx = c.x - a.x;
+            int acDy = c.y - a.y;
+
+            bool isAxisAlignedSteps =
+                Math.Abs(abDx) + Math.Abs(abDy) == 1 &&
+                Math.Abs(bcDx) + Math.Abs(bcDy) == 1;
+            bool isRightAngleTurn = (abDx != bcDx || abDy != bcDy) && ((abDx == 0 && bcDx != 0) || (abDy == 0 && bcDy != 0));
+            bool isStaircaseCorner = Math.Abs(acDx) == 1 && Math.Abs(acDy) == 1;
+            if (!isAxisAlignedSteps || !isRightAngleTurn || !isStaircaseCorner)
+                return;
+
+            int indexB = (b.y * _vm.SpriteState.Width) + b.x;
+            if (_pixelPerfectOriginalStates.TryGetValue(indexB, out bool originalState))
+            {
+                _drawingService.DrawBrushStamp(_vm.SpriteState, b.x, b.y, 1, originalState);
+                _vm.RedrawRegion(b.x, b.y, b.x, b.y, updatePreviewSimulation: false);
+                _pixelPerfectStrokePath.RemoveAt(_pixelPerfectStrokePath.Count - 2);
+            }
+        }
+
+        private static IEnumerable<(int x, int y)> EnumerateLinePoints(int x0, int y0, int x1, int y1)
+        {
+            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+
+            while (true)
+            {
+                yield return (x0, y0);
+                if (x0 == x1 && y0 == y1) break;
+
+                int e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
         }
     }
 }

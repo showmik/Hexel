@@ -22,6 +22,7 @@ namespace Hexprite.Services
         public int BrushSize { get; set; } = 1;
         public BrushShape BrushShape { get; set; } = BrushShape.Circle;
         public int BrushAngle { get; set; } = 0;
+        public bool IsPixelPerfectEnabled { get; set; } = false;
         public int PreviewScale { get; set; } = 2;
         public int PreviewDisplayTypeIndex { get; set; } = 0;
         public bool UseRealisticPreview { get; set; } = false;
@@ -112,6 +113,7 @@ namespace Hexprite.Services
                 BrushSize = prefs.BrushSize,
                 BrushShape = prefs.BrushShape,
                 BrushAngle = prefs.BrushAngle,
+                IsPixelPerfectEnabled = prefs.IsPixelPerfectEnabled,
                 PreviewScale = prefs.PreviewScale,
                 PreviewDisplayTypeIndex = prefs.PreviewDisplayTypeIndex,
                 UseRealisticPreview = prefs.UseRealisticPreview,

@@ -150,6 +150,28 @@
                                Margin="3,0,0,0"
                                FontSize="11" />
 
+                    <CheckBox Content="Pixel-Perfect"
+                              IsChecked="{Binding IsPixelPerfectEnabled}"
+                              Foreground="{DynamicResource Brush.Text.Muted}"
+                              VerticalAlignment="Center"
+                              Margin="10,0,0,0"
+                              ToolTip="Remove staircase corners while freehand drawing with a 1px pencil.">
+                        <CheckBox.Style>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding CurrentTool}" Value="Pencil" />
+                                            <Condition Binding="{Binding BrushSize}" Value="1" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </CheckBox.Style>
+                    </CheckBox>
+
                     <!-- Rotation controls (only for Square and Line) -->
                     <StackPanel x:Name="RotationPanel" x:FieldModifier="public"
                                 Orientation="Horizontal"

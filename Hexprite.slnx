@@ -1,4 +1,6 @@
 <Solution>
-  <Project Path="Hexprite.Tests/Hexprite.Tests.csproj" />
+  <Project Path="Hexprite.Tests/Hexprite.Tests.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
   <Project Path="Hexprite/Hexprite.csproj" />
 </Solution>

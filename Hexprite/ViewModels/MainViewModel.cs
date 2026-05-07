@@ -8,7 +8,9 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -199,7 +201,10 @@ namespace Hexprite.ViewModels
             set
             {
                 if (SetProperty(ref _currentTool, value))
+                {
+                    OnPropertyChanged(nameof(IsPixelPerfectAvailable));
                     SaveEditorPreferences();
+                }
             }
         }
 
@@ -217,9 +222,25 @@ namespace Hexprite.ViewModels
             set
             {
                 if (SetProperty(ref _brushSize, Math.Clamp(value, 1, 64)))
+                {
+                    OnPropertyChanged(nameof(IsPixelPerfectAvailable));
+                    SaveEditorPreferences();
+                }
+            }
+        }
+
+        private bool _isPixelPerfectEnabled;
+        public bool IsPixelPerfectEnabled
+        {
+            get => _isPixelPerfectEnabled;
+            set
+            {
+                if (SetProperty(ref _isPixelPerfectEnabled, value))
                     SaveEditorPreferences();
             }
         }
+
+        public bool IsPixelPerfectAvailable => CurrentTool == ToolMode.Pencil && BrushSize == 1;
 
         private BrushShape _brushShape = BrushShape.Circle;
         public BrushShape BrushShape
@@ -610,6 +631,12 @@ namespace Hexprite.ViewModels
         private uint[] _previewSimBuffer = Array.Empty<uint>();
         private long _lastPreviewSimulationTicks;
         private const long PreviewSimulationMinIntervalTicks = TimeSpan.TicksPerMillisecond * 33;
+        private bool _isStrokeRenderingActive;
+        private bool _pendingPreviewSimulationAfterStroke;
+
+#if DEBUG
+        private readonly DrawPerfCollector _drawPerf = new();
+#endif
 
         private uint _colorOffUint, _colorOnUint, _previewOffUint, _previewOnUint;
         private static uint ToBgra32(Color c) =>
@@ -1277,34 +1304,35 @@ namespace Hexprite.ViewModels
         public void RedrawGridFromMemory()
         {
             if (CanvasBitmap == null || _canvasBuffer == null || SpriteState?.Pixels == null) return;
+            using var perfScope = BeginDrawPerfScope("RedrawGridFromMemory");
 
             int w = SpriteState.Width;
             int h = SpriteState.Height;
+            var visibleLayerPixels = GetVisibleLayerPixels();
+            int visibleLayerCount = visibleLayerPixels.Count;
+            bool[]? singleLayerPixels = visibleLayerCount == 1 ? visibleLayerPixels[0] : null;
+            bool hasFloating = _selectionService.IsFloating && _selectionService.FloatingPixels != null;
+            int floatingX = _selectionService.FloatingX;
+            int floatingY = _selectionService.FloatingY;
+            int floatingW = _selectionService.FloatingWidth;
+            int floatingH = _selectionService.FloatingHeight;
+            bool[,]? floatingPixels = _selectionService.FloatingPixels;
 
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
                     int i = (y * w) + x;
-                    bool isPixelOn = false;
-                    foreach (var layer in SpriteState.Layers)
-                    {
-                        if (!layer.IsVisible) continue;
-                        if (layer.Pixels[i])
-                        {
-                            isPixelOn = true;
-                            break;
-                        }
-                    }
+                    bool isPixelOn = ComposePixelState(i, visibleLayerPixels, visibleLayerCount, singleLayerPixels);
 
                     // Overlay the floating selection layer if one is active
-                    if (_selectionService.IsFloating && _selectionService.FloatingPixels != null)
+                    if (hasFloating && floatingPixels != null)
                     {
-                        int fx = x - _selectionService.FloatingX;
-                        int fy = y - _selectionService.FloatingY;
-                        if (fx >= 0 && fx < _selectionService.FloatingWidth &&
-                            fy >= 0 && fy < _selectionService.FloatingHeight &&
-                            _selectionService.FloatingPixels[fx, fy])
+                        int fx = x - floatingX;
+                        int fy = y - floatingY;
+                        if (fx >= 0 && fx < floatingW &&
+                            fy >= 0 && fy < floatingH &&
+                            floatingPixels[fx, fy])
                         {
                             isPixelOn = true;
                         }
@@ -1316,8 +1344,14 @@ namespace Hexprite.ViewModels
             }
 
             var rect = new Int32Rect(0, 0, w, h);
-            CanvasBitmap.WritePixels(rect, _canvasBuffer, w * 4, 0);
-            PreviewBitmap.WritePixels(rect, _previewBuffer, w * 4, 0);
+            using (BeginDrawPerfScope("WritePixels.Full.Canvas"))
+            {
+                CanvasBitmap.WritePixels(rect, _canvasBuffer, w * 4, 0);
+            }
+            using (BeginDrawPerfScope("WritePixels.Full.Preview"))
+            {
+                PreviewBitmap.WritePixels(rect, _previewBuffer, w * 4, 0);
+            }
             UpdatePreviewSimulation();
         }
 
@@ -1329,6 +1363,7 @@ namespace Hexprite.ViewModels
         public void RedrawRegion(int minX, int minY, int maxX, int maxY, bool updatePreviewSimulation = true)
         {
             if (CanvasBitmap == null || _canvasBuffer == null || SpriteState?.Pixels == null) return;
+            using var perfScope = BeginDrawPerfScope("RedrawRegion");
 
             int w = SpriteState.Width;
             int h = SpriteState.Height;
@@ -1340,31 +1375,30 @@ namespace Hexprite.ViewModels
             int y1 = Math.Clamp(maxY, 0, h - 1);
             if (x0 > x1 || y0 > y1) return;
 
+            var visibleLayerPixels = GetVisibleLayerPixels();
+            int visibleLayerCount = visibleLayerPixels.Count;
+            bool[]? singleLayerPixels = visibleLayerCount == 1 ? visibleLayerPixels[0] : null;
             bool hasFloating = _selectionService.IsFloating && _selectionService.FloatingPixels != null;
+            int floatingX = _selectionService.FloatingX;
+            int floatingY = _selectionService.FloatingY;
+            int floatingW = _selectionService.FloatingWidth;
+            int floatingH = _selectionService.FloatingHeight;
+            bool[,]? floatingPixels = _selectionService.FloatingPixels;
 
             for (int y = y0; y <= y1; y++)
             {
                 for (int x = x0; x <= x1; x++)
                 {
                     int i = (y * w) + x;
-                    bool isPixelOn = false;
-                    foreach (var layer in SpriteState.Layers)
-                    {
-                        if (!layer.IsVisible) continue;
-                        if (layer.Pixels[i])
-                        {
-                            isPixelOn = true;
-                            break;
-                        }
-                    }
+                    bool isPixelOn = ComposePixelState(i, visibleLayerPixels, visibleLayerCount, singleLayerPixels);
 
-                    if (hasFloating)
+                    if (hasFloating && floatingPixels != null)
                     {
-                        int fx = x - _selectionService.FloatingX;
-                        int fy = y - _selectionService.FloatingY;
-                        if (fx >= 0 && fx < _selectionService.FloatingWidth &&
-                            fy >= 0 && fy < _selectionService.FloatingHeight &&
-                            _selectionService.FloatingPixels![fx, fy])
+                        int fx = x - floatingX;
+                        int fy = y - floatingY;
+                        if (fx >= 0 && fx < floatingW &&
+                            fy >= 0 && fy < floatingH &&
+                            floatingPixels[fx, fy])
                         {
                             isPixelOn = true;
                         }
@@ -1381,8 +1415,14 @@ namespace Hexprite.ViewModels
             // destX/Y is where it lands in the bitmap. This avoids the buffer-size
             // validation issue with the offset-based overload.
             var srcRect = new Int32Rect(x0, y0, regionW, regionH);
-            CanvasBitmap.WritePixels(srcRect, _canvasBuffer, w * 4, x0, y0);
-            PreviewBitmap.WritePixels(srcRect, _previewBuffer, w * 4, x0, y0);
+            using (BeginDrawPerfScope("WritePixels.Region.Canvas"))
+            {
+                CanvasBitmap.WritePixels(srcRect, _canvasBuffer, w * 4, x0, y0);
+            }
+            using (BeginDrawPerfScope("WritePixels.Region.Preview"))
+            {
+                PreviewBitmap.WritePixels(srcRect, _previewBuffer, w * 4, x0, y0);
+            }
             if (updatePreviewSimulation)
                 UpdatePreviewSimulation();
         }
@@ -1900,6 +1940,7 @@ namespace Hexprite.ViewModels
             _brushSize = Math.Clamp(prefs.BrushSize, 1, 64);
             _brushShape = prefs.BrushShape;
             _brushAngle = ((prefs.BrushAngle % 360) + 360) % 360;
+            _isPixelPerfectEnabled = prefs.IsPixelPerfectEnabled;
             _previewScale = Math.Max(1, prefs.PreviewScale);
             _previewDisplayType = (DisplayType)Math.Clamp(prefs.PreviewDisplayTypeIndex, 0, 4);
             _useRealisticPreview = prefs.UseRealisticPreview;
@@ -1917,6 +1958,7 @@ namespace Hexprite.ViewModels
                 p.BrushSize = _brushSize;
                 p.BrushShape = _brushShape;
                 p.BrushAngle = _brushAngle;
+                p.IsPixelPerfectEnabled = _isPixelPerfectEnabled;
                 p.PreviewScale = _previewScale;
                 p.PreviewDisplayTypeIndex = (int)_previewDisplayType;
                 p.UseRealisticPreview = _useRealisticPreview;
@@ -1964,6 +2006,12 @@ namespace Hexprite.ViewModels
             long nowTicks = DateTime.UtcNow.Ticks;
             if (!force && (nowTicks - _lastPreviewSimulationTicks) < PreviewSimulationMinIntervalTicks)
                 return;
+            if (!force && _isStrokeRenderingActive)
+            {
+                _pendingPreviewSimulationAfterStroke = true;
+                return;
+            }
+            using var perfScope = BeginDrawPerfScope("UpdatePreviewSimulation");
 
             EnsurePreviewSimBitmap();
 
@@ -2010,9 +2058,158 @@ namespace Hexprite.ViewModels
                 _previewSimBuffer);
 
             var rect = new Int32Rect(0, 0, PreviewSimBitmap.PixelWidth, PreviewSimBitmap.PixelHeight);
-            PreviewSimBitmap.WritePixels(rect, _previewSimBuffer, PreviewSimBitmap.PixelWidth * 4, 0);
+            using (BeginDrawPerfScope("WritePixels.PreviewSim"))
+            {
+                PreviewSimBitmap.WritePixels(rect, _previewSimBuffer, PreviewSimBitmap.PixelWidth * 4, 0);
+            }
             _lastPreviewSimulationTicks = nowTicks;
         }
+
+        public void BeginStrokeRenderSession()
+        {
+            _isStrokeRenderingActive = true;
+        }
+
+        public void EndStrokeRenderSession()
+        {
+            _isStrokeRenderingActive = false;
+            if (_pendingPreviewSimulationAfterStroke)
+            {
+                _pendingPreviewSimulationAfterStroke = false;
+                UpdatePreviewSimulation(force: true);
+            }
+        }
+
+        public IDisposable BeginMovePerfScope() => BeginDrawPerfScope("HandleToolMove");
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ComposePixelState(int pixelIndex, List<bool[]> visibleLayerPixels, int visibleLayerCount, bool[]? singleLayerPixels)
+        {
+            if (visibleLayerCount == 0)
+                return false;
+            if (visibleLayerCount == 1)
+                return singleLayerPixels![pixelIndex];
+
+            for (int li = 0; li < visibleLayerPixels.Count; li++)
+            {
+                if (visibleLayerPixels[li][pixelIndex])
+                    return true;
+            }
+            return false;
+        }
+
+        private List<bool[]> GetVisibleLayerPixels()
+        {
+            var layers = SpriteState.Layers;
+            var visible = new List<bool[]>(layers.Count);
+            for (int i = 0; i < layers.Count; i++)
+            {
+                if (layers[i].IsVisible)
+                    visible.Add(layers[i].Pixels);
+            }
+            return visible;
+        }
+
+        private IDisposable BeginDrawPerfScope(string scope)
+        {
+#if DEBUG
+            return _drawPerf.Begin(scope);
+#else
+            return NoopDisposable.Instance;
+#endif
+        }
+
+        private sealed class NoopDisposable : IDisposable
+        {
+            public static readonly NoopDisposable Instance = new();
+            public void Dispose() { }
+        }
+
+#if DEBUG
+        private sealed class DrawPerfCollector
+        {
+            private const int SampleWindow = 180;
+            private readonly Dictionary<string, SampleBucket> _buckets = new(StringComparer.Ordinal);
+
+            public IDisposable Begin(string scope) => new Scope(this, scope, Stopwatch.GetTimestamp());
+
+            private void Commit(string scope, long startTimestamp)
+            {
+                long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+                if (!_buckets.TryGetValue(scope, out var bucket))
+                {
+                    bucket = new SampleBucket();
+                    _buckets[scope] = bucket;
+                }
+                bucket.Add(elapsedTicks);
+                if (bucket.Count >= SampleWindow)
+                {
+                    Log.Debug("DrawPerf {Scope}: avg={AvgMs:F3}ms p95={P95Ms:F3}ms max={MaxMs:F3}ms n={Count}",
+                        scope, bucket.GetAverageMs(), bucket.GetP95Ms(), bucket.GetMaxMs(), bucket.Count);
+                    bucket.Reset();
+                }
+            }
+
+            private sealed class Scope : IDisposable
+            {
+                private readonly DrawPerfCollector _owner;
+                private readonly string _scope;
+                private readonly long _startTimestamp;
+                private bool _disposed;
+
+                public Scope(DrawPerfCollector owner, string scope, long startTimestamp)
+                {
+                    _owner = owner;
+                    _scope = scope;
+                    _startTimestamp = startTimestamp;
+                }
+
+                public void Dispose()
+                {
+                    if (_disposed) return;
+                    _disposed = true;
+                    _owner.Commit(_scope, _startTimestamp);
+                }
+            }
+
+            private sealed class SampleBucket
+            {
+                private readonly List<long> _samples = new(SampleWindow);
+                private long _sumTicks;
+                private long _maxTicks;
+                public int Count => _samples.Count;
+
+                public void Add(long ticks)
+                {
+                    _samples.Add(ticks);
+                    _sumTicks += ticks;
+                    if (ticks > _maxTicks) _maxTicks = ticks;
+                }
+
+                public double GetAverageMs() => TicksToMs(_sumTicks / (double)Math.Max(1, _samples.Count));
+
+                public double GetP95Ms()
+                {
+                    if (_samples.Count == 0) return 0;
+                    _samples.Sort();
+                    int index = (int)Math.Ceiling(_samples.Count * 0.95) - 1;
+                    index = Math.Clamp(index, 0, _samples.Count - 1);
+                    return TicksToMs(_samples[index]);
+                }
+
+                public double GetMaxMs() => TicksToMs(_maxTicks);
+
+                public void Reset()
+                {
+                    _samples.Clear();
+                    _sumTicks = 0;
+                    _maxTicks = 0;
+                }
+
+                private static double TicksToMs(double ticks) => ticks * 1000.0 / Stopwatch.Frequency;
+            }
+        }
+#endif
 
         private static double GetRelativeLuminance(Color c)
         {
