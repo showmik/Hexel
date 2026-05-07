@@ -11,6 +11,15 @@ namespace Hexprite.Services
         public bool IsSelecting { get; private set; }
         public bool IsFloating { get; private set; }
         public bool IsDragging { get; private set; }
+        public bool IsTransforming { get; private set; }
+        public TransformHandle ActiveTransformHandle { get; private set; }
+
+        // ── Transform snapshot (nearest-neighbor resize source) ───────────
+        private bool[,]? _originalFloatingPixels;
+        private int _originalFloatingX;
+        private int _originalFloatingY;
+        private int _originalFloatingW;
+        private int _originalFloatingH;
 
         // ── Selection bounds ──────────────────────────────────────────────
         public int MinX { get; private set; } = -1;
@@ -593,6 +602,13 @@ namespace Hexprite.Services
                 IsSelecting = IsSelecting,
                 IsFloating = IsFloating,
                 IsDragging = IsDragging,
+                IsTransforming = IsTransforming,
+                ActiveTransformHandle = ActiveTransformHandle,
+                OriginalFloatingPixels = _originalFloatingPixels != null ? (bool[,])_originalFloatingPixels.Clone() : null,
+                OriginalFloatingX = _originalFloatingX,
+                OriginalFloatingY = _originalFloatingY,
+                OriginalFloatingWidth = _originalFloatingW,
+                OriginalFloatingHeight = _originalFloatingH,
                 MinX = MinX,
                 MaxX = MaxX,
                 MinY = MinY,
@@ -613,6 +629,13 @@ namespace Hexprite.Services
             IsSelecting = snapshot.IsSelecting;
             IsFloating = snapshot.IsFloating;
             IsDragging = snapshot.IsDragging;
+            IsTransforming = snapshot.IsTransforming;
+            ActiveTransformHandle = snapshot.ActiveTransformHandle;
+            _originalFloatingPixels = snapshot.OriginalFloatingPixels != null ? (bool[,])snapshot.OriginalFloatingPixels.Clone() : null;
+            _originalFloatingX = snapshot.OriginalFloatingX;
+            _originalFloatingY = snapshot.OriginalFloatingY;
+            _originalFloatingW = snapshot.OriginalFloatingWidth;
+            _originalFloatingH = snapshot.OriginalFloatingHeight;
             MinX = snapshot.MinX;
             MaxX = snapshot.MaxX;
             MinY = snapshot.MinY;
@@ -637,6 +660,105 @@ namespace Hexprite.Services
             Notify();
         }
 
+        // ── Transform (resize floating selection) ─────────────────────────
+
+        public void BeginTransform(TransformHandle handle)
+        {
+            if (!HasActiveSelection || handle == TransformHandle.None)
+                return;
+            if (!IsFloating || FloatingPixels == null)
+                return;
+
+            ActiveTransformHandle = handle;
+            IsTransforming = true;
+            _originalFloatingPixels = (bool[,])FloatingPixels.Clone();
+            _originalFloatingX = FloatingX;
+            _originalFloatingY = FloatingY;
+            _originalFloatingW = FloatingWidth;
+            _originalFloatingH = FloatingHeight;
+            Notify();
+        }
+
+        public void UpdateTransform(int newX, int newY, int newW, int newH)
+        {
+            if (!IsTransforming || _originalFloatingPixels == null)
+                return;
+
+            newW = Math.Max(1, newW);
+            newH = Math.Max(1, newH);
+
+            FloatingX = newX;
+            FloatingY = newY;
+            FloatingWidth = newW;
+            FloatingHeight = newH;
+
+            FloatingPixels = ResampleNearestNeighbor(_originalFloatingPixels, _originalFloatingW, _originalFloatingH, newW, newH);
+
+            MinX = newX;
+            MinY = newY;
+            MaxX = newX + newW - 1;
+            MaxY = newY + newH - 1;
+            Notify();
+        }
+
+        public void CommitTransform()
+        {
+            if (!IsTransforming)
+                return;
+
+            IsTransforming = false;
+            ActiveTransformHandle = TransformHandle.None;
+            _originalFloatingPixels = null;
+
+            MinX = FloatingX;
+            MinY = FloatingY;
+            MaxX = FloatingX + FloatingWidth - 1;
+            MaxY = FloatingY + FloatingHeight - 1;
+            Mask = null;
+            Notify();
+        }
+
+        public void CancelTransform()
+        {
+            if (!IsTransforming || _originalFloatingPixels == null)
+                return;
+
+            FloatingPixels = (bool[,])_originalFloatingPixels.Clone();
+            FloatingX = _originalFloatingX;
+            FloatingY = _originalFloatingY;
+            FloatingWidth = _originalFloatingW;
+            FloatingHeight = _originalFloatingH;
+
+            MinX = FloatingX;
+            MinY = FloatingY;
+            MaxX = FloatingX + FloatingWidth - 1;
+            MaxY = FloatingY + FloatingHeight - 1;
+
+            IsTransforming = false;
+            ActiveTransformHandle = TransformHandle.None;
+            _originalFloatingPixels = null;
+            Notify();
+        }
+
+        private static bool[,] ResampleNearestNeighbor(bool[,] src, int sw, int sh, int dw, int dh)
+        {
+            var dst = new bool[dw, dh];
+            if (sw <= 0 || sh <= 0)
+                return dst;
+
+            for (int ty = 0; ty < dh; ty++)
+            {
+                int sy = dh <= 1 ? 0 : ty * (sh - 1) / (dh - 1);
+                for (int tx = 0; tx < dw; tx++)
+                {
+                    int sx = dw <= 1 ? 0 : tx * (sw - 1) / (dw - 1);
+                    dst[tx, ty] = src[sx, sy];
+                }
+            }
+
+            return dst;
+        }
+
         // ── Private helpers ───────────────────────────────────────────────
 
         private void ResetState(bool notify)
@@ -645,6 +767,9 @@ namespace Hexprite.Services
             IsSelecting = false;
             IsFloating = false;
             IsDragging = false;
+            IsTransforming = false;
+            ActiveTransformHandle = TransformHandle.None;
+            _originalFloatingPixels = null;
             MinX = MaxX = MinY = MaxY = -1;
             Mask = null;
             FloatingPixels = null;

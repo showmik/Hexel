@@ -665,6 +665,9 @@ namespace Hexprite.ViewModels
         public IRelayCommand DuplicateLayerCommand { get; }
         public IRelayCommand MoveLayerUpCommand { get; }
         public IRelayCommand MoveLayerDownCommand { get; }
+        public IRelayCommand RotateCanvasCWCommand { get; }
+        public IRelayCommand RotateCanvasCCWCommand { get; }
+        public IRelayCommand RotateCanvas180Command { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
@@ -858,6 +861,10 @@ namespace Hexprite.ViewModels
             DuplicateLayerCommand = new RelayCommand(DuplicateActiveLayer);
             MoveLayerUpCommand = new RelayCommand(MoveActiveLayerUp);
             MoveLayerDownCommand = new RelayCommand(MoveActiveLayerDown);
+
+            RotateCanvasCWCommand = new RelayCommand(() => RotateCanvas(RotationDirection.Clockwise90));
+            RotateCanvasCCWCommand = new RelayCommand(() => RotateCanvas(RotationDirection.CounterClockwise90));
+            RotateCanvas180Command = new RelayCommand(() => RotateCanvas(RotationDirection.OneEighty));
 
             // ── Initialization ────────────────────────────────────────────
             InitializeBrushColors();
@@ -1091,6 +1098,58 @@ namespace Hexprite.ViewModels
         }
 
         /// <summary>
+        /// Rotates the entire canvas (all layers) by 90° CW/CCW or 180°. Width and height swap for 90° rotations.
+        /// </summary>
+        public void RotateCanvas(RotationDirection dir)
+        {
+            var oldState = SpriteState;
+            oldState.EnsureLayers();
+            int oldW = oldState.Width;
+            int oldH = oldState.Height;
+
+            if (_selectionService.IsFloating)
+                _selectionService.CommitSelection(oldState);
+            _selectionService.Cancel();
+
+            oldState.SelectionSnapshot = _selectionService.CreateSnapshot();
+            _historyService.SaveState(oldState);
+            IsDirty = true;
+
+            bool swapDims = dir is RotationDirection.Clockwise90 or RotationDirection.CounterClockwise90;
+            int newW = swapDims ? oldH : oldW;
+            int newH = swapDims ? oldW : oldH;
+
+            var newState = new SpriteState(newW, newH)
+            {
+                IsDisplayInverted = oldState.IsDisplayInverted,
+                ExportSettings = oldState.ExportSettings
+            };
+            newState.Layers.Clear();
+
+            foreach (var oldLayer in oldState.Layers)
+            {
+                var rotatedPixels = _drawingService.RotatePixels(oldLayer.Pixels, oldW, oldH, dir);
+                newState.Layers.Add(new LayerState
+                {
+                    Name = oldLayer.Name,
+                    IsVisible = oldLayer.IsVisible,
+                    IsLocked = oldLayer.IsLocked,
+                    Pixels = rotatedPixels
+                });
+            }
+
+            newState.ActiveLayerIndex = oldState.ActiveLayerIndex;
+            newState.EnsureLayers();
+
+            SpriteState = newState;
+            RebuildBitmaps(newW, newH);
+
+            RedrawGridFromMemory();
+            MarkCodeStale();
+            NotifyCanvasLayoutChanged();
+        }
+
+        /// <summary>
         /// Computes the pixel offset at which the old content should be placed
         /// within the new canvas, based on the anchor position.
         /// </summary>
@@ -1247,6 +1306,21 @@ namespace Hexprite.ViewModels
         /// </summary>
         public bool TryBeginSelectionDrag(int pixelX, int pixelY)
             => _selectionInput.TryBeginDrag(pixelX, pixelY);
+
+        public TransformHandle HitTestSelectionHandle(double mouseImgX, double mouseImgY, double actualW, double actualH)
+            => _selectionInput.HitTestHandle(mouseImgX, mouseImgY, actualW, actualH);
+
+        public bool TryBeginSelectionTransform(TransformHandle handle)
+            => _selectionInput.TryBeginTransform(handle);
+
+        public void UpdateSelectionTransform(int deltaX, int deltaY, bool shiftAspect, bool altFromCenter)
+            => _selectionInput.UpdateTransformFromDelta(deltaX, deltaY, shiftAspect, altFromCenter);
+
+        public void CommitSelectionTransformIfActive()
+            => _selectionInput.CommitTransformIfActive();
+
+        public void CancelSelectionTransformIfActive()
+            => _selectionInput.CancelTransformIfActive();
 
         public void SaveStateForUndo()
         {

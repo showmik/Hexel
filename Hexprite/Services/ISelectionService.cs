@@ -111,5 +111,13 @@ namespace Hexprite.Services
         // ── Snapshots ────────────────────────────────────────────────────
         SelectionSnapshot CreateSnapshot();
         void RestoreSnapshot(SelectionSnapshot snapshot);
+
+        // ── Transform (resize floating selection) ───────────────────────
+        bool IsTransforming { get; }
+        TransformHandle ActiveTransformHandle { get; }
+        void BeginTransform(TransformHandle handle);
+        void UpdateTransform(int newX, int newY, int newW, int newH);
+        void CommitTransform();
+        void CancelTransform();
     }
 }

@@ -58,7 +58,10 @@ namespace Hexprite.Controllers
         public bool CommitIfActive(bool saveHistory = true)
         {
             if (!_selection.HasActiveSelection) return false;
-            
+
+            if (_selection.IsTransforming)
+                CommitTransformIfActive();
+
             bool wasFloating = _selection.IsFloating;
 
             if (saveHistory && wasFloating)
@@ -199,6 +202,349 @@ namespace Hexprite.Controllers
             if (isShiftDown) return SelectionMode.Add;
             if (isAltDown) return SelectionMode.Subtract;
             return SelectionMode.Replace;
+        }
+
+        // ── Floating selection resize (transform handles) ─────────────────
+
+        private int _transformAnchorOx;
+        private int _transformAnchorOy;
+        private int _transformAnchorOw;
+        private int _transformAnchorOh;
+
+        /// <summary>
+        /// Hit-tests transform handles in image-local coordinates (same space as <see cref="MainWindow.GetPixelCoordinates"/> input).
+        /// </summary>
+        public TransformHandle HitTestHandle(double mouseImgX, double mouseImgY, double actualW, double actualH)
+        {
+            if (!_selection.IsFloating || !_selection.HasActiveSelection || actualW <= 0 || actualH <= 0)
+                return TransformHandle.None;
+
+            int cw = _vm.SpriteState.Width;
+            int ch = _vm.SpriteState.Height;
+
+            double px = mouseImgX / actualW * cw - 0.5;
+            double py = mouseImgY / actualH * ch - 0.5;
+
+            int fx = _selection.FloatingX;
+            int fy = _selection.FloatingY;
+            int fw = _selection.FloatingWidth;
+            int fh = _selection.FloatingHeight;
+
+            double hitR = Math.Max(10.0 / actualW * cw, 1.25);
+
+            bool Near(double hx, double hy)
+            {
+                double dx = px - hx, dy = py - hy;
+                return dx * dx + dy * dy <= hitR * hitR;
+            }
+
+            double midX = fx + (fw - 1) * 0.5;
+            double midY = fy + (fh - 1) * 0.5;
+            int right = fx + fw - 1;
+            int bottom = fy + fh - 1;
+
+            if (Near(fx, fy)) return TransformHandle.NW;
+            if (Near(right, fy)) return TransformHandle.NE;
+            if (Near(fx, bottom)) return TransformHandle.SW;
+            if (Near(right, bottom)) return TransformHandle.SE;
+            if (Near(midX, fy)) return TransformHandle.N;
+            if (Near(midX, bottom)) return TransformHandle.S;
+            if (Near(fx, midY)) return TransformHandle.W;
+            if (Near(right, midY)) return TransformHandle.E;
+
+            return TransformHandle.None;
+        }
+
+        /// <summary>
+        /// Starts a resize drag from a handle. Lifts the selection if it is not already floating.
+        /// </summary>
+        public bool TryBeginTransform(TransformHandle handle)
+        {
+            if (handle == TransformHandle.None || !_selection.HasActiveSelection)
+                return false;
+
+            if (!_selection.IsFloating)
+            {
+                _vm.SaveStateForUndo();
+                _selection.LiftSelection(_vm.SpriteState);
+            }
+            else
+            {
+                _vm.SaveStateForUndo();
+            }
+
+            _transformAnchorOx = _selection.FloatingX;
+            _transformAnchorOy = _selection.FloatingY;
+            _transformAnchorOw = _selection.FloatingWidth;
+            _transformAnchorOh = _selection.FloatingHeight;
+
+            _selection.BeginTransform(handle);
+            _vm.RedrawGridFromMemory();
+            return true;
+        }
+
+        /// <summary>
+        /// Applies resize delta in pixel space relative to the mouse-down anchor (same as marquee drag deltas).
+        /// </summary>
+        public void UpdateTransformFromDelta(int deltaX, int deltaY, bool shiftAspect, bool altFromCenter)
+        {
+            if (!_selection.IsTransforming)
+                return;
+
+            var handle = _selection.ActiveTransformHandle;
+            var (x, y, w, h) = ComputeResizeRect(
+                handle,
+                _transformAnchorOx, _transformAnchorOy, _transformAnchorOw, _transformAnchorOh,
+                deltaX, deltaY,
+                shiftAspect, altFromCenter);
+
+            _selection.UpdateTransform(x, y, w, h);
+            _vm.RedrawGridFromMemory();
+        }
+
+        public void CommitTransformIfActive()
+        {
+            if (!_selection.IsTransforming)
+                return;
+
+            _selection.CommitTransform();
+            _vm.MarkCodeStale();
+            _vm.RedrawGridFromMemory();
+        }
+
+        public void CancelTransformIfActive()
+        {
+            if (!_selection.IsTransforming)
+                return;
+
+            _selection.CancelTransform();
+            _vm.RedrawGridFromMemory();
+        }
+
+        /// <summary>Computes the floating bounding rect after a resize drag.</summary>
+        internal static (int x, int y, int w, int h) ComputeResizeRect(
+            TransformHandle handle,
+            int ox, int oy, int ow, int oh,
+            int dx, int dy,
+            bool shiftAspect, bool altFromCenter)
+        {
+            int x = ox, y = oy, w = ow, h = oh;
+
+            switch (handle)
+            {
+                case TransformHandle.NW:
+                    if (altFromCenter)
+                    {
+                        w = ow - 2 * dx;
+                        h = oh - 2 * dy;
+                        x = ox + dx;
+                        y = oy + dy;
+                    }
+                    else
+                    {
+                        x = ox + dx;
+                        y = oy + dy;
+                        w = ow - dx;
+                        h = oh - dy;
+                    }
+                    break;
+                case TransformHandle.NE:
+                    if (altFromCenter)
+                    {
+                        w = ow + 2 * dx;
+                        h = oh - 2 * dy;
+                        x = ox - dx;
+                        y = oy + dy;
+                    }
+                    else
+                    {
+                        x = ox;
+                        y = oy + dy;
+                        w = ow + dx;
+                        h = oh - dy;
+                    }
+                    break;
+                case TransformHandle.SW:
+                    if (altFromCenter)
+                    {
+                        w = ow - 2 * dx;
+                        h = oh + 2 * dy;
+                        x = ox + dx;
+                        y = oy - dy;
+                    }
+                    else
+                    {
+                        x = ox + dx;
+                        y = oy;
+                        w = ow - dx;
+                        h = oh + dy;
+                    }
+                    break;
+                case TransformHandle.SE:
+                    if (altFromCenter)
+                    {
+                        w = ow + 2 * dx;
+                        h = oh + 2 * dy;
+                        x = ox - dx;
+                        y = oy - dy;
+                    }
+                    else
+                    {
+                        x = ox;
+                        y = oy;
+                        w = ow + dx;
+                        h = oh + dy;
+                    }
+                    break;
+                case TransformHandle.N:
+                    if (altFromCenter)
+                    {
+                        h = oh - 2 * dy;
+                        y = oy + dy;
+                        x = ox;
+                        w = ow;
+                    }
+                    else
+                    {
+                        x = ox;
+                        y = oy + dy;
+                        w = ow;
+                        h = oh - dy;
+                    }
+                    break;
+                case TransformHandle.S:
+                    if (altFromCenter)
+                    {
+                        h = oh + 2 * dy;
+                        y = oy - dy;
+                        x = ox;
+                        w = ow;
+                    }
+                    else
+                    {
+                        x = ox;
+                        y = oy;
+                        w = ow;
+                        h = oh + dy;
+                    }
+                    break;
+                case TransformHandle.W:
+                    if (altFromCenter)
+                    {
+                        w = ow - 2 * dx;
+                        x = ox + dx;
+                        y = oy;
+                        h = oh;
+                    }
+                    else
+                    {
+                        x = ox + dx;
+                        y = oy;
+                        w = ow - dx;
+                        h = oh;
+                    }
+                    break;
+                case TransformHandle.E:
+                    if (altFromCenter)
+                    {
+                        w = ow + 2 * dx;
+                        x = ox - dx;
+                        y = oy;
+                        h = oh;
+                    }
+                    else
+                    {
+                        x = ox;
+                        y = oy;
+                        w = ow + dx;
+                        h = oh;
+                    }
+                    break;
+            }
+
+            w = Math.Max(1, w);
+            h = Math.Max(1, h);
+
+            if (shiftAspect && ow > 0 && oh > 0 && handle != TransformHandle.None)
+            {
+                // When Alt is held we must keep the selection centered; the dragged
+                // handle only determines the scale direction/magnitude.
+                if (altFromCenter)
+                {
+                    double sx = w / (double)ow;
+                    double sy = h / (double)oh;
+                    double s = Math.Max(sx, sy);
+
+                    w = Math.Max(1, (int)Math.Round(ow * s));
+                    h = Math.Max(1, (int)Math.Round(oh * s));
+
+                    // Keep original center fixed (not the currently-anchored side).
+                    double cx = ox + ow / 2.0;
+                    double cy = oy + oh / 2.0;
+                    x = (int)Math.Round(cx - w / 2.0);
+                    y = (int)Math.Round(cy - h / 2.0);
+
+                    return (x, y, w, h);
+                }
+
+                bool isCorner = handle is TransformHandle.NW or TransformHandle.NE
+                    or TransformHandle.SW or TransformHandle.SE;
+
+                if (isCorner)
+                {
+                    double sx = w / (double)ow;
+                    double sy = h / (double)oh;
+                    double s = Math.Max(sx, sy);
+                    w = Math.Max(1, (int)Math.Round(ow * s));
+                    h = Math.Max(1, (int)Math.Round(oh * s));
+                    (x, y) = AnchorFixedCorner(handle, ox, oy, ow, oh, w, h);
+                }
+                else
+                {
+                    double sx = w / (double)ow;
+                    double sy = h / (double)oh;
+                    double s = Math.Max(sx, sy);
+                    w = Math.Max(1, (int)Math.Round(ow * s));
+                    h = Math.Max(1, (int)Math.Round(oh * s));
+
+                    switch (handle)
+                    {
+                        case TransformHandle.N:
+                            x = ox;
+                            y = oy + oh - h;
+                            break;
+                        case TransformHandle.S:
+                            x = ox;
+                            y = oy;
+                            break;
+                        case TransformHandle.W:
+                            y = oy;
+                            x = ox + ow - w;
+                            break;
+                        case TransformHandle.E:
+                            y = oy;
+                            x = ox;
+                            break;
+                    }
+                }
+            }
+
+            return (x, y, w, h);
+        }
+
+        private static (int x, int y) AnchorFixedCorner(
+            TransformHandle handle,
+            int ox, int oy, int ow, int oh,
+            int nw, int nh)
+        {
+            return handle switch
+            {
+                TransformHandle.NW => (ox, oy),
+                TransformHandle.NE => (ox + ow - nw, oy),
+                TransformHandle.SW => (ox, oy + oh - nh),
+                TransformHandle.SE => (ox + ow - nw, oy + oh - nh),
+                _ => (ox, oy)
+            };
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Application = System.Windows.Application;
 using Hexprite.Core;
 using Hexprite.Services;
 using Hexprite.ViewModels;
@@ -56,14 +57,22 @@ namespace Hexprite.Rendering
                 UpdateLassoOverlay(sel, vm);
             else
                 UpdateMarqueeOverlay(sel, vm);
+
+            UpdateTransformHandles(sel, vm);
         }
 
         public void Clear()
         {
             var m = _elements.GetMarqueeOverlay();
             var l = _elements.GetLassoOverlay();
+            var th = _elements.GetTransformHandlesLayer();
             if (m != null) m.Visibility = Visibility.Hidden;
             if (l != null) l.Visibility = Visibility.Hidden;
+            if (th != null)
+            {
+                th.Children.Clear();
+                th.Visibility = Visibility.Hidden;
+            }
         }
 
         // ── Marquee (rectangle selection) ─────────────────────────────────
@@ -219,7 +228,9 @@ namespace Hexprite.Rendering
 
             if (groupGeom.Children.Count == 0)
             {
-                Clear();
+                lasso.Visibility = Visibility.Hidden;
+                var marqueeEmpty = _elements.GetMarqueeOverlay();
+                if (marqueeEmpty != null) marqueeEmpty.Visibility = Visibility.Hidden;
                 return;
             }
 
@@ -227,6 +238,75 @@ namespace Hexprite.Rendering
             lasso.Visibility = Visibility.Visible;
             var marquee = _elements.GetMarqueeOverlay();
             if (marquee != null) marquee.Visibility = Visibility.Hidden;
+        }
+
+        /// <summary>
+        /// Decorative resize handles around a floating selection (hit-testing is done in the View).
+        /// </summary>
+        private void UpdateTransformHandles(ISelectionService sel, MainViewModel vm)
+        {
+            var layer = _elements.GetTransformHandlesLayer();
+            if (layer == null) return;
+
+            layer.Children.Clear();
+
+            if (!sel.HasActiveSelection || !sel.IsFloating || sel.IsSelecting)
+            {
+                layer.Visibility = Visibility.Hidden;
+                return;
+            }
+
+            var grid = _elements.GetPixelGridContainer();
+            double gw = grid.ActualWidth > 0 ? grid.ActualWidth : 400.0;
+            double gh = grid.ActualHeight > 0 ? grid.ActualHeight : 400.0;
+            double cw = gw / vm.SpriteState.Width;
+            double ch = gh / vm.SpriteState.Height;
+
+            Brush stroke = (Brush)(Application.Current.TryFindResource("Brush.Accent.PreviewBorder") ?? Brushes.White);
+            Brush fill = (Brush)(Application.Current.TryFindResource("Brush.Surface.Base") ?? Brushes.Black);
+
+            double hs = Math.Clamp(14.0 / vm.ZoomLevel, 4.0, Math.Min(cw, ch) * 0.45);
+
+            int fx = sel.FloatingX;
+            int fy = sel.FloatingY;
+            int fw = sel.FloatingWidth;
+            int fh = sel.FloatingHeight;
+
+            double left = fx * cw;
+            double top = fy * ch;
+            double right = (fx + fw) * cw;
+            double bottom = (fy + fh) * ch;
+            double midX = (fx + fw * 0.5) * cw;
+            double midY = (fy + fh * 0.5) * ch;
+
+            double strokeThick = Math.Max(0.5, vm.SelectionStrokeThickness * 0.35);
+
+            void AddCorner(double px, double py)
+            {
+                var r = new Rectangle
+                {
+                    Width = hs,
+                    Height = hs,
+                    Stroke = stroke,
+                    StrokeThickness = strokeThick,
+                    Fill = fill,
+                    SnapsToDevicePixels = true
+                };
+                Canvas.SetLeft(r, px - hs * 0.5);
+                Canvas.SetTop(r, py - hs * 0.5);
+                layer.Children.Add(r);
+            }
+
+            AddCorner(left, top);
+            AddCorner(midX, top);
+            AddCorner(right, top);
+            AddCorner(right, midY);
+            AddCorner(right, bottom);
+            AddCorner(midX, bottom);
+            AddCorner(left, bottom);
+            AddCorner(left, midY);
+
+            layer.Visibility = Visibility.Visible;
         }
     }
 }

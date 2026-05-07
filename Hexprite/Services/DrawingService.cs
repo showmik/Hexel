@@ -553,5 +553,67 @@ namespace Hexprite.Services
             for (int i = 0; i < state.Pixels.Length; i++)
                 state.Pixels[i] = !state.Pixels[i];
         }
+
+        /// <inheritdoc />
+        public bool[] RotatePixels(bool[] src, int srcW, int srcH, RotationDirection dir)
+        {
+            if (src == null || src.Length != srcW * srcH)
+                throw new ArgumentException("Source buffer must match srcW × srcH.", nameof(src));
+
+            switch (dir)
+            {
+                case RotationDirection.OneEighty:
+                {
+                    var dst = new bool[srcW * srcH];
+                    for (int ny = 0; ny < srcH; ny++)
+                    {
+                        for (int nx = 0; nx < srcW; nx++)
+                        {
+                            int oy = srcH - 1 - ny;
+                            int ox = srcW - 1 - nx;
+                            dst[ny * srcW + nx] = src[oy * srcW + ox];
+                        }
+                    }
+                    return dst;
+                }
+
+                case RotationDirection.Clockwise90:
+                {
+                    int newW = srcH;
+                    int newH = srcW;
+                    var dst = new bool[newW * newH];
+                    for (int ny = 0; ny < newH; ny++)
+                    {
+                        for (int nx = 0; nx < newW; nx++)
+                        {
+                            int ox = srcW - 1 - ny;
+                            int oy = nx;
+                            dst[ny * newW + nx] = src[oy * srcW + ox];
+                        }
+                    }
+                    return dst;
+                }
+
+                case RotationDirection.CounterClockwise90:
+                {
+                    int newW = srcH;
+                    int newH = srcW;
+                    var dst = new bool[newW * newH];
+                    for (int ny = 0; ny < newH; ny++)
+                    {
+                        for (int nx = 0; nx < newW; nx++)
+                        {
+                            int ox = ny;
+                            int oy = srcH - 1 - nx;
+                            dst[ny * newW + nx] = src[oy * srcW + ox];
+                        }
+                    }
+                    return dst;
+                }
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(dir));
+            }
+        }
     }
 }

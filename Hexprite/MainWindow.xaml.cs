@@ -51,6 +51,11 @@ namespace Hexprite
         // ── Draw mode locked for the duration of a stroke ─────────────────
         private DrawMode _activeDrawMode = DrawMode.None;
 
+        /// <summary>Floating selection resize via transform handles (preview coordinate deltas).</summary>
+        private bool _activeTransformDrag;
+        private int _transformDownPixelX;
+        private int _transformDownPixelY;
+
         // ── Currently-subscribed document (for event unwiring) ─────────────
         private ViewModels.MainViewModel? _subscribedDoc;
         private const string DebugLogPath = @"H:\dev\Hexel\debug-4d8f4c.log";
@@ -80,7 +85,8 @@ namespace Hexprite
                 () => Canvas.CrosshairH,
                 () => Canvas.CrosshairV,
                 () => Canvas.MarqueeOverlay,
-                () => Canvas.LassoOverlay);
+                () => Canvas.LassoOverlay,
+                () => Canvas.TransformHandlesLayer);
 
             _selectionOverlay = new SelectionOverlayRenderer(
                 _canvasElements, () => ViewModel, () => _selection);
@@ -471,6 +477,11 @@ namespace Hexprite
 
             if (e.ChangedButton == MouseButton.Left)
             {
+                if (_activeTransformDrag)
+                {
+                    ViewModel.CommitSelectionTransformIfActive();
+                    _activeTransformDrag = false;
+                }
                 if ((ViewModel.CurrentTool == ToolMode.Lasso || ViewModel.CurrentTool == ToolMode.Marquee || ViewModel.CurrentTool == ToolMode.MagicWand) && _selection.IsSelecting)
                     ViewModel.ProcessSelectionInput(-1, -1, ToolAction.Up, false, false);
                 ReleaseDragCapture();
@@ -522,9 +533,19 @@ namespace Hexprite
                         }
                         break;
                     case Key.Escape:
-                        ViewModel.DeselectCommand.Execute(null);
-                        _selectionOverlay.Clear();
-                        e.Handled = true;
+                        if (_selection.IsTransforming)
+                        {
+                            ViewModel.CancelSelectionTransformIfActive();
+                            _activeTransformDrag = false;
+                            _selectionOverlay.Update();
+                            e.Handled = true;
+                        }
+                        else
+                        {
+                            ViewModel.DeselectCommand.Execute(null);
+                            _selectionOverlay.Clear();
+                            e.Handled = true;
+                        }
                         break;
                     case Key.P: ViewModel.SelectToolCommand.Execute("Pencil"); e.Handled = true; break;
                     case Key.L: ViewModel.SelectToolCommand.Execute("Line"); e.Handled = true; break;
@@ -637,12 +658,26 @@ namespace Hexprite
             if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right)
             {
                 image.CaptureMouse();
-                var (x, y) = GetPixelCoordinates(e.GetPosition(image), image.ActualWidth, image.ActualHeight);
+                var imgPos = e.GetPosition(image);
+                var (x, y) = GetPixelCoordinates(imgPos, image.ActualWidth, image.ActualHeight);
 
                 if (ViewModel.CurrentTool == ToolMode.Marquee ||
                     ViewModel.CurrentTool == ToolMode.Lasso ||
                     ViewModel.CurrentTool == ToolMode.MagicWand)
                 {
+                    if (e.ChangedButton == MouseButton.Left)
+                    {
+                        var handle = ViewModel.HitTestSelectionHandle(imgPos.X, imgPos.Y, image.ActualWidth, image.ActualHeight);
+                        if (handle != TransformHandle.None && ViewModel.TryBeginSelectionTransform(handle))
+                        {
+                            _activeTransformDrag = true;
+                            _transformDownPixelX = x;
+                            _transformDownPixelY = y;
+                            Mouse.Capture(Canvas.PixelGridContainer);
+                            return;
+                        }
+                    }
+
                     // Check if we should start a drag instead
                     bool isReplace = !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && !Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
                     if (isReplace && _selection.HasActiveSelection && _selection.IsPixelInSelection(x, y))
@@ -672,7 +707,6 @@ namespace Hexprite
                 {
                     // Update brush cursor immediately on press so the overlay
                     // doesn't lag until the first PreviewMouseMove event fires.
-                    var imgPos = e.GetPosition(image);
                     _brushCursor.LastCanvasMousePos = imgPos;
                     _brushCursor.IsMouseOverCanvas = true;
                     _brushCursor.Update(x, y, imgPos, image.ActualWidth, image.ActualHeight);
@@ -707,6 +741,30 @@ namespace Hexprite
             // Update brush cursor every mouse move for smooth visual tracking
             _brushCursor.Update(x, y, pos, image.ActualWidth, image.ActualHeight);
 
+            if (_activeTransformDrag && e.LeftButton == MouseButtonState.Pressed)
+            {
+                ViewModel.UpdateSelectionTransform(
+                    x - _transformDownPixelX,
+                    y - _transformDownPixelY,
+                    Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
+                    Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
+                _selectionOverlay.Update();
+                return;
+            }
+
+            if (!_activeTransformDrag && _selection.IsFloating &&
+                (ViewModel.CurrentTool == ToolMode.Marquee ||
+                 ViewModel.CurrentTool == ToolMode.Lasso ||
+                 ViewModel.CurrentTool == ToolMode.MagicWand))
+            {
+                var h = ViewModel.HitTestSelectionHandle(pos.X, pos.Y, image.ActualWidth, image.ActualHeight);
+                image.Cursor = CursorForTransformHandle(h);
+            }
+            else if (!_zoomPan.IsPanning)
+            {
+                image.Cursor = Cursors.Arrow;
+            }
+
             // Only process drawing/selection when the pixel coordinate actually changes
             if (x != _lastHoveredX || y != _lastHoveredY)
             {
@@ -715,7 +773,8 @@ namespace Hexprite
                 ViewModel.CursorX = x;
                 ViewModel.CursorY = y;
 
-                if ((ViewModel.CurrentTool == ToolMode.Marquee ||
+                if (!_activeTransformDrag &&
+                    (ViewModel.CurrentTool == ToolMode.Marquee ||
                      ViewModel.CurrentTool == ToolMode.Lasso ||
                      ViewModel.CurrentTool == ToolMode.MagicWand)
                     && e.LeftButton == MouseButtonState.Pressed)
@@ -742,6 +801,18 @@ namespace Hexprite
         }
 
         // ── Utility ───────────────────────────────────────────────────────
+
+        private static Cursor CursorForTransformHandle(TransformHandle h)
+        {
+            return h switch
+            {
+                TransformHandle.NW or TransformHandle.SE => Cursors.SizeNWSE,
+                TransformHandle.NE or TransformHandle.SW => Cursors.SizeNESW,
+                TransformHandle.N or TransformHandle.S => Cursors.SizeNS,
+                TransformHandle.E or TransformHandle.W => Cursors.SizeWE,
+                _ => Cursors.Arrow,
+            };
+        }
 
         private (int x, int y) GetPixelCoordinates(Point pos, double actualWidth, double actualHeight)
         {

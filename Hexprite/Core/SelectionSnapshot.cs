@@ -9,6 +9,13 @@ namespace Hexprite.Core
         public bool IsSelecting { get; set; }
         public bool IsFloating { get; set; }
         public bool IsDragging { get; set; }
+        public bool IsTransforming { get; set; }
+        public TransformHandle ActiveTransformHandle { get; set; }
+        public bool[,]? OriginalFloatingPixels { get; set; }
+        public int OriginalFloatingX { get; set; }
+        public int OriginalFloatingY { get; set; }
+        public int OriginalFloatingWidth { get; set; }
+        public int OriginalFloatingHeight { get; set; }
         public int MinX { get; set; }
         public int MaxX { get; set; }
         public int MinY { get; set; }
@@ -29,6 +36,12 @@ namespace Hexprite.Core
                 IsSelecting = IsSelecting,
                 IsFloating = IsFloating,
                 IsDragging = IsDragging,
+                IsTransforming = IsTransforming,
+                ActiveTransformHandle = ActiveTransformHandle,
+                OriginalFloatingX = OriginalFloatingX,
+                OriginalFloatingY = OriginalFloatingY,
+                OriginalFloatingWidth = OriginalFloatingWidth,
+                OriginalFloatingHeight = OriginalFloatingHeight,
                 MinX = MinX,
                 MaxX = MaxX,
                 MinY = MinY,
@@ -44,6 +57,9 @@ namespace Hexprite.Core
 
             if (FloatingPixels != null)
                 clone.FloatingPixels = (bool[,])FloatingPixels.Clone();
+
+            if (OriginalFloatingPixels != null)
+                clone.OriginalFloatingPixels = (bool[,])OriginalFloatingPixels.Clone();
 
             if (LassoPoints != null)
                 clone.LassoPoints = new List<PixelPoint>(LassoPoints);

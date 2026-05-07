@@ -474,6 +474,13 @@
                                   Visibility="Hidden"
                                   IsHitTestVisible="False" />
 
+                            <!-- Transform handles (decorative; hit-testing is in MainWindow) -->
+                            <Canvas x:Name="TransformHandlesLayer" x:FieldModifier="public"
+                                    IsHitTestVisible="False"
+                                    ClipToBounds="False"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch" />
+
                             <!-- Brush cursor overlay (pixel-accurate bitmap) -->
                             <Image x:Name="BrushCursorOverlay" x:FieldModifier="public"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor"

@@ -158,6 +158,11 @@
                     </MenuItem>
                     <MenuItem Header="_Image">
                         <MenuItem Header="Canvas _Size..." Command="{Binding ResizeCanvasCommand}"/>
+                        <MenuItem Header="_Rotate Canvas">
+                            <MenuItem Header="90° _Clockwise" Command="{Binding ActiveDocument.RotateCanvasCWCommand}"/>
+                            <MenuItem Header="90° Counter_clockwise" Command="{Binding ActiveDocument.RotateCanvasCCWCommand}"/>
+                            <MenuItem Header="_180°" Command="{Binding ActiveDocument.RotateCanvas180Command}"/>
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="_Selection">
                         <MenuItem Header="Cu_t" Command="{Binding ActiveDocument.CutSelectionCommand}" InputGestureText="Ctrl+X"/>

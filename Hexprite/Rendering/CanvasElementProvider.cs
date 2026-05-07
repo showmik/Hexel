@@ -20,6 +20,7 @@ namespace Hexprite.Rendering
         public Func<Line?> GetCrosshairV { get; }
         public Func<Rectangle?> GetMarqueeOverlay { get; }
         public Func<Path?> GetLassoOverlay { get; }
+        public Func<Canvas?> GetTransformHandlesLayer { get; }
 
         public CanvasElementProvider(
             Func<Image?> getCanvasImage,
@@ -28,7 +29,8 @@ namespace Hexprite.Rendering
             Func<Line?> getCrosshairH,
             Func<Line?> getCrosshairV,
             Func<Rectangle?> getMarqueeOverlay,
-            Func<Path?> getLassoOverlay)
+            Func<Path?> getLassoOverlay,
+            Func<Canvas?> getTransformHandlesLayer)
         {
             GetCanvasImage = getCanvasImage ?? throw new ArgumentNullException(nameof(getCanvasImage));
             GetPixelGridContainer = getPixelGridContainer ?? throw new ArgumentNullException(nameof(getPixelGridContainer));
@@ -37,6 +39,7 @@ namespace Hexprite.Rendering
             GetCrosshairV = getCrosshairV ?? throw new ArgumentNullException(nameof(getCrosshairV));
             GetMarqueeOverlay = getMarqueeOverlay ?? throw new ArgumentNullException(nameof(getMarqueeOverlay));
             GetLassoOverlay = getLassoOverlay ?? throw new ArgumentNullException(nameof(getLassoOverlay));
+            GetTransformHandlesLayer = getTransformHandlesLayer ?? throw new ArgumentNullException(nameof(getTransformHandlesLayer));
         }
     }
 }
