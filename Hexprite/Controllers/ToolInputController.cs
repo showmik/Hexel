@@ -428,6 +428,12 @@ namespace Hexprite.Controllers
             if (after != newState)
                 return;
 
+            // If the pixel was already in the desired state before this stroke,
+            // it wasn't actually changed — don't treat it as part of the stroke path.
+            // Otherwise the corner-removal algorithm may erase genuinely drawn pixels.
+            if (before == newState)
+                return;
+
             if (_pixelPerfectStrokePath.Count == 0 || _pixelPerfectStrokePath[^1] != (x, y))
                 _pixelPerfectStrokePath.Add((x, y));
 
