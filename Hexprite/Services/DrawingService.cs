@@ -615,5 +615,50 @@ namespace Hexprite.Services
                     throw new ArgumentOutOfRangeException(nameof(dir));
             }
         }
+
+        public bool[] FlipPixels(bool[] src, int srcW, int srcH, FlipDirection dir)
+        {
+            if (src == null || src.Length != srcW * srcH)
+                throw new ArgumentException("Source buffer must match srcW × srcH.", nameof(src));
+
+            var dst = new bool[srcW * srcH];
+
+            switch (dir)
+            {
+                case FlipDirection.Horizontal:
+                {
+                    // Mirror around vertical axis: (x, y) -> (srcW-1-x, y)
+                    for (int y = 0; y < srcH; y++)
+                    {
+                        int row = y * srcW;
+                        for (int x = 0; x < srcW; x++)
+                        {
+                            int nx = srcW - 1 - x;
+                            dst[row + nx] = src[row + x];
+                        }
+                    }
+                    break;
+                }
+
+                case FlipDirection.Vertical:
+                {
+                    // Mirror around horizontal axis: (x, y) -> (x, srcH-1-y)
+                    for (int y = 0; y < srcH; y++)
+                    {
+                        int ny = srcH - 1 - y;
+                        for (int x = 0; x < srcW; x++)
+                        {
+                            dst[ny * srcW + x] = src[y * srcW + x];
+                        }
+                    }
+                    break;
+                }
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(dir));
+            }
+
+            return dst;
+        }
     }
 }

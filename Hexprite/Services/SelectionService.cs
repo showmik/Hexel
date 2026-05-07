@@ -740,6 +740,83 @@ namespace Hexprite.Services
             Notify();
         }
 
+        // ── Flip (floating selection only) ─────────────────────────────
+
+        public void FlipFloatingHorizontally()
+        {
+            if (!IsFloating || FloatingPixels == null) return;
+
+            // Don't allow resampling-based resize to continue after a flip;
+            // commit now to end transform mode (and avoid stale _originalFloatingPixels).
+            if (IsTransforming)
+                CommitTransform();
+
+            int fw = FloatingWidth;
+            int fh = FloatingHeight;
+            var flipped = new bool[fw, fh];
+
+            for (int y = 0; y < fh; y++)
+            {
+                for (int x = 0; x < fw; x++)
+                {
+                    flipped[fw - 1 - x, y] = FloatingPixels[x, y];
+                }
+            }
+
+            FloatingPixels = flipped;
+
+            // Keep the per-pixel boundary mask aligned with the flipped content.
+            if (Mask != null && Mask.GetLength(0) == fw && Mask.GetLength(1) == fh)
+            {
+                var flippedMask = new bool[fw, fh];
+                for (int y = 0; y < fh; y++)
+                {
+                    for (int x = 0; x < fw; x++)
+                        flippedMask[fw - 1 - x, y] = Mask[x, y];
+                }
+                Mask = flippedMask;
+            }
+
+            Notify();
+        }
+
+        public void FlipFloatingVertically()
+        {
+            if (!IsFloating || FloatingPixels == null) return;
+
+            if (IsTransforming)
+                CommitTransform();
+
+            int fw = FloatingWidth;
+            int fh = FloatingHeight;
+            var flipped = new bool[fw, fh];
+
+            for (int y = 0; y < fh; y++)
+            {
+                int ny = fh - 1 - y;
+                for (int x = 0; x < fw; x++)
+                {
+                    flipped[x, ny] = FloatingPixels[x, y];
+                }
+            }
+
+            FloatingPixels = flipped;
+
+            if (Mask != null && Mask.GetLength(0) == fw && Mask.GetLength(1) == fh)
+            {
+                var flippedMask = new bool[fw, fh];
+                for (int y = 0; y < fh; y++)
+                {
+                    int ny = fh - 1 - y;
+                    for (int x = 0; x < fw; x++)
+                        flippedMask[x, ny] = Mask[x, y];
+                }
+                Mask = flippedMask;
+            }
+
+            Notify();
+        }
+
         private static bool[,] ResampleNearestNeighbor(bool[,] src, int sw, int sh, int dw, int dh)
         {
             var dst = new bool[dw, dh];

@@ -668,6 +668,10 @@ namespace Hexprite.ViewModels
         public IRelayCommand RotateCanvasCWCommand { get; }
         public IRelayCommand RotateCanvasCCWCommand { get; }
         public IRelayCommand RotateCanvas180Command { get; }
+        public IRelayCommand FlipCanvasHorizontalCommand { get; }
+        public IRelayCommand FlipCanvasVerticalCommand { get; }
+        public IRelayCommand FlipSelectionHorizontalCommand { get; }
+        public IRelayCommand FlipSelectionVerticalCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
@@ -865,6 +869,26 @@ namespace Hexprite.ViewModels
             RotateCanvasCWCommand = new RelayCommand(() => RotateCanvas(RotationDirection.Clockwise90));
             RotateCanvasCCWCommand = new RelayCommand(() => RotateCanvas(RotationDirection.CounterClockwise90));
             RotateCanvas180Command = new RelayCommand(() => RotateCanvas(RotationDirection.OneEighty));
+
+            FlipCanvasHorizontalCommand = new RelayCommand(() => FlipCanvas(FlipDirection.Horizontal));
+            FlipCanvasVerticalCommand = new RelayCommand(() => FlipCanvas(FlipDirection.Vertical));
+
+            FlipSelectionHorizontalCommand = new RelayCommand(
+                () => FlipSelection(FlipDirection.Horizontal),
+                () => _selectionService.HasActiveSelection && _selectionService.IsFloating && !_selectionService.IsTransforming);
+            FlipSelectionVerticalCommand = new RelayCommand(
+                () => FlipSelection(FlipDirection.Vertical),
+                () => _selectionService.HasActiveSelection && _selectionService.IsFloating && !_selectionService.IsTransforming);
+
+            // Keep menu enabled/disabled state in sync with selection/floating/transform status.
+            // Otherwise WPF can keep stale CanExecute values and the command won't execute.
+            _selectionService.SelectionChanged += (_, _) =>
+            {
+                if (FlipSelectionHorizontalCommand is RelayCommand rh)
+                    rh.NotifyCanExecuteChanged();
+                if (FlipSelectionVerticalCommand is RelayCommand rv)
+                    rv.NotifyCanExecuteChanged();
+            };
 
             // ── Initialization ────────────────────────────────────────────
             InitializeBrushColors();
@@ -1147,6 +1171,73 @@ namespace Hexprite.ViewModels
             RedrawGridFromMemory();
             MarkCodeStale();
             NotifyCanvasLayoutChanged();
+        }
+
+        public void FlipCanvas(FlipDirection dir)
+        {
+            var oldState = SpriteState;
+            oldState.EnsureLayers();
+
+            // Match Resize/Rotate UX: if there is a floating selection, commit it
+            // to the canvas before flipping everything.
+            if (_selectionService.IsFloating)
+                _selectionService.CommitSelection(oldState);
+            _selectionService.Cancel();
+
+            // Push current state for undo (selection is now cleared/committed).
+            oldState.SelectionSnapshot = _selectionService.CreateSnapshot();
+            _historyService.SaveState(oldState);
+            IsDirty = true;
+
+            int w = oldState.Width;
+            int h = oldState.Height;
+
+            var newState = new SpriteState(w, h)
+            {
+                IsDisplayInverted = oldState.IsDisplayInverted,
+                ExportSettings = oldState.ExportSettings
+            };
+            newState.Layers.Clear();
+
+            foreach (var oldLayer in oldState.Layers)
+            {
+                var flippedPixels = _drawingService.FlipPixels(oldLayer.Pixels, w, h, dir);
+                newState.Layers.Add(new LayerState
+                {
+                    Name = oldLayer.Name,
+                    IsVisible = oldLayer.IsVisible,
+                    IsLocked = oldLayer.IsLocked,
+                    Pixels = flippedPixels
+                });
+            }
+
+            newState.ActiveLayerIndex = oldState.ActiveLayerIndex;
+            newState.EnsureLayers();
+
+            SpriteState = newState;
+            RebuildBitmaps(w, h);
+
+            RedrawGridFromMemory();
+            MarkCodeStale();
+            NotifyCanvasLayoutChanged();
+        }
+
+        public void FlipSelection(FlipDirection dir)
+        {
+            if (!_selectionService.HasActiveSelection || !_selectionService.IsFloating)
+                return;
+            if (_selectionService.FloatingPixels == null)
+                return;
+
+            // Ensure undo captures the current floating pixels.
+            SaveStateForUndo();
+
+            if (dir == FlipDirection.Horizontal)
+                _selectionService.FlipFloatingHorizontally();
+            else if (dir == FlipDirection.Vertical)
+                _selectionService.FlipFloatingVertically();
+
+            RedrawGridFromMemory();
         }
 
         /// <summary>

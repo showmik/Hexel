@@ -163,12 +163,20 @@
                             <MenuItem Header="90° Counter_clockwise" Command="{Binding ActiveDocument.RotateCanvasCCWCommand}"/>
                             <MenuItem Header="_180°" Command="{Binding ActiveDocument.RotateCanvas180Command}"/>
                         </MenuItem>
+                        <MenuItem Header="_Flip Canvas">
+                            <MenuItem Header="_Horizontal" Command="{Binding ActiveDocument.FlipCanvasHorizontalCommand}"/>
+                            <MenuItem Header="_Vertical" Command="{Binding ActiveDocument.FlipCanvasVerticalCommand}"/>
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="_Selection">
                         <MenuItem Header="Cu_t" Command="{Binding ActiveDocument.CutSelectionCommand}" InputGestureText="Ctrl+X"/>
                         <MenuItem Header="_Copy" Command="{Binding ActiveDocument.CopySelectionCommand}" InputGestureText="Ctrl+C"/>
                         <MenuItem Header="_Paste" Command="{Binding ActiveDocument.PasteCommand}" InputGestureText="Ctrl+V"/>
                         <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_Flip Selection">
+                            <MenuItem Header="_Horizontal" Command="{Binding ActiveDocument.FlipSelectionHorizontalCommand}"/>
+                            <MenuItem Header="_Vertical" Command="{Binding ActiveDocument.FlipSelectionVerticalCommand}"/>
+                        </MenuItem>
                         <MenuItem Header="_Delete Selection" Command="{Binding ActiveDocument.DeleteSelectionCommand}" InputGestureText="Del"/>
                         <Separator Style="{StaticResource MenuSeparatorStyle}"/>
                         <MenuItem Header="D_eselect" Command="{Binding ActiveDocument.DeselectCommand}" InputGestureText="Ctrl+D"/>

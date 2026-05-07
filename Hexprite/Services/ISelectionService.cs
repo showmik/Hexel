@@ -119,5 +119,9 @@ namespace Hexprite.Services
         void UpdateTransform(int newX, int newY, int newW, int newH);
         void CommitTransform();
         void CancelTransform();
+
+        // ── Flip (floating selection only) ─────────────────────────────
+        void FlipFloatingHorizontally();
+        void FlipFloatingVertically();
     }
 }

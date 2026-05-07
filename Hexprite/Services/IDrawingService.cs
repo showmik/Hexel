@@ -27,6 +27,11 @@ namespace Hexprite.Services
         /// width and height swap for 90° rotations.
         /// </summary>
         bool[] RotatePixels(bool[] src, int srcW, int srcH, RotationDirection dir);
+
+        /// <summary>
+        /// Flips a flat row-major pixel buffer (width × height). Returns a new buffer.
+        /// </summary>
+        bool[] FlipPixels(bool[] src, int srcW, int srcH, FlipDirection dir);
         bool[,] GetFloodFillMask(SpriteState state, int startX, int startY, out int minX, out int minY, out int maxX, out int maxY);
     }
 }

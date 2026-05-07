@@ -67,6 +67,8 @@ public class DrawingServiceTests
         public void UpdateTransform(int newX, int newY, int newW, int newH) { }
         public void CommitTransform() { }
         public void CancelTransform() { }
+        public void FlipFloatingHorizontally() { }
+        public void FlipFloatingVertically() { }
     }
 
     [Fact]
@@ -435,5 +437,72 @@ public class DrawingServiceTests
         var direct = svc.RotatePixels(src, 4, 3, RotationDirection.OneEighty);
 
         Assert.Equal(direct, step2);
+    }
+
+    [Fact]
+    public void FlipPixels_Horizontal_2x3_MirrorsX()
+    {
+        var svc = new DrawingService();
+        int w = 2, h = 3;
+        var src = new bool[w * h];
+        src[(0 * w) + 0] = true; // (0,0)
+
+        var dst = svc.FlipPixels(src, w, h, FlipDirection.Horizontal);
+
+        for (int i = 0; i < dst.Length; i++)
+        {
+            if (i == 1) Assert.True(dst[i]); // (1,0)
+            else Assert.False(dst[i]);
+        }
+    }
+
+    [Fact]
+    public void FlipPixels_Vertical_2x3_MirrorsY()
+    {
+        var svc = new DrawingService();
+        int w = 2, h = 3;
+        var src = new bool[w * h];
+        src[(0 * w) + 0] = true; // (0,0)
+
+        var dst = svc.FlipPixels(src, w, h, FlipDirection.Vertical);
+
+        int expectedIndex = (h - 1) * w + 0; // (0,2) => 4
+        for (int i = 0; i < dst.Length; i++)
+        {
+            if (i == expectedIndex) Assert.True(dst[i]);
+            else Assert.False(dst[i]);
+        }
+    }
+
+    [Fact]
+    public void FlipPixels_DoubleHorizontal_IsIdentity()
+    {
+        var svc = new DrawingService();
+        int w = 4, h = 3;
+        var src = new bool[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                src[(y * w) + x] = (x + y) % 3 == 0;
+
+        var once = svc.FlipPixels(src, w, h, FlipDirection.Horizontal);
+        var twice = svc.FlipPixels(once, w, h, FlipDirection.Horizontal);
+
+        Assert.Equal(src, twice);
+    }
+
+    [Fact]
+    public void FlipPixels_DoubleVertical_IsIdentity()
+    {
+        var svc = new DrawingService();
+        int w = 4, h = 3;
+        var src = new bool[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                src[(y * w) + x] = (x * 2 + y) % 4 == 0;
+
+        var once = svc.FlipPixels(src, w, h, FlipDirection.Vertical);
+        var twice = svc.FlipPixels(once, w, h, FlipDirection.Vertical);
+
+        Assert.Equal(src, twice);
     }
 }
