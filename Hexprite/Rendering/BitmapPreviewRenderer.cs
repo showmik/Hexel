@@ -169,7 +169,8 @@ namespace Hexprite.Rendering
             var rect = new Int32Rect(0, 0, _ctx.SpriteState.Width, _ctx.SpriteState.Height);
             _ctx.CanvasBitmap.WritePixels(rect, _ctx.CanvasBuffer, _ctx.SpriteState.Width * 4, 0);
             _ctx.PreviewBitmap.WritePixels(rect, _ctx.PreviewBuffer, _ctx.SpriteState.Width * 4, 0);
-            _ctx.UpdatePreviewSimulation();
+            // Shape preview can emit many updates per second during drag.
+            // Defer realistic preview simulation to commit time to keep drawing smooth.
         }
     }
 }

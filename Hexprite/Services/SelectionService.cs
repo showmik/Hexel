@@ -679,7 +679,7 @@ namespace Hexprite.Services
             Notify();
         }
 
-        public void UpdateTransform(int newX, int newY, int newW, int newH)
+        public void UpdateTransform(int newX, int newY, int newW, int newH, bool flipX = false, bool flipY = false)
         {
             if (!IsTransforming || _originalFloatingPixels == null)
                 return;
@@ -693,6 +693,11 @@ namespace Hexprite.Services
             FloatingHeight = newH;
 
             FloatingPixels = ResampleNearestNeighbor(_originalFloatingPixels, _originalFloatingW, _originalFloatingH, newW, newH);
+            if (FloatingPixels != null)
+            {
+                if (flipX) MirrorXInPlace(FloatingPixels, newW, newH);
+                if (flipY) MirrorYInPlace(FloatingPixels, newW, newH);
+            }
 
             MinX = newX;
             MinY = newY;
@@ -834,6 +839,28 @@ namespace Hexprite.Services
             }
 
             return dst;
+        }
+
+        private static void MirrorXInPlace(bool[,] pixels, int w, int h)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w / 2; x++)
+                {
+                    int nx = w - 1 - x;
+                    (pixels[x, y], pixels[nx, y]) = (pixels[nx, y], pixels[x, y]);
+                }
+            }
+        }
+
+        private static void MirrorYInPlace(bool[,] pixels, int w, int h)
+        {
+            for (int y = 0; y < h / 2; y++)
+            {
+                int ny = h - 1 - y;
+                for (int x = 0; x < w; x++)
+                    (pixels[x, y], pixels[x, ny]) = (pixels[x, ny], pixels[x, y]);
+            }
         }
 
         // ── Private helpers ───────────────────────────────────────────────

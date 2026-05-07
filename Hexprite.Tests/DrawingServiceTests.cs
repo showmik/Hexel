@@ -64,7 +64,7 @@ public class DrawingServiceTests
         public SelectionSnapshot CreateSnapshot() => new();
         public void RestoreSnapshot(SelectionSnapshot snapshot) { }
         public void BeginTransform(TransformHandle handle) { }
-        public void UpdateTransform(int newX, int newY, int newW, int newH) { }
+        public void UpdateTransform(int newX, int newY, int newW, int newH, bool flipX = false, bool flipY = false) { }
         public void CommitTransform() { }
         public void CancelTransform() { }
         public void FlipFloatingHorizontally() { }

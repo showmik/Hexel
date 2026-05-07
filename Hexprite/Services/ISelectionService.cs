@@ -116,7 +116,7 @@ namespace Hexprite.Services
         bool IsTransforming { get; }
         TransformHandle ActiveTransformHandle { get; }
         void BeginTransform(TransformHandle handle);
-        void UpdateTransform(int newX, int newY, int newW, int newH);
+        void UpdateTransform(int newX, int newY, int newW, int newH, bool flipX = false, bool flipY = false);
         void CommitTransform();
         void CancelTransform();
 

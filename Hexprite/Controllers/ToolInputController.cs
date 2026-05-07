@@ -184,7 +184,8 @@ namespace Hexprite.Controllers
                             Math.Min(_lastClickedX, x) - brushMargin1,
                             Math.Min(_lastClickedY, y) - brushMargin1,
                             Math.Max(_lastClickedX, x) + brushMargin1,
-                            Math.Max(_lastClickedY, y) + brushMargin1);
+                            Math.Max(_lastClickedY, y) + brushMargin1,
+                            updatePreviewSimulation: false);
 
                         _lastClickedX = x;
                         _lastClickedY = y;
@@ -200,7 +201,12 @@ namespace Hexprite.Controllers
                         // Partial redraw for the single stamp — use full brush size
                         // as margin to account for rotated Square/Line brush offsets
                         int brushMargin2 = _vm.BrushSize + 1;
-                        _vm.RedrawRegion(x - brushMargin2, y - brushMargin2, x + brushMargin2, y + brushMargin2);
+                        _vm.RedrawRegion(
+                            x - brushMargin2,
+                            y - brushMargin2,
+                            x + brushMargin2,
+                            y + brushMargin2,
+                            updatePreviewSimulation: false);
                         _pendingTextUpdateDuringDrag = true;
                     }
                     break;
@@ -250,7 +256,7 @@ namespace Hexprite.Controllers
                     int dirtyMinY = Math.Min(prevY, y) - brushMargin;
                     int dirtyMaxX = Math.Max(prevX, x) + brushMargin;
                     int dirtyMaxY = Math.Max(prevY, y) + brushMargin;
-                    _vm.RedrawRegion(dirtyMinX, dirtyMinY, dirtyMaxX, dirtyMaxY);
+                    _vm.RedrawRegion(dirtyMinX, dirtyMinY, dirtyMaxX, dirtyMaxY, updatePreviewSimulation: false);
                 }
             }
         }
@@ -283,6 +289,7 @@ namespace Hexprite.Controllers
             {
                 _pendingTextUpdateDuringDrag = false;
                 _vm.MarkCodeStale();
+                _vm.UpdatePreviewSimulation();
             }
         }
 

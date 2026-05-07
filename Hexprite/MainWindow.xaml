@@ -92,6 +92,9 @@
         <KeyBinding Key="A"
                     Modifiers="Ctrl"
                     Command="{Binding ActiveDocument.SelectAllCommand}" />
+        <KeyBinding Key="T"
+                    Modifiers="Ctrl"
+                    Command="{Binding ActiveDocument.BeginSelectionTransformCommand}" />
         <KeyBinding Key="I"
                     Modifiers="Ctrl+Shift"
                     Command="{Binding ImportFromCodeMenuCommand}" />
@@ -173,6 +176,7 @@
                         <MenuItem Header="_Copy" Command="{Binding ActiveDocument.CopySelectionCommand}" InputGestureText="Ctrl+C"/>
                         <MenuItem Header="_Paste" Command="{Binding ActiveDocument.PasteCommand}" InputGestureText="Ctrl+V"/>
                         <Separator Style="{StaticResource MenuSeparatorStyle}"/>
+                        <MenuItem Header="_Transform" Command="{Binding ActiveDocument.BeginSelectionTransformCommand}" InputGestureText="Ctrl+T"/>
                         <MenuItem Header="_Flip Selection">
                             <MenuItem Header="_Horizontal" Command="{Binding ActiveDocument.FlipSelectionHorizontalCommand}"/>
                             <MenuItem Header="_Vertical" Command="{Binding ActiveDocument.FlipSelectionVerticalCommand}"/>

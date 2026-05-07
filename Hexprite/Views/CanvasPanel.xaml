@@ -287,7 +287,7 @@
                                FontStyle="Italic" />
                 </StackPanel>
 
-                <!-- 4. Selection hints (Marquee, Lasso) -->
+                <!-- 4. Selection hints (Marquee, Lasso, MagicWand) -->
                 <StackPanel Orientation="Horizontal"
                             Grid.Column="0">
                     <StackPanel.Style>
@@ -305,9 +305,39 @@
                                     <Setter Property="Visibility"
                                             Value="Visible" />
                                 </DataTrigger>
+                                <DataTrigger Binding="{Binding CurrentTool}"
+                                             Value="MagicWand">
+                                    <Setter Property="Visibility"
+                                            Value="Visible" />
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
+
+                    <!-- Transform button (context-aware: enabled only when a selection exists) -->
+                    <Button Command="{Binding BeginSelectionTransformCommand}"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Height="28"
+                            Padding="10,0"
+                            Margin="0,0,10,0"
+                            ToolTip="Transform selection (Ctrl+T) — drag handles to scale">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE740;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="13"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,6,0" />
+                            <TextBlock Text="Transform"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Rectangle Width="2"
+                               Fill="{DynamicResource Brush.Border.Base}"
+                               Margin="0,4,10,4"
+                               RadiusX="1"
+                               RadiusY="1" />
+
                     <TextBlock Text="&#xE9A6;"
                                FontFamily="Segoe MDL2 Assets"
                                Foreground="{DynamicResource Brush.Text.Muted}"

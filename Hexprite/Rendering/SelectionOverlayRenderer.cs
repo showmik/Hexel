@@ -165,7 +165,9 @@ namespace Hexprite.Rendering
                 groupGeom.Children.Add(dragGeom);
             }
 
-            if (mask != null)
+            // During active lasso drag, drawing the vector preview path is enough.
+            // Defer expensive per-pixel boundary extraction until selection is finalized.
+            if (!sel.IsSelecting && mask != null)
             {
                 int estimatedEdges = (maskW + maskH) * 2;
                 var edgesByStart = new Dictionary<(int, int), List<(int, int)>>(estimatedEdges);
@@ -265,7 +267,14 @@ namespace Hexprite.Rendering
             Brush stroke = (Brush)(Application.Current.TryFindResource("Brush.Accent.PreviewBorder") ?? Brushes.White);
             Brush fill = (Brush)(Application.Current.TryFindResource("Brush.Surface.Base") ?? Brushes.Black);
 
-            double hs = Math.Clamp(14.0 / vm.ZoomLevel, 4.0, Math.Min(cw, ch) * 0.45);
+            double maxHs = Math.Min(cw, ch) * 0.45;
+            if (maxHs <= 0)
+            {
+                layer.Visibility = Visibility.Hidden;
+                return;
+            }
+            double minHs = Math.Min(4.0, maxHs);
+            double hs = Math.Clamp(14.0 / vm.ZoomLevel, minHs, maxHs);
 
             int fx = sel.FloatingX;
             int fy = sel.FloatingY;

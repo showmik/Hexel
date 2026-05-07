@@ -672,6 +672,7 @@ namespace Hexprite.ViewModels
         public IRelayCommand FlipCanvasVerticalCommand { get; }
         public IRelayCommand FlipSelectionHorizontalCommand { get; }
         public IRelayCommand FlipSelectionVerticalCommand { get; }
+        public IRelayCommand BeginSelectionTransformCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────
         public MainViewModel(
@@ -880,6 +881,10 @@ namespace Hexprite.ViewModels
                 () => FlipSelection(FlipDirection.Vertical),
                 () => _selectionService.HasActiveSelection && _selectionService.IsFloating && !_selectionService.IsTransforming);
 
+            BeginSelectionTransformCommand = new RelayCommand(
+                () => _selectionInput.EnterTransformMode(),
+                () => _selectionService.HasActiveSelection && !_selectionService.IsTransforming);
+
             // Keep menu enabled/disabled state in sync with selection/floating/transform status.
             // Otherwise WPF can keep stale CanExecute values and the command won't execute.
             _selectionService.SelectionChanged += (_, _) =>
@@ -888,6 +893,8 @@ namespace Hexprite.ViewModels
                     rh.NotifyCanExecuteChanged();
                 if (FlipSelectionVerticalCommand is RelayCommand rv)
                     rv.NotifyCanExecuteChanged();
+                if (BeginSelectionTransformCommand is RelayCommand rt)
+                    rt.NotifyCanExecuteChanged();
             };
 
             // ── Initialization ────────────────────────────────────────────
@@ -1317,7 +1324,7 @@ namespace Hexprite.ViewModels
         /// specified bounding box. Much faster than a full <see cref="RedrawGridFromMemory"/>
         /// for small brush strokes on large canvases.
         /// </summary>
-        public void RedrawRegion(int minX, int minY, int maxX, int maxY)
+        public void RedrawRegion(int minX, int minY, int maxX, int maxY, bool updatePreviewSimulation = true)
         {
             if (CanvasBitmap == null || _canvasBuffer == null || SpriteState?.Pixels == null) return;
 
@@ -1374,7 +1381,8 @@ namespace Hexprite.ViewModels
             var srcRect = new Int32Rect(x0, y0, regionW, regionH);
             CanvasBitmap.WritePixels(srcRect, _canvasBuffer, w * 4, x0, y0);
             PreviewBitmap.WritePixels(srcRect, _previewBuffer, w * 4, x0, y0);
-            UpdatePreviewSimulation();
+            if (updatePreviewSimulation)
+                UpdatePreviewSimulation();
         }
 
         /// <summary>
@@ -1403,6 +1411,9 @@ namespace Hexprite.ViewModels
 
         public bool TryBeginSelectionTransform(TransformHandle handle)
             => _selectionInput.TryBeginTransform(handle);
+
+        public void EnterSelectionTransformMode()
+            => _selectionInput.EnterTransformMode();
 
         public void UpdateSelectionTransform(int deltaX, int deltaY, bool shiftAspect, bool altFromCenter)
             => _selectionInput.UpdateTransformFromDelta(deltaX, deltaY, shiftAspect, altFromCenter);
