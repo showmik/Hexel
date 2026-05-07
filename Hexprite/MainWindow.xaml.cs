@@ -673,8 +673,15 @@ namespace Hexprite
                 // Non-floating selections persist until explicitly deselected (Ctrl+D).
                 if (_selection.HasActiveSelection && _selection.IsFloating)
                 {
-                    ViewModel.DeselectCommand.Execute(null);
-                    _selectionOverlay.Clear();
+                    // Don't deselect if the click is on a transform handle (handle may be outside canvas).
+                    var image2 = Canvas.CanvasImage;
+                    var imgPos2 = e.GetPosition(image2);
+                    var hitHandle = ViewModel.HitTestSelectionHandle(imgPos2.X, imgPos2.Y, image2.ActualWidth, image2.ActualHeight);
+                    if (hitHandle == TransformHandle.None)
+                    {
+                        ViewModel.DeselectCommand.Execute(null);
+                        _selectionOverlay.Clear();
+                    }
                 }
             }
 
