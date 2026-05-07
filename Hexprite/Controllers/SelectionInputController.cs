@@ -244,7 +244,8 @@ namespace Hexprite.Controllers
             int fw = _selection.FloatingWidth;
             int fh = _selection.FloatingHeight;
 
-            double hitR = Math.Max(10.0 / actualW * cw, 1.25);
+            double cellMin = Math.Min((double)cw, (double)ch);
+            double hitR = Math.Max(cellMin * 0.10, Math.Max(14.0 / actualW * cw, 1.25));
 
             bool Near(double hx, double hy)
             {

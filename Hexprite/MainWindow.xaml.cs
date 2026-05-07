@@ -434,6 +434,9 @@ namespace Hexprite
                 e.PropertyName == nameof(ViewModels.MainViewModel.BrushShape) ||
                 e.PropertyName == nameof(ViewModels.MainViewModel.BrushAngle))
                 _brushCursor.Refresh();
+
+            if (e.PropertyName == nameof(ViewModels.MainViewModel.ZoomLevel))
+                _selectionOverlay.Update();
         }
 
         // ── Tab bar event handlers ────────────────────────────────────────

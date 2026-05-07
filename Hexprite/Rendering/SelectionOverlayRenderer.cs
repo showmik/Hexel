@@ -277,16 +277,15 @@ namespace Hexprite.Rendering
             Brush stroke = (Brush)(Application.Current.TryFindResource("Brush.Accent.PreviewBorder") ?? Brushes.White);
             Brush fill = (Brush)(Application.Current.TryFindResource("Brush.Surface.Base") ?? Brushes.Black);
 
-            double maxHs = Math.Min(cw, ch) * 0.45;
-            if (maxHs <= 0)
+            double cellMin = Math.Min(cw, ch);
+            if (cellMin <= 0)
             {
                 foreach (var handle in _transformHandlePool)
                     handle.Visibility = Visibility.Hidden;
                 layer.Visibility = Visibility.Hidden;
                 return;
             }
-            double minHs = Math.Min(4.0, maxHs);
-            double hs = Math.Clamp(14.0 / vm.ZoomLevel, minHs, maxHs);
+            double hs = Math.Max(cellMin * 0.15, 14.0 / vm.ZoomLevel);
 
             int fx = sel.FloatingX;
             int fy = sel.FloatingY;
@@ -300,7 +299,7 @@ namespace Hexprite.Rendering
             double midX = (fx + fw * 0.5) * cw;
             double midY = (fy + fh * 0.5) * ch;
 
-            double strokeThick = Math.Max(0.5, vm.SelectionStrokeThickness * 0.35);
+            double strokeThick = hs * 0.12;
 
             if (layer.Children.Count == 0)
             {
