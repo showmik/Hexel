@@ -20,6 +20,7 @@ namespace Hexprite.Controllers
         private int _selectionAnchorX = -1;
         private int _selectionAnchorY = -1;
         private bool _wasSelectionActiveOnDown;
+        private bool _hasDragged;
 
         public SelectionInputController(
             MainViewModel vm,
@@ -136,6 +137,8 @@ namespace Hexprite.Controllers
                 CommitIfActive();
             }
 
+            _hasDragged = false;
+
             if (_vm.CurrentTool == ToolMode.MagicWand)
             {
                 var fillMask = _drawingService.GetFloodFillMask(_vm.SpriteState, x, y,
@@ -182,6 +185,8 @@ namespace Hexprite.Controllers
         {
             if (!_selection.IsSelecting) return;
 
+            _hasDragged = true;
+
             if (_vm.CurrentTool == ToolMode.Lasso)
             {
                 _selection.AddLassoPoint(x, y);
@@ -207,7 +212,22 @@ namespace Hexprite.Controllers
         private void HandleUp()
         {
             if (_selection.IsSelecting)
-                _selection.FinalizeSelection();
+            {
+                if (_hasDragged)
+                    _selection.FinalizeSelection();
+                else
+                    _selection.Cancel();
+            }
+        }
+
+        /// <summary>
+        /// Called by the View on any mouse movement during a selection drag,
+        /// even when the pixel coordinates haven't changed (sub-pixel movement).
+        /// This lets us distinguish a real drag from a stationary click.
+        /// </summary>
+        public void NotifyMouseMoved()
+        {
+            _hasDragged = true;
         }
 
         private static SelectionMode DetermineSelectionMode(bool isShiftDown, bool isAltDown)

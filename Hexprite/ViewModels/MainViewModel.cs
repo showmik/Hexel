@@ -1441,6 +1441,12 @@ namespace Hexprite.ViewModels
         public void ProcessSelectionInput(int x, int y, ToolAction action, bool isShiftDown, bool isAltDown, bool isInverse = false)
             => _selectionInput.ProcessInput(x, y, action, isShiftDown, isAltDown, isInverse);
 
+        /// <summary>
+        /// Notifies the selection controller that the mouse moved during a selection drag
+        /// (even if pixel coordinates didn't change). Distinguishes click from drag.
+        /// </summary>
+        public void NotifySelectionMouseMoved()
+            => _selectionInput.NotifyMouseMoved();
 
         /// <summary>
         /// Tries to begin a floating selection drag. Returns true if successful.

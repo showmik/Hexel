@@ -799,6 +799,18 @@ namespace Hexprite
                 image.Cursor = Cursors.Arrow;
             }
 
+            // Notify the selection controller of any mouse movement during a
+            // selection drag so that sub-pixel movement within the same pixel
+            // still counts as a drag (distinguishes click from drag).
+            if (!_activeTransformDrag &&
+                (ViewModel.CurrentTool == ToolMode.Marquee ||
+                 ViewModel.CurrentTool == ToolMode.Lasso)
+                && e.LeftButton == MouseButtonState.Pressed
+                && _selection.IsSelecting)
+            {
+                ViewModel.NotifySelectionMouseMoved();
+            }
+
             // Only process drawing/selection when the pixel coordinate actually changes
             if (x != _lastHoveredX || y != _lastHoveredY)
             {

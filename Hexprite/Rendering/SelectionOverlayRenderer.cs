@@ -169,9 +169,11 @@ namespace Hexprite.Rendering
                 groupGeom.Children.Add(dragGeom);
             }
 
-            // During active lasso drag, drawing the vector preview path is enough.
-            // Defer expensive per-pixel boundary extraction until selection is finalized.
-            if (!sel.IsSelecting && mask != null)
+            // Render the per-pixel boundary whenever a mask exists.  For pixel-art
+            // canvas sizes the edge-tracing cost is negligible, and skipping it during
+            // boolean-mode drags (Add/Subtract/Intersect) caused the existing selection
+            // preview to disappear while dragging.
+            if (mask != null)
             {
                 // Keep renderer robust when selection bounds and mask dimensions
                 // are transiently out of sync during transforms.
