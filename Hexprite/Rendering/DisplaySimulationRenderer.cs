@@ -3,12 +3,14 @@ using Hexprite.Services;
 using Hexprite.ViewModels;
 using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Windows.Media;
 
 namespace Hexprite.Rendering
 {
     public static class DisplaySimulationRenderer
     {
+        private static readonly ConcurrentDictionary<(int Radius, int SigmaMilli), float[]> GaussianKernelCache = new();
         private static float SrgbToLinear(float c)
             => c <= 0.04045f ? (c / 12.92f) : MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
 
@@ -550,6 +552,10 @@ namespace Hexprite.Rendering
 
         private static float[] BuildGaussianKernel(int radius, float sigma)
         {
+            int sigmaMilli = Math.Max(1, (int)MathF.Round(sigma * 1000f));
+            if (GaussianKernelCache.TryGetValue((radius, sigmaMilli), out var cached))
+                return cached;
+
             float[] k = new float[(radius * 2) + 1];
             float inv2s2 = 1f / (2f * sigma * sigma);
             float sum = 0f;
@@ -564,6 +570,8 @@ namespace Hexprite.Rendering
                 for (int i = 0; i < k.Length; i++)
                     k[i] /= sum;
             }
+
+            GaussianKernelCache.TryAdd((radius, sigmaMilli), k);
             return k;
         }
     }

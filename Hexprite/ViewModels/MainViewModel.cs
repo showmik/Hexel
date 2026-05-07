@@ -608,6 +608,8 @@ namespace Hexprite.ViewModels
         private uint[] _canvasBuffer = Array.Empty<uint>();
         private uint[] _previewBuffer = Array.Empty<uint>();
         private uint[] _previewSimBuffer = Array.Empty<uint>();
+        private long _lastPreviewSimulationTicks;
+        private const long PreviewSimulationMinIntervalTicks = TimeSpan.TicksPerMillisecond * 33;
 
         private uint _colorOffUint, _colorOnUint, _previewOffUint, _previewOnUint;
         private static uint ToBgra32(Color c) =>
@@ -1951,12 +1953,16 @@ namespace Hexprite.ViewModels
             }
         }
 
-        public void UpdatePreviewSimulation()
+        public void UpdatePreviewSimulation(bool force = false)
         {
             if (!UseRealisticPreview)
                 return;
 
             if (SpriteState == null)
+                return;
+
+            long nowTicks = DateTime.UtcNow.Ticks;
+            if (!force && (nowTicks - _lastPreviewSimulationTicks) < PreviewSimulationMinIntervalTicks)
                 return;
 
             EnsurePreviewSimBitmap();
@@ -2005,6 +2011,7 @@ namespace Hexprite.ViewModels
 
             var rect = new Int32Rect(0, 0, PreviewSimBitmap.PixelWidth, PreviewSimBitmap.PixelHeight);
             PreviewSimBitmap.WritePixels(rect, _previewSimBuffer, PreviewSimBitmap.PixelWidth * 4, 0);
+            _lastPreviewSimulationTicks = nowTicks;
         }
 
         private static double GetRelativeLuminance(Color c)

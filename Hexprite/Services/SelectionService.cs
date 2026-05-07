@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using Hexprite.Core;
 
@@ -242,47 +243,79 @@ namespace Hexprite.Services
 
             int w = maxX - minX + 1;
             int h = maxY - minY + 1;
-            bool[,] combined = new bool[w, h];
+            int total = w * h;
+            bool[] combined = ArrayPool<bool>.Shared.Rent(total);
+            Array.Clear(combined, 0, total);
             bool anyTrue = false;
+            int trueMinX = int.MaxValue, trueMinY = int.MaxValue, trueMaxX = int.MinValue, trueMaxY = int.MinValue;
 
-            for (int y = minY; y <= maxY; y++)
+            try
             {
-                for (int x = minX; x <= maxX; x++)
+                for (int y = minY; y <= maxY; y++)
                 {
-                    bool inBase = false;
-                    if (x >= _baseMinX && x <= _baseMaxX && y >= _baseMinY && y <= _baseMaxY)
-                        inBase = _baseMask[x - _baseMinX, y - _baseMinY];
-
-                    bool inNew = false;
-                    if (x >= nMinX && x <= nMaxX && y >= nMinY && y <= nMaxY)
-                        inNew = newMask[x - nMinX, y - nMinY];
-
-                    bool result = false;
-                    switch (mode)
+                    for (int x = minX; x <= maxX; x++)
                     {
-                        case SelectionMode.Add: result = inBase || inNew; break;
-                        case SelectionMode.Subtract: result = inBase && !inNew; break;
-                        case SelectionMode.Intersect: result = inBase && inNew; break;
+                        bool inBase = false;
+                        if (x >= _baseMinX && x <= _baseMaxX && y >= _baseMinY && y <= _baseMaxY)
+                            inBase = _baseMask![x - _baseMinX, y - _baseMinY];
+
+                        bool inNew = false;
+                        if (x >= nMinX && x <= nMaxX && y >= nMinY && y <= nMaxY)
+                            inNew = newMask[x - nMinX, y - nMinY];
+
+                        bool result = false;
+                        switch (mode)
+                        {
+                            case SelectionMode.Add: result = inBase || inNew; break;
+                            case SelectionMode.Subtract: result = inBase && !inNew; break;
+                            case SelectionMode.Intersect: result = inBase && inNew; break;
+                        }
+
+                        int localX = x - minX;
+                        int localY = y - minY;
+                        if (result)
+                        {
+                            combined[(localY * w) + localX] = true;
+                            anyTrue = true;
+                            trueMinX = Math.Min(trueMinX, x);
+                            trueMaxX = Math.Max(trueMaxX, x);
+                            trueMinY = Math.Min(trueMinY, y);
+                            trueMaxY = Math.Max(trueMaxY, y);
+                        }
                     }
-
-                    combined[x - minX, y - minY] = result;
-                    if (result) anyTrue = true;
                 }
-            }
 
-            if (!anyTrue)
+                if (!anyTrue)
+                {
+                    MinX = MaxX = MinY = MaxY = -1;
+                    Mask = null;
+                    return;
+                }
+
+                int finalW = trueMaxX - trueMinX + 1;
+                int finalH = trueMaxY - trueMinY + 1;
+                var trimmed = new bool[finalW, finalH];
+                for (int y = trueMinY; y <= trueMaxY; y++)
+                {
+                    for (int x = trueMinX; x <= trueMaxX; x++)
+                    {
+                        int srcX = x - minX;
+                        int srcY = y - minY;
+                        trimmed[x - trueMinX, y - trueMinY] = combined[(srcY * w) + srcX];
+                    }
+                }
+
+                MinX = trueMinX;
+                MaxX = trueMaxX;
+                MinY = trueMinY;
+                MaxY = trueMaxY;
+                Mask = trimmed;
+                HasActiveSelection = true;
+            }
+            finally
             {
-                MinX = MaxX = MinY = MaxY = -1;
-                Mask = null;
-                return;
+                ArrayPool<bool>.Shared.Return(combined);
             }
-
-            MinX = minX;
-            MaxX = maxX;
-            MinY = minY;
-            MaxY = maxY;
-            Mask = combined;
-            HasActiveSelection = true;
         }
 
         public void ApplyMask(bool[,] mask, int minX, int minY, int maxX, int maxY, SelectionMode mode)

@@ -144,7 +144,7 @@ namespace Hexprite.Core
             return composite;
         }
 
-        public SpriteState Clone()
+        public SpriteState Clone(bool cloneSelectionSnapshot = true, bool includeOriginalFloatingPixels = true)
         {
             EnsureLayers();
             var clone = new SpriteState(Width, Height)
@@ -152,7 +152,7 @@ namespace Hexprite.Core
                 Layers = Layers.ConvertAll(l => l.Clone()),
                 ActiveLayerIndex = ActiveLayerIndex,
                 IsDisplayInverted = IsDisplayInverted,
-                SelectionSnapshot = SelectionSnapshot?.Clone()
+                SelectionSnapshot = cloneSelectionSnapshot ? SelectionSnapshot?.Clone(includeOriginalFloatingPixels) : SelectionSnapshot
                 // ExportSettings intentionally NOT cloned: settings tweaks
                 // should not be undone when the user hits Ctrl+Z.
             };

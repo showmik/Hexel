@@ -28,7 +28,7 @@ namespace Hexprite.Core
         public int FloatingHeight { get; set; }
         public List<PixelPoint> LassoPoints { get; set; } = new();
 
-        public SelectionSnapshot Clone()
+        public SelectionSnapshot Clone(bool includeOriginalFloatingPixels = true)
         {
             var clone = new SelectionSnapshot
             {
@@ -58,7 +58,7 @@ namespace Hexprite.Core
             if (FloatingPixels != null)
                 clone.FloatingPixels = (bool[,])FloatingPixels.Clone();
 
-            if (OriginalFloatingPixels != null)
+            if (includeOriginalFloatingPixels && OriginalFloatingPixels != null)
                 clone.OriginalFloatingPixels = (bool[,])OriginalFloatingPixels.Clone();
 
             if (LassoPoints != null)

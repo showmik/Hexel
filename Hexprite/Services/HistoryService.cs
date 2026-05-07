@@ -13,7 +13,7 @@ namespace Hexprite.Services
         {
             if (state == null) return;
 
-            _undoStack.Push(state.Clone());
+            _undoStack.Push(CloneForHistory(state));
             _redoStack.Clear();
             if (_undoStack.Count > MaxHistory)
                 TrimStack(_undoStack, MaxHistory);
@@ -23,7 +23,7 @@ namespace Hexprite.Services
         {
             if (_undoStack.Count == 0) return currentState;
 
-            _redoStack.Push(currentState.Clone());
+            _redoStack.Push(CloneForHistory(currentState));
             var restored = _undoStack.Pop();
             restored.EnsureLayers();
             return restored;
@@ -33,11 +33,16 @@ namespace Hexprite.Services
         {
             if (_redoStack.Count == 0) return currentState;
 
-            _undoStack.Push(currentState.Clone());
+            _undoStack.Push(CloneForHistory(currentState));
             var restored = _redoStack.Pop();
             restored.EnsureLayers();
             return restored;
         }
+
+        private static SpriteState CloneForHistory(SpriteState state)
+            // SelectionSnapshot is already cloned by the selection service before SaveStateForUndo.
+            // Avoid cloning it a second time when persisting history entries.
+            => state.Clone(cloneSelectionSnapshot: false);
 
         private static void TrimStack(Stack<SpriteState> stack, int maxCount)
         {

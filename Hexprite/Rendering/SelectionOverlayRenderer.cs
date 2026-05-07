@@ -21,6 +21,7 @@ namespace Hexprite.Rendering
         private readonly CanvasElementProvider _elements;
         private readonly Func<MainViewModel?> _getVm;
         private readonly Func<ISelectionService?> _getSelection;
+        private readonly List<Rectangle> _transformHandlePool = new(8);
 
         public SelectionOverlayRenderer(
             CanvasElementProvider elements,
@@ -30,6 +31,8 @@ namespace Hexprite.Rendering
             _elements = elements ?? throw new ArgumentNullException(nameof(elements));
             _getVm = getVm ?? throw new ArgumentNullException(nameof(getVm));
             _getSelection = getSelection ?? throw new ArgumentNullException(nameof(getSelection));
+            for (int i = 0; i < 8; i++)
+                _transformHandlePool.Add(new Rectangle { SnapsToDevicePixels = true, Visibility = Visibility.Hidden });
         }
 
         public void Update()
@@ -70,7 +73,8 @@ namespace Hexprite.Rendering
             if (l != null) l.Visibility = Visibility.Hidden;
             if (th != null)
             {
-                th.Children.Clear();
+                foreach (var handle in _transformHandlePool)
+                    handle.Visibility = Visibility.Hidden;
                 th.Visibility = Visibility.Hidden;
             }
         }
@@ -256,10 +260,10 @@ namespace Hexprite.Rendering
             var layer = _elements.GetTransformHandlesLayer();
             if (layer == null) return;
 
-            layer.Children.Clear();
-
             if (!sel.HasActiveSelection || !sel.IsFloating || sel.IsSelecting)
             {
+                foreach (var handle in _transformHandlePool)
+                    handle.Visibility = Visibility.Hidden;
                 layer.Visibility = Visibility.Hidden;
                 return;
             }
@@ -276,6 +280,8 @@ namespace Hexprite.Rendering
             double maxHs = Math.Min(cw, ch) * 0.45;
             if (maxHs <= 0)
             {
+                foreach (var handle in _transformHandlePool)
+                    handle.Visibility = Visibility.Hidden;
                 layer.Visibility = Visibility.Hidden;
                 return;
             }
@@ -296,30 +302,32 @@ namespace Hexprite.Rendering
 
             double strokeThick = Math.Max(0.5, vm.SelectionStrokeThickness * 0.35);
 
-            void AddCorner(double px, double py)
+            if (layer.Children.Count == 0)
             {
-                var r = new Rectangle
-                {
-                    Width = hs,
-                    Height = hs,
-                    Stroke = stroke,
-                    StrokeThickness = strokeThick,
-                    Fill = fill,
-                    SnapsToDevicePixels = true
-                };
-                Canvas.SetLeft(r, px - hs * 0.5);
-                Canvas.SetTop(r, py - hs * 0.5);
-                layer.Children.Add(r);
+                foreach (var handle in _transformHandlePool)
+                    layer.Children.Add(handle);
             }
 
-            AddCorner(left, top);
-            AddCorner(midX, top);
-            AddCorner(right, top);
-            AddCorner(right, midY);
-            AddCorner(right, bottom);
-            AddCorner(midX, bottom);
-            AddCorner(left, bottom);
-            AddCorner(left, midY);
+            static void PositionHandle(Rectangle r, double px, double py, double hs, Brush stroke, Brush fill, double strokeThick)
+            {
+                r.Width = hs;
+                r.Height = hs;
+                r.Stroke = stroke;
+                r.StrokeThickness = strokeThick;
+                r.Fill = fill;
+                Canvas.SetLeft(r, px - hs * 0.5);
+                Canvas.SetTop(r, py - hs * 0.5);
+                r.Visibility = Visibility.Visible;
+            }
+
+            PositionHandle(_transformHandlePool[0], left, top, hs, stroke, fill, strokeThick);
+            PositionHandle(_transformHandlePool[1], midX, top, hs, stroke, fill, strokeThick);
+            PositionHandle(_transformHandlePool[2], right, top, hs, stroke, fill, strokeThick);
+            PositionHandle(_transformHandlePool[3], right, midY, hs, stroke, fill, strokeThick);
+            PositionHandle(_transformHandlePool[4], right, bottom, hs, stroke, fill, strokeThick);
+            PositionHandle(_transformHandlePool[5], midX, bottom, hs, stroke, fill, strokeThick);
+            PositionHandle(_transformHandlePool[6], left, bottom, hs, stroke, fill, strokeThick);
+            PositionHandle(_transformHandlePool[7], left, midY, hs, stroke, fill, strokeThick);
 
             layer.Visibility = Visibility.Visible;
         }
