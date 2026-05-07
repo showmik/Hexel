@@ -330,7 +330,7 @@ namespace Hexprite.Controllers
             int maxY = Math.Max(oldY + oldH - 1, newY + newH - 1);
 
             const int padding = 1;
-            _vm.RedrawRegion(minX - padding, minY - padding, maxX + padding, maxY + padding);
+            _vm.RedrawRegion(minX - padding, minY - padding, maxX + padding, maxY + padding, updatePreviewSimulation: false);
         }
 
         public void CommitTransformIfActive()

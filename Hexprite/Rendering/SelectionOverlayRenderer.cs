@@ -169,63 +169,69 @@ namespace Hexprite.Rendering
             // Defer expensive per-pixel boundary extraction until selection is finalized.
             if (!sel.IsSelecting && mask != null)
             {
-                int estimatedEdges = (maskW + maskH) * 2;
-                var edgesByStart = new Dictionary<(int, int), List<(int, int)>>(estimatedEdges);
-
-                Action<int, int, int, int> addEdge = (x1, y1, x2, y2) =>
+                // Keep renderer robust when selection bounds and mask dimensions
+                // are transiently out of sync during transforms.
+                int effectiveMaskW = Math.Min(maskW, mask.GetLength(0));
+                int effectiveMaskH = Math.Min(maskH, mask.GetLength(1));
+                if (effectiveMaskW > 0 && effectiveMaskH > 0)
                 {
-                    if (!edgesByStart.TryGetValue((x1, y1), out var list))
-                    {
-                        list = new List<(int, int)>(2);
-                        edgesByStart[(x1, y1)] = list;
-                    }
-                    list.Add((x2, y2));
-                };
+                    int estimatedEdges = (effectiveMaskW + effectiveMaskH) * 2;
+                    var edgesByStart = new Dictionary<(int, int), List<(int, int)>>(estimatedEdges);
 
-                for (int y = 0; y < maskH; y++)
-                {
-                    for (int x = 0; x < maskW; x++)
+                    Action<int, int, int, int> addEdge = (x1, y1, x2, y2) =>
                     {
-                        if (mask[x, y])
+                        if (!edgesByStart.TryGetValue((x1, y1), out var list))
                         {
-                            if (y == 0 || !mask[x, y - 1]) addEdge(x, y, x + 1, y);
-                            if (y == maskH - 1 || !mask[x, y + 1]) addEdge(x + 1, y + 1, x, y + 1);
-                            if (x == 0 || !mask[x - 1, y]) addEdge(x, y + 1, x, y);
-                            if (x == maskW - 1 || !mask[x + 1, y]) addEdge(x + 1, y, x + 1, y + 1);
+                            list = new List<(int, int)>(2);
+                            edgesByStart[(x1, y1)] = list;
+                        }
+                        list.Add((x2, y2));
+                    };
+
+                    for (int y = 0; y < effectiveMaskH; y++)
+                    {
+                        for (int x = 0; x < effectiveMaskW; x++)
+                        {
+                            if (mask[x, y])
+                            {
+                                if (y == 0 || !mask[x, y - 1]) addEdge(x, y, x + 1, y);
+                                if (y == effectiveMaskH - 1 || !mask[x, y + 1]) addEdge(x + 1, y + 1, x, y + 1);
+                                if (x == 0 || !mask[x - 1, y]) addEdge(x, y + 1, x, y);
+                                if (x == effectiveMaskW - 1 || !mask[x + 1, y]) addEdge(x + 1, y, x + 1, y + 1);
+                            }
                         }
                     }
-                }
-
-                var maskGeom = new StreamGeometry();
-                using (var ctx = maskGeom.Open())
-                {
-                    while (edgesByStart.Count > 0)
+                    var maskGeom = new StreamGeometry();
+                    using (var ctx = maskGeom.Open())
                     {
-                        var e = edgesByStart.GetEnumerator();
-                        e.MoveNext();
-                        var startNode = e.Current.Key;
-                        e.Dispose();
-
-                        ctx.BeginFigure(new Point((baseX + startNode.Item1) * cw, (baseY + startNode.Item2) * ch), isFilled: false, isClosed: true);
-
-                        var curr = startNode;
-                        while (true)
+                        while (edgesByStart.Count > 0)
                         {
-                            if (!edgesByStart.TryGetValue(curr, out var list) || list.Count == 0)
-                                break;
+                            var e = edgesByStart.GetEnumerator();
+                            e.MoveNext();
+                            var startNode = e.Current.Key;
+                            e.Dispose();
 
-                            var next = list[list.Count - 1];
-                            list.RemoveAt(list.Count - 1);
-                            if (list.Count == 0) edgesByStart.Remove(curr);
+                            ctx.BeginFigure(new Point((baseX + startNode.Item1) * cw, (baseY + startNode.Item2) * ch), isFilled: false, isClosed: true);
 
-                            ctx.LineTo(new Point((baseX + next.Item1) * cw, (baseY + next.Item2) * ch), isStroked: true, isSmoothJoin: false);
-                            curr = next;
-                            if (curr == startNode) break;
+                            var curr = startNode;
+                            while (true)
+                            {
+                                if (!edgesByStart.TryGetValue(curr, out var list) || list.Count == 0)
+                                    break;
+
+                                var next = list[list.Count - 1];
+                                list.RemoveAt(list.Count - 1);
+                                if (list.Count == 0) edgesByStart.Remove(curr);
+
+                                ctx.LineTo(new Point((baseX + next.Item1) * cw, (baseY + next.Item2) * ch), isStroked: true, isSmoothJoin: false);
+                                curr = next;
+                                if (curr == startNode) break;
+                            }
                         }
                     }
+                    maskGeom.Freeze();
+                    groupGeom.Children.Add(maskGeom);
                 }
-                maskGeom.Freeze();
-                groupGeom.Children.Add(maskGeom);
             }
 
             if (groupGeom.Children.Count == 0)

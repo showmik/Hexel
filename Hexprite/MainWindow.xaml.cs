@@ -477,6 +477,8 @@ namespace Hexprite
 
             if (e.ChangedButton == MouseButton.Left)
             {
+                bool wasDragging = _selection.IsDragging;
+
                 if (_activeTransformDrag)
                 {
                     ViewModel.CommitSelectionTransformIfActive();
@@ -486,6 +488,9 @@ namespace Hexprite
                     ViewModel.ProcessSelectionInput(-1, -1, ToolAction.Up, false, false);
                 ReleaseDragCapture();
                 _selection.EndDrag();
+
+                if (wasDragging)
+                    ViewModel.UpdatePreviewSimulation();
             }
 
             if (Mouse.Captured == Canvas.CanvasImage)
@@ -600,8 +605,20 @@ namespace Hexprite
 
             if (newX != _selection!.FloatingX || newY != _selection.FloatingY)
             {
+                int oldX = _selection.FloatingX;
+                int oldY = _selection.FloatingY;
+                int fw = _selection.FloatingWidth;
+                int fh = _selection.FloatingHeight;
+
                 _selection.MoveFloatingTo(newX, newY);
-                ViewModel.RedrawGridFromMemory();
+
+                int minX = Math.Min(oldX, newX);
+                int minY = Math.Min(oldY, newY);
+                int maxX = Math.Max(oldX + fw - 1, newX + fw - 1);
+                int maxY = Math.Max(oldY + fh - 1, newY + fh - 1);
+
+                const int padding = 1;
+                ViewModel.RedrawRegion(minX - padding, minY - padding, maxX + padding, maxY + padding, updatePreviewSimulation: false);
             }
         }
 
