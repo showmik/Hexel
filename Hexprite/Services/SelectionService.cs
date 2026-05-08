@@ -55,10 +55,6 @@ namespace Hexprite.Services
         [System.Diagnostics.Conditional("DEBUG")]
         private void ValidateState()
         {
-            // Dragging requires an active selection
-            if (IsDragging && !HasActiveSelection)
-                throw new InvalidOperationException("Invalid state: IsDragging=true but HasActiveSelection=false");
-
             // Floating requires an active selection
             if (IsFloating && !HasActiveSelection)
                 throw new InvalidOperationException("Invalid state: IsFloating=true but HasActiveSelection=false");

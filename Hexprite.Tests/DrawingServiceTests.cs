@@ -22,6 +22,12 @@ public class DrawingServiceTests
         return count;
     }
 
+    private sealed class PixelClipStub : IPixelClip
+    {
+        public required Func<int, int, bool> Selector { get; init; }
+        public bool IsPixelInClip(int x, int y) => Selector(x, y);
+    }
+
     private sealed class ClipSelectionStub : ISelectionService
     {
         public required Func<int, int, bool> Selector { get; init; }
@@ -107,9 +113,9 @@ public class DrawingServiceTests
     {
         var svc = new DrawingService();
         var s = MakeState(8, 8);
-        svc.SetSelectionClip(new ClipSelectionStub { Selector = static (x, y) => x == 3 && y == 3 });
+        var clip = new PixelClipStub { Selector = static (x, y) => x == 3 && y == 3 };
 
-        svc.DrawBrushStamp(s, 3, 3, 3, true, BrushShape.Square);
+        svc.DrawBrushStamp(s, 3, 3, 3, true, BrushShape.Square, 0, clip);
 
         Assert.True(s.Pixels[(3 * 8) + 3]);
         Assert.Equal(1, CountOn(s));
@@ -200,9 +206,9 @@ public class DrawingServiceTests
     {
         var svc = new DrawingService();
         var s = MakeState(6, 6);
-        svc.SetSelectionClip(new ClipSelectionStub { Selector = static (x, y) => x == 2 && y == 2 });
+        var clip = new PixelClipStub { Selector = static (x, y) => x == 2 && y == 2 };
 
-        svc.DrawFilledRectangle(s, 0, 0, 5, 5, true);
+        svc.DrawFilledRectangle(s, 0, 0, 5, 5, true, clip);
 
         Assert.Equal(1, CountOn(s));
         Assert.True(s.Pixels[(2 * 6) + 2]);
@@ -291,12 +297,12 @@ public class DrawingServiceTests
     {
         var s = MakeState(6, 6);
         var svc = new DrawingService();
-        svc.SetSelectionClip(new ClipSelectionStub
+        var clip = new PixelClipStub
         {
             Selector = static (x, y) => x >= 1 && x <= 3 && y >= 1 && y <= 3
-        });
+        };
 
-        svc.ApplyFloodFill(s, 2, 2, true);
+        svc.ApplyFloodFill(s, 2, 2, true, clip);
 
         for (int y = 0; y < 6; y++)
         {
