@@ -12,7 +12,7 @@ namespace Hexprite.Controllers
     /// logic, drawing-in-progress tracking, and preview orchestration.
     /// Extracted from MainViewModel to separate input handling from ViewModel state.
     /// </summary>
-    public class ToolInputController
+    public class ToolInputController : IToolInputController
     {
         private readonly MainViewModel _vm;
         private readonly IDrawingService _drawingService;

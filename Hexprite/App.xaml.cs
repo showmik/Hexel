@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Hexprite.Controllers;
 using Hexprite.Services;
 using Hexprite.ViewModels;
 using Serilog;
@@ -71,6 +72,9 @@ namespace Hexprite
             services.AddSingleton<IBugReportService, BugReportService>();
             services.AddSingleton<IUserFeedbackService, UserFeedbackService>();
             services.AddSingleton<IPixelClipboardService, PixelClipboardService>();
+
+            // Controller factory for creating document-scoped controllers
+            services.AddSingleton<IControllerFactory, ControllerFactory>();
 
             // ShellViewModel is the app-level VM that manages tabs
             services.AddSingleton<ShellViewModel>();

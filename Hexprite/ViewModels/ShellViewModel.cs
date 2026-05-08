@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Hexprite.Controllers;
 using Hexprite.Core;
 using Hexprite.Services;
 using System;
@@ -31,6 +32,7 @@ namespace Hexprite.ViewModels
         private readonly IThemeService _themeService;
         private readonly IBugReportService _bugReportService;
         private readonly IUserFeedbackService _userFeedbackService;
+        private readonly IControllerFactory _controllerFactory;
 
         private const string FileFilter = "Hexprite Sprite (*.hexprite)|*.hexprite|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
 
@@ -156,7 +158,8 @@ namespace Hexprite.ViewModels
             IDialogService dialogService,
             IThemeService themeService,
             IBugReportService bugReportService,
-            IUserFeedbackService userFeedbackService)
+            IUserFeedbackService userFeedbackService,
+            IControllerFactory controllerFactory)
         {
             _codeGen = codeGen;
             _drawingService = drawingService;
@@ -166,6 +169,7 @@ namespace Hexprite.ViewModels
             _themeService = themeService;
             _bugReportService = bugReportService;
             _userFeedbackService = userFeedbackService;
+            _controllerFactory = controllerFactory;
 
             LoadWindowLayoutSettings();
             PropertyChanged += OnShellPropertyChanged;
@@ -789,9 +793,19 @@ namespace Hexprite.ViewModels
             var history = new HistoryService();
             var selection = new SelectionService();
 
+            // Create document with deferred controller initialization
+            // Controllers will be created and injected after doc is initialized
             var doc = new MainViewModel(
                 _codeGen, _drawingService, history, selection,
                 _clipboardService, _pixelClipboard, _dialogService);
+
+            // Now create document-scoped controllers using the factory
+            var previewRenderer = _controllerFactory.CreatePreviewRenderer(doc);
+            var toolInput = _controllerFactory.CreateToolInputController(doc, _drawingService, previewRenderer);
+            var selectionInput = _controllerFactory.CreateSelectionInputController(doc, selection, _drawingService);
+
+            // Initialize the document with controllers
+            doc.InitializeControllers(toolInput, selectionInput, previewRenderer);
 
             doc.InitializeGrid(width, height, redrawImmediately);
             return doc;

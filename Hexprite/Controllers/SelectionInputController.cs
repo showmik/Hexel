@@ -11,7 +11,7 @@ namespace Hexprite.Controllers
     /// floating layer management, and commit/cancel orchestration.
     /// Extracted from MainWindow.xaml.cs to move domain logic out of the View.
     /// </summary>
-    public class SelectionInputController
+    public class SelectionInputController : ISelectionInputController
     {
         private readonly MainViewModel _vm;
         private readonly ISelectionService _selection;

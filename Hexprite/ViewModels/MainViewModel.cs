@@ -658,9 +658,11 @@ namespace Hexprite.ViewModels
         void IBitmapBufferContext.UpdatePreviewSimulation() => UpdatePreviewSimulation();
 
         // ── Extracted subsystems ──────────────────────────────────────────
-        private ToolInputController _toolInput = null!;
+        // These are initialized via InitializeControllers after construction
+        // because they require the MainViewModel instance itself.
+        private IToolInputController _toolInput = null!;
         private BitmapPreviewRenderer _previewRenderer = null!;
-        private SelectionInputController _selectionInput = null!;
+        private ISelectionInputController _selectionInput = null!;
 
         // ── Events ────────────────────────────────────────────────────────
         /// <summary>
@@ -724,6 +726,11 @@ namespace Hexprite.ViewModels
             _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
             _pixelClipboard = pixelClipboard ?? throw new ArgumentNullException(nameof(pixelClipboard));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            // Controllers are initialized via InitializeControllers after construction
+            // since they require the MainViewModel instance itself
+            _toolInput = null!;
+            _selectionInput = null!;
+            _previewRenderer = null!;
             ApplySavedEditorPreferences();
 
             // ── Commands ──────────────────────────────────────────────────
@@ -931,9 +938,21 @@ namespace Hexprite.ViewModels
 
             // ── Initialization ────────────────────────────────────────────
             InitializeBrushColors();
-            _previewRenderer = new BitmapPreviewRenderer(this);
-            _toolInput = new ToolInputController(this, _drawingService, _previewRenderer);
-            _selectionInput = new SelectionInputController(this, _selectionService, _drawingService);
+        }
+
+        /// <summary>
+        /// Initializes the document-scoped controllers after construction.
+        /// This is called by ShellViewModel.CreateDocument after the document
+        /// is created but before InitializeGrid is called.
+        /// </summary>
+        public void InitializeControllers(
+            IToolInputController toolInput,
+            ISelectionInputController selectionInput,
+            BitmapPreviewRenderer previewRenderer)
+        {
+            _toolInput = toolInput ?? throw new ArgumentNullException(nameof(toolInput));
+            _selectionInput = selectionInput ?? throw new ArgumentNullException(nameof(selectionInput));
+            _previewRenderer = previewRenderer ?? throw new ArgumentNullException(nameof(previewRenderer));
         }
 
         // ── Public methods called by the View ─────────────────────────────
