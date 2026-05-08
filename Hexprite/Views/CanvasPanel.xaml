@@ -20,17 +20,115 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Contextual Options (all share Column 0) -->
+                <!-- Tool Indicator (Current Tool Name + Icon) -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            Margin="0,0,16,0">
+                    <TextBlock x:Name="ToolIcon"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="16"
+                               Foreground="{DynamicResource Brush.Accent.Base}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="&#xE716;" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Pencil">
+                                        <Setter Property="Text" Value="&#xE70F;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Line">
+                                        <Setter Property="Text" Value="&#xE738;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Rectangle">
+                                        <Setter Property="Text" Value="&#xE739;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Ellipse">
+                                        <Setter Property="Text" Value="&#xE7BA;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="FilledRectangle">
+                                        <Setter Property="Text" Value="&#xE739;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="FilledEllipse">
+                                        <Setter Property="Text" Value="&#xE7BA;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Fill">
+                                        <Setter Property="Text" Value="&#xE74B;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Marquee">
+                                        <Setter Property="Text" Value="&#xE727;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Lasso">
+                                        <Setter Property="Text" Value="&#xF12E;" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="MagicWand">
+                                        <Setter Property="Text" Value="&#xE8D4;" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock x:Name="ToolNameText"
+                               Foreground="{DynamicResource Brush.Text.Primary}"
+                               FontWeight="SemiBold"
+                               FontSize="13"
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="Pencil" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Line">
+                                        <Setter Property="Text" Value="Line" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Rectangle">
+                                        <Setter Property="Text" Value="Rectangle" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Ellipse">
+                                        <Setter Property="Text" Value="Ellipse" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="FilledRectangle">
+                                        <Setter Property="Text" Value="Filled Rect" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="FilledEllipse">
+                                        <Setter Property="Text" Value="Filled Ellipse" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Fill">
+                                        <Setter Property="Text" Value="Fill" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Marquee">
+                                        <Setter Property="Text" Value="Marquee" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Lasso">
+                                        <Setter Property="Text" Value="Lasso" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="MagicWand">
+                                        <Setter Property="Text" Value="Magic Wand" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <Rectangle Grid.Column="1"
+                           Width="2"
+                           Fill="{DynamicResource Brush.Border.Base}"
+                           Margin="0,4,16,4"
+                           RadiusX="1"
+                           RadiusY="1" />
+
+                <!-- Contextual Options (all share Column 2) -->
 
                 <!-- 1. Brush options (Pencil only) -->
                 <StackPanel Orientation="Horizontal"
-                            Grid.Column="0">
+                            Grid.Column="2">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
                             <Setter Property="Visibility"
@@ -222,9 +320,9 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- 2. Shape hints (Line, Rectangle, Ellipse) -->
+                <!-- 2. Shape hints & controls (Line, Rectangle, Ellipse, FilledRectangle, FilledEllipse) -->
                 <StackPanel Orientation="Horizontal"
-                            Grid.Column="0">
+                            Grid.Column="2">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
                             <Setter Property="Visibility"
@@ -258,6 +356,67 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
+
+                    <!-- Stroke Width (only for non-filled shapes) -->
+                    <StackPanel Orientation="Horizontal"
+                                x:Name="StrokeWidthPanel">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Line">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Rectangle">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentTool}" Value="Ellipse">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <TextBlock Text="STROKE"
+                                   Style="{StaticResource HeaderStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                        <Button Content="-"
+                                Width="24"
+                                Height="24"
+                                Margin="0,0,4,0"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="0"
+                                Click="BtnBrushDown_Click"
+                                ToolTip="Decrease stroke width" />
+                        <Slider Width="60"
+                                Minimum="1"
+                                Maximum="16"
+                                Value="{Binding BrushSize}"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                VerticalAlignment="Center"
+                                ToolTip="Shape stroke width (1-16px)" />
+                        <Button Content="+"
+                                Width="24"
+                                Height="24"
+                                Margin="4,0,8,0"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Padding="0"
+                                Click="BtnBrushUp_Click"
+                                ToolTip="Increase stroke width" />
+                        <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}"
+                                   Foreground="{DynamicResource Brush.Accent.Base}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Width="28" />
+
+                        <Rectangle Width="2"
+                                   Style="{StaticResource SeparatorRectangleStyle}"
+                                   Margin="12,4" />
+                    </StackPanel>
+
+                    <!-- Hint text -->
                     <TextBlock Text="&#xE9A6;"
                                FontFamily="Segoe MDL2 Assets"
                                Foreground="{DynamicResource Brush.Text.Muted}"
@@ -271,7 +430,7 @@
 
                 <!-- 3. Fill hint -->
                 <StackPanel Orientation="Horizontal"
-                            Grid.Column="0">
+                            Grid.Column="2">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
                             <Setter Property="Visibility"
@@ -298,7 +457,7 @@
 
                 <!-- 4. Selection hints (Marquee, Lasso, MagicWand) -->
                 <StackPanel Orientation="Horizontal"
-                            Grid.Column="0">
+                            Grid.Column="2">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
                             <Setter Property="Visibility"
@@ -322,6 +481,63 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
+
+                    <!-- Selection Info (shown when selection exists) -->
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,0,10,0">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectionService.HasActiveSelection}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <TextBlock Text="&#xE727;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   Foreground="{DynamicResource Brush.Accent.Base}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0"
+                                   FontSize="14" />
+                        <TextBlock Text="{Binding SelectionInfo}"
+                                   Foreground="{DynamicResource Brush.Accent.Base}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,0" />
+
+                        <!-- Quick Actions -->
+                        <Button Command="{Binding CutSelectionCommand}"
+                                Style="{StaticResource CompactIconButtonStyle}"
+                                Margin="0,0,4,0"
+                                ToolTip="Cut selection (Ctrl+X)">
+                            <TextBlock Text="&#xE8B8;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="14" />
+                        </Button>
+                        <Button Command="{Binding CopySelectionCommand}"
+                                Style="{StaticResource CompactIconButtonStyle}"
+                                Margin="0,0,4,0"
+                                ToolTip="Copy selection (Ctrl+C)">
+                            <TextBlock Text="&#xE8C8;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="14" />
+                        </Button>
+                        <Button Command="{Binding DeleteSelectionCommand}"
+                                Style="{StaticResource CompactIconButtonStyle}"
+                                Margin="0,0,8,0"
+                                ToolTip="Delete selection (Del)">
+                            <TextBlock Text="&#xE74D;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="14" />
+                        </Button>
+
+                        <Rectangle Width="2"
+                                   Style="{StaticResource SeparatorRectangleStyle}"
+                                   Margin="0,4,10,4" />
+                    </StackPanel>
 
                     <!-- Transform button (context-aware: enabled only when a selection exists) -->
                     <Button Command="{Binding BeginSelectionTransformCommand}"
@@ -360,7 +576,7 @@
 
 
 
-                <Rectangle Grid.Column="3"
+                <Rectangle Grid.Column="4"
                            Width="2"
                            Fill="{DynamicResource Brush.Border.Base}"
                            Margin="12,4"
@@ -369,7 +585,7 @@
 
                 <!-- Zoom -->
                 <StackPanel Orientation="Horizontal"
-                            Grid.Column="4">
+                            Grid.Column="5">
                     <TextBlock Text="ZOOM"
                                Style="{StaticResource HeaderStyle}"
                                VerticalAlignment="Center"
