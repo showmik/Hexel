@@ -91,7 +91,6 @@ namespace Hexprite.ViewModels
                 {
                     if (old != null) old.IsActive = false;
                     if (value != null) value.IsActive = true;
-                    _drawingService.SetSelectionClip(null);
                     OnPropertyChanged(nameof(HasOpenDocument));
                 }
             }

@@ -17,6 +17,7 @@ namespace Hexprite.Controllers
         private readonly MainViewModel _vm;
         private readonly IDrawingService _drawingService;
         private readonly BitmapPreviewRenderer _preview;
+        private IPixelClip? _currentClip;
 
         // ── Internal drawing tracking ─────────────────────────────────────
         private const int NoPosition = int.MinValue;
@@ -84,11 +85,11 @@ namespace Hexprite.Controllers
 
             _shapeCommitMap = new Dictionary<ToolMode, CommitAction>
             {
-                { ToolMode.Line,            (s, x0, y0, x1, y1, st) => _drawingService.DrawLine(s, x0, y0, x1, y1, st) },
-                { ToolMode.Rectangle,       (s, x0, y0, x1, y1, st) => _drawingService.DrawRectangle(s, x0, y0, x1, y1, st) },
-                { ToolMode.Ellipse,         (s, x0, y0, x1, y1, st) => _drawingService.DrawEllipse(s, x0, y0, x1, y1, st) },
-                { ToolMode.FilledRectangle, (s, x0, y0, x1, y1, st) => _drawingService.DrawFilledRectangle(s, x0, y0, x1, y1, st) },
-                { ToolMode.FilledEllipse,   (s, x0, y0, x1, y1, st) => _drawingService.DrawFilledEllipse(s, x0, y0, x1, y1, st) },
+                { ToolMode.Line,            (s, x0, y0, x1, y1, st) => _drawingService.DrawLine(s, x0, y0, x1, y1, st, _currentClip) },
+                { ToolMode.Rectangle,       (s, x0, y0, x1, y1, st) => _drawingService.DrawRectangle(s, x0, y0, x1, y1, st, _currentClip) },
+                { ToolMode.Ellipse,         (s, x0, y0, x1, y1, st) => _drawingService.DrawEllipse(s, x0, y0, x1, y1, st, _currentClip) },
+                { ToolMode.FilledRectangle, (s, x0, y0, x1, y1, st) => _drawingService.DrawFilledRectangle(s, x0, y0, x1, y1, st, _currentClip) },
+                { ToolMode.FilledEllipse,   (s, x0, y0, x1, y1, st) => _drawingService.DrawFilledEllipse(s, x0, y0, x1, y1, st, _currentClip) },
             };
         }
 
@@ -105,7 +106,7 @@ namespace Hexprite.Controllers
             // the residual non-floating mask is what constrains drawing.
             var sel = _vm.SelectionService;
             bool hasClip = sel.HasActiveSelection && !sel.IsFloating;
-            _drawingService.SetSelectionClip(hasClip ? sel : null);
+            _currentClip = hasClip ? new SelectionClipAdapter(sel) : null;
 
             switch (action)
             {
@@ -167,7 +168,7 @@ namespace Hexprite.Controllers
                     // ApplyFloodFill, resulting in two undo entries per fill operation.
                     // History is now saved exactly once, here at the call site.
                     _vm.SaveStateForUndo();
-                    _drawingService.ApplyFloodFill(_vm.SpriteState, x, y, newState);
+                    _drawingService.ApplyFloodFill(_vm.SpriteState, x, y, newState, _currentClip);
                     _lastClickedX = x;
                     _lastClickedY = y;
                     _vm.RedrawGridFromMemory();
@@ -186,7 +187,7 @@ namespace Hexprite.Controllers
                         }
                         else
                         {
-                            _drawingService.DrawLine(_vm.SpriteState, _lastClickedX, _lastClickedY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
+                            _drawingService.DrawLine(_vm.SpriteState, _lastClickedX, _lastClickedY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle, _currentClip);
 
                             int brushMargin1 = ComputeDirtyMargin();
                             _vm.RedrawRegion(
@@ -210,7 +211,7 @@ namespace Hexprite.Controllers
                         }
                         else
                         {
-                            _drawingService.DrawBrushStamp(_vm.SpriteState, x, y, _vm.BrushSize, newState, _vm.BrushShape, _vm.BrushAngle);
+                            _drawingService.DrawBrushStamp(_vm.SpriteState, x, y, _vm.BrushSize, newState, _vm.BrushShape, _vm.BrushAngle, _currentClip);
                         }
                         _lastClickedX = x;
                         _lastClickedY = y;
@@ -269,7 +270,7 @@ namespace Hexprite.Controllers
                     }
                     else
                     {
-                        _drawingService.DrawLine(_vm.SpriteState, prevX, prevY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle);
+                        _drawingService.DrawLine(_vm.SpriteState, prevX, prevY, x, y, newState, _vm.BrushSize, _vm.BrushShape, _vm.BrushAngle, _currentClip);
                     }
                     _lastClickedX = x;
                     _lastClickedY = y;
@@ -423,7 +424,7 @@ namespace Hexprite.Controllers
             if (!_pixelPerfectOriginalStates.ContainsKey(index))
                 _pixelPerfectOriginalStates[index] = before;
 
-            _drawingService.DrawBrushStamp(state, x, y, 1, newState);
+            _drawingService.DrawBrushStamp(state, x, y, 1, newState, BrushShape.Circle, 0, _currentClip);
             bool after = state.Pixels[index];
             if (after != newState)
                 return;
@@ -468,7 +469,7 @@ namespace Hexprite.Controllers
             int indexB = (b.y * _vm.SpriteState.Width) + b.x;
             if (_pixelPerfectOriginalStates.TryGetValue(indexB, out bool originalState))
             {
-                _drawingService.DrawBrushStamp(_vm.SpriteState, b.x, b.y, 1, originalState);
+                _drawingService.DrawBrushStamp(_vm.SpriteState, b.x, b.y, 1, originalState, BrushShape.Circle, 0, _currentClip);
                 _vm.RedrawRegion(b.x, b.y, b.x, b.y, updatePreviewSimulation: false);
                 _pixelPerfectStrokePath.RemoveAt(_pixelPerfectStrokePath.Count - 2);
             }

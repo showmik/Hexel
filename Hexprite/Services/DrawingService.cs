@@ -6,32 +6,22 @@ namespace Hexprite.Services
 {
     public class DrawingService : IDrawingService
     {
-        // ── Selection clip ─────────────────────────────────────────────────
-        private ISelectionService? _activeClip;
-
-        public void SetSelectionClip(ISelectionService? selectionService)
-        {
-            _activeClip = selectionService;
-        }
-
         /// <summary>
         /// Returns true if the pixel at (x, y) should NOT be written because
-        /// it falls outside the active selection clip.
+        /// it falls outside the provided selection clip.
         /// </summary>
-        private bool IsClipped(int x, int y)
+        private static bool IsClipped(int x, int y, IPixelClip? clip)
         {
-            return _activeClip != null
-                && _activeClip.HasActiveSelection
-                && !_activeClip.IsPixelInSelection(x, y);
+            return clip != null && !clip.IsPixelInClip(x, y);
         }
 
         // ── Flood fill ────────────────────────────────────────────────────
 
-        public void ApplyFloodFill(SpriteState state, int startX, int startY, bool newState)
+        public void ApplyFloodFill(SpriteState state, int startX, int startY, bool newState, IPixelClip? clip = null)
         {
             if (startX < 0 || startX >= state.Width || startY < 0 || startY >= state.Height) return;
             // If the start pixel is outside the selection, do nothing
-            if (IsClipped(startX, startY)) return;
+            if (IsClipped(startX, startY, clip)) return;
 
             int startIndex = (startY * state.Width) + startX;
             bool targetState = state.Pixels[startIndex];
@@ -59,10 +49,10 @@ namespace Hexprite.Services
                     int x = current % state.Width;
                     int y = current / state.Width;
 
-                    TryEnqueue(queue, visited, state, targetState, x - 1, y);
-                    TryEnqueue(queue, visited, state, targetState, x + 1, y);
-                    TryEnqueue(queue, visited, state, targetState, x, y - 1);
-                    TryEnqueue(queue, visited, state, targetState, x, y + 1);
+                    TryEnqueue(queue, visited, state, targetState, x - 1, y, clip);
+                    TryEnqueue(queue, visited, state, targetState, x + 1, y, clip);
+                    TryEnqueue(queue, visited, state, targetState, x, y - 1, clip);
+                    TryEnqueue(queue, visited, state, targetState, x, y + 1, clip);
                 }
             }
             finally
@@ -76,12 +66,12 @@ namespace Hexprite.Services
         /// Enqueues a neighbor pixel if it is in bounds, inside the selection clip,
         /// hasn't been visited, and matches the target state.
         /// </summary>
-        private void TryEnqueue(Queue<int> queue, bool[] visited, SpriteState state, bool targetState, int x, int y)
+        private static void TryEnqueue(Queue<int> queue, bool[] visited, SpriteState state, bool targetState, int x, int y, IPixelClip? clip)
         {
             if (x < 0 || x >= state.Width || y < 0 || y >= state.Height) return;
             int index = (y * state.Width) + x;
             if (visited[index] || state.Pixels[index] != targetState) return;
-            if (IsClipped(x, y)) return;
+            if (IsClipped(x, y, clip)) return;
             visited[index] = true;
             queue.Enqueue(index);
         }
@@ -272,38 +262,38 @@ namespace Hexprite.Services
             return offsets;
         }
 
-        public void DrawBrushStamp(SpriteState state, int cx, int cy, int brushSize, bool newState, BrushShape shape = BrushShape.Circle, int angleDeg = 0)
+        public void DrawBrushStamp(SpriteState state, int cx, int cy, int brushSize, bool newState, BrushShape shape = BrushShape.Circle, int angleDeg = 0, IPixelClip? clip = null)
         {
             if (brushSize <= 1)
             {
-                if (cx >= 0 && cx < state.Width && cy >= 0 && cy < state.Height && !IsClipped(cx, cy))
+                if (cx >= 0 && cx < state.Width && cy >= 0 && cy < state.Height && !IsClipped(cx, cy, clip))
                     state.Pixels[(cy * state.Width) + cx] = newState;
                 return;
             }
 
             int w = state.Width, h = state.Height;
             var offsets = ComputeStampOffsets(brushSize, shape, angleDeg);
-            StampOffsets(state, cx, cy, newState, offsets);
+            StampOffsets(state, cx, cy, newState, offsets, clip);
         }
 
         /// <summary>
         /// Fast stamp using pre-computed offsets — avoids re-allocating and
         /// re-computing offsets when called repeatedly (e.g. along a line).
         /// </summary>
-        private void StampOffsets(SpriteState state, int cx, int cy, bool newState, List<(int dx, int dy)> offsets)
+        private static void StampOffsets(SpriteState state, int cx, int cy, bool newState, List<(int dx, int dy)> offsets, IPixelClip? clip)
         {
             int w = state.Width, h = state.Height;
             foreach (var (dx, dy) in offsets)
             {
                 int px = cx + dx, py = cy + dy;
-                if (px >= 0 && px < w && py >= 0 && py < h && !IsClipped(px, py))
+                if (px >= 0 && px < w && py >= 0 && py < h && !IsClipped(px, py, clip))
                     state.Pixels[(py * w) + px] = newState;
             }
         }
 
         // ── Line ──────────────────────────────────────────────────────────
 
-        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
+        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState, IPixelClip? clip = null)
         {
             int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
             int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
@@ -311,7 +301,7 @@ namespace Hexprite.Services
 
             while (true)
             {
-                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height && !IsClipped(x0, y0))
+                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height && !IsClipped(x0, y0, clip))
                     state.Pixels[(y0 * state.Width) + x0] = newState;
                 if (x0 == x1 && y0 == y1) break;
 
@@ -321,11 +311,11 @@ namespace Hexprite.Services
             }
         }
 
-        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState, int brushSize, BrushShape shape = BrushShape.Circle, int angleDeg = 0)
+        public void DrawLine(SpriteState state, int x0, int y0, int x1, int y1, bool newState, int brushSize, BrushShape shape = BrushShape.Circle, int angleDeg = 0, IPixelClip? clip = null)
         {
             if (brushSize <= 1)
             {
-                DrawLine(state, x0, y0, x1, y1, newState);
+                DrawLine(state, x0, y0, x1, y1, newState, clip);
                 return;
             }
 
@@ -338,7 +328,7 @@ namespace Hexprite.Services
 
             while (true)
             {
-                StampOffsets(state, x0, y0, newState, offsets);
+                StampOffsets(state, x0, y0, newState, offsets, clip);
                 if (x0 == x1 && y0 == y1) break;
 
                 int e2 = 2 * err;
@@ -349,12 +339,12 @@ namespace Hexprite.Services
 
         // ── Rectangle ─────────────────────────────────────────────────────
 
-        public void DrawRectangle(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
+        public void DrawRectangle(SpriteState state, int x0, int y0, int x1, int y1, bool newState, IPixelClip? clip = null)
         {
             if (x0 == x1 && y0 == y1)
             {
                 // Degenerate case: single pixel
-                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height && !IsClipped(x0, y0))
+                if (x0 >= 0 && x0 < state.Width && y0 >= 0 && y0 < state.Height && !IsClipped(x0, y0, clip))
                     state.Pixels[(y0 * state.Width) + x0] = newState;
                 return;
             }
@@ -369,23 +359,23 @@ namespace Hexprite.Services
             {
                 if (x >= 0 && x < width)
                 {
-                    if (minY >= 0 && minY < height && !IsClipped(x, minY)) state.Pixels[(minY * width) + x] = newState;
-                    if (maxY >= 0 && maxY < height && !IsClipped(x, maxY)) state.Pixels[(maxY * width) + x] = newState;
+                    if (minY >= 0 && minY < height && !IsClipped(x, minY, clip)) state.Pixels[(minY * width) + x] = newState;
+                    if (maxY >= 0 && maxY < height && !IsClipped(x, maxY, clip)) state.Pixels[(maxY * width) + x] = newState;
                 }
             }
             for (int y = minY + 1; y < maxY; y++)
             {
                 if (y >= 0 && y < height)
                 {
-                    if (minX >= 0 && minX < width && !IsClipped(minX, y)) state.Pixels[(y * width) + minX] = newState;
-                    if (maxX >= 0 && maxX < width && !IsClipped(maxX, y)) state.Pixels[(y * width) + maxX] = newState;
+                    if (minX >= 0 && minX < width && !IsClipped(minX, y, clip)) state.Pixels[(y * width) + minX] = newState;
+                    if (maxX >= 0 && maxX < width && !IsClipped(maxX, y, clip)) state.Pixels[(y * width) + maxX] = newState;
                 }
             }
         }
 
         // ── Filled Rectangle ──────────────────────────────────────────────
 
-        public void DrawFilledRectangle(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
+        public void DrawFilledRectangle(SpriteState state, int x0, int y0, int x1, int y1, bool newState, IPixelClip? clip = null)
         {
             int width = state.Width;
             int height = state.Height;
@@ -397,20 +387,20 @@ namespace Hexprite.Services
 
             for (int y = minY; y <= maxY; y++)
                 for (int x = minX; x <= maxX; x++)
-                    if (!IsClipped(x, y))
+                    if (!IsClipped(x, y, clip))
                         state.Pixels[(y * width) + x] = newState;
         }
 
         // ── Ellipse ───────────────────────────────────────────────────────
 
-        public void DrawEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
+        public void DrawEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState, IPixelClip? clip = null)
         {
             int width = state.Width;
             int height = state.Height;
 
             if (x0 == x1 && y0 == y1)
             {
-                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height && !IsClipped(x0, y0))
+                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height && !IsClipped(x0, y0, clip))
                     state.Pixels[(y0 * width) + x0] = newState;
                 return;
             }
@@ -428,7 +418,7 @@ namespace Hexprite.Services
 
             void SetPixel(int px, int py)
             {
-                if (px >= 0 && px < width && py >= 0 && py < height && !IsClipped(px, py))
+                if (px >= 0 && px < width && py >= 0 && py < height && !IsClipped(px, py, clip))
                     state.Pixels[(py * width) + px] = newState;
             }
 
@@ -452,14 +442,14 @@ namespace Hexprite.Services
 
         // ── Filled Ellipse ────────────────────────────────────────────────
 
-        public void DrawFilledEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState)
+        public void DrawFilledEllipse(SpriteState state, int x0, int y0, int x1, int y1, bool newState, IPixelClip? clip = null)
         {
             int width = state.Width;
             int height = state.Height;
 
             if (x0 == x1 && y0 == y1)
             {
-                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height && !IsClipped(x0, y0))
+                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height && !IsClipped(x0, y0, clip))
                     state.Pixels[(y0 * width) + x0] = newState;
                 return;
             }
@@ -487,7 +477,7 @@ namespace Hexprite.Services
                 int clampR = Math.Clamp(maxX, 0, width - 1);
                 
                 for (int px = clampL; px <= clampR; px++)
-                    if (!IsClipped(px, py))
+                    if (!IsClipped(px, py, clip))
                         state.Pixels[(py * width) + px] = newState;
             }
 
