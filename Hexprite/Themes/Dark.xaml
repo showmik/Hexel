@@ -28,22 +28,22 @@
     <Color x:Key="Palette.Surface.Active">#323854</Color>
 
     <!-- Borders & Separators -->
-    <Color x:Key="Palette.Border.Base">#24293D</Color>
-    <!-- Soft structural borders -->
-    <Color x:Key="Palette.Border.Separator">#1C2030</Color>
-    <!-- Subtle dividers -->
-    <Color x:Key="Palette.Border.StatusBar">#1C2030</Color>
+    <Color x:Key="Palette.Border.Base">#2D3748</Color>
+    <!-- Better contrast borders -->
+    <Color x:Key="Palette.Border.Separator">#1A202C</Color>
+    <!-- Subtle but visible dividers -->
+    <Color x:Key="Palette.Border.StatusBar">#1A202C</Color>
     <Color x:Key="Palette.Border.Focus">#6366F1</Color>
     <!-- Ties to accent -->
 
     <!-- Typography -->
     <Color x:Key="Palette.Text.Primary">#F8FAFC</Color>
     <!-- Crisp white-slate -->
-    <Color x:Key="Palette.Text.Muted">#8B95A5</Color>
-    <!-- Legible but subdued -->
+    <Color x:Key="Palette.Text.Muted">#94A3B8</Color>
+    <!-- Better contrast - lighter slate -->
     <Color x:Key="Palette.Text.Inverse">#0B0D14</Color>
     <Color x:Key="Palette.Text.OnAccent">#FFFFFF</Color>
-    <Color x:Key="Palette.Text.Code">#A1AABA</Color>
+    <Color x:Key="Palette.Text.Code">#CBD5E1</Color>
 
     <!-- Accent & Selection -->
     <Color x:Key="Palette.Accent.Base">#6366F1</Color>
@@ -64,10 +64,10 @@
     <!-- Crimson -->
 
     <!-- Canvas & Drawing (High Contrast Revision) -->
-    <Color x:Key="Palette.Canvas.Base">#262B40</Color>
+    <Color x:Key="Palette.Canvas.Base">#1A202C</Color>
     <Color x:Key="Palette.Canvas.Drawing">#40C4FF</Color>
-    <Color x:Key="Palette.Canvas.Pixel">#1E2336</Color>
-    <Color x:Key="Palette.Canvas.Grid">#121624</Color>
+    <Color x:Key="Palette.Canvas.Pixel">#2D3748</Color>
+    <Color x:Key="Palette.Canvas.Grid">#0F1419</Color>
     <Color x:Key="Palette.Canvas.Crosshair">#B3FFFFFF</Color>
 
     <!-- Common Elements -->
@@ -78,25 +78,25 @@
     <Color x:Key="Palette.Common.BrushFill">#40FFFFFF</Color>
 
     <!-- Controls (Inputs, Scrollbars) -->
-    <Color x:Key="Palette.Control.Background">#181B28</Color>
-    <Color x:Key="Palette.Control.Thumb">#373E59</Color>
-    <!-- High contrast scrollbar thumb -->
-    <Color x:Key="Palette.Control.ScrollBar">#0B0D14</Color>
+    <Color x:Key="Palette.Control.Background">#1A202C</Color>
+    <Color x:Key="Palette.Control.Thumb">#4A5568</Color>
+    <!-- Better contrast scrollbar thumb -->
+    <Color x:Key="Palette.Control.ScrollBar">#0F1419</Color>
     <!-- Deep track -->
-    <Color x:Key="Palette.Control.TextBox">#0F111A</Color>
-    <!-- Inset input boxes -->
-    <Color x:Key="Palette.Control.CheckBoxBorder">#373E59</Color>
+    <Color x:Key="Palette.Control.TextBox">#2D3748</Color>
+    <!-- Better contrast input boxes -->
+    <Color x:Key="Palette.Control.CheckBoxBorder">#4A5568</Color>
 
     <!-- Code / Syntax (OneDark / Palenight inspired) -->
     <Color x:Key="Palette.Code.Keyword">#C792EA</Color>
     <!-- Soft Purple -->
     <Color x:Key="Palette.Code.Literal">#A7F3D0</Color>
     <!-- Soft Mint/Green -->
-    <Color x:Key="Palette.Code.Comment">#637777</Color>
-    <!-- Low contrast teal-gray -->
+    <Color x:Key="Palette.Code.Comment">#6B7280</Color>
+    <!-- Better contrast gray -->
     <Color x:Key="Palette.Code.Identifier">#82AAFF</Color>
     <!-- Soft Blue -->
-    <Color x:Key="Palette.Code.Punctuation">#8993A4</Color>
+    <Color x:Key="Palette.Code.Punctuation">#9CA3AF</Color>
 
     <!-- Hardware Previews -->
     <Color x:Key="Palette.Preview.Base">#000000</Color>

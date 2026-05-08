@@ -7,42 +7,43 @@
          ═══════════════════════════════════════════════════════════ -->
 
     <!-- Surfaces & Backgrounds (Sleek Matte Black & Dark Grays) -->
-    <Color x:Key="Palette.Surface.Base">#050505</Color>
-    <!-- Pitch black background -->
-    <Color x:Key="Palette.Surface.MenuBar">#050505</Color>
-    <Color x:Key="Palette.Surface.StatusBar">#050505</Color>
+    <Color x:Key="Palette.Surface.Base">#0A0A0A</Color>
+    <!-- Slightly lighter pitch black for better contrast -->
+    <Color x:Key="Palette.Surface.MenuBar">#0A0A0A</Color>
+    <Color x:Key="Palette.Surface.StatusBar">#0A0A0A</Color>
 
-    <Color x:Key="Palette.Surface.ToolSidebar">#0A0A0A</Color>
-    <!-- Slightly raised -->
-    <Color x:Key="Palette.Surface.RightSidebar">#0A0A0A</Color>
+    <Color x:Key="Palette.Surface.ToolSidebar">#121212</Color>
+    <!-- More distinct raised surface -->
+    <Color x:Key="Palette.Surface.RightSidebar">#121212</Color>
 
-    <Color x:Key="Palette.Surface.Panel">#121212</Color>
-    <!-- Standard dark panels -->
-    <Color x:Key="Palette.Surface.Toolbar">#1A1A1A</Color>
-    <Color x:Key="Palette.Surface.Overlay">#1E1E1E</Color>
+    <Color x:Key="Palette.Surface.Panel">#1A1A1A</Color>
+    <!-- Standard dark panels with better hierarchy -->
+    <Color x:Key="Palette.Surface.Toolbar">#242424</Color>
+    <Color x:Key="Palette.Surface.Overlay">#2D2D2D</Color>
     <!-- Floating dropdowns -->
 
     <!-- Interaction States -->
-    <Color x:Key="Palette.Surface.Hover">#222222</Color>
-    <!-- Clean gray hover (fixed muddy orange) -->
-    <Color x:Key="Palette.Surface.Active">#2D2D2D</Color>
+    <Color x:Key="Palette.Surface.Hover">#333333</Color>
+    <!-- Better contrast hover state -->
+    <Color x:Key="Palette.Surface.Active">#404040</Color>
 
     <!-- Borders & Separators -->
-    <Color x:Key="Palette.Border.Base">#262626</Color>
-    <Color x:Key="Palette.Border.Separator">#1A1A1A</Color>
-    <Color x:Key="Palette.Border.StatusBar">#1A1A1A</Color>
+    <Color x:Key="Palette.Border.Base">#404040</Color>
+    <!-- More visible borders -->
+    <Color x:Key="Palette.Border.Separator">#2D2D2D</Color>
+    <Color x:Key="Palette.Border.StatusBar">#2D2D2D</Color>
     <Color x:Key="Palette.Border.Focus">#FF8200</Color>
     <!-- Flipper Orange focus ring -->
 
     <!-- Typography (Highly legible White/Gray with Black on Accents) -->
     <Color x:Key="Palette.Text.Primary">#F5F5F5</Color>
-    <!-- Crisp White (Fixed from Orange) -->
-    <Color x:Key="Palette.Text.Muted">#888888</Color>
-    <!-- Medium Gray -->
+    <!-- Crisp White -->
+    <Color x:Key="Palette.Text.Muted">#A3A3A3</Color>
+    <!-- Better contrast medium gray -->
     <Color x:Key="Palette.Text.Inverse">#000000</Color>
     <Color x:Key="Palette.Text.OnAccent">#000000</Color>
     <!-- Black text on Orange looks amazing -->
-    <Color x:Key="Palette.Text.Code">#D4D4D4</Color>
+    <Color x:Key="Palette.Text.Code">#E0E0E0</Color>
 
     <!-- Accent & Selection -->
     <Color x:Key="Palette.Accent.Base">#FF8200</Color>
@@ -64,13 +65,13 @@
 
     <!-- Canvas & Drawing (High Contrast Revision) -->
     <Color x:Key="Palette.Canvas.Base">#1A1A1A</Color>
-    <!-- Elevated dark gray "bezel" clearly visible against the #050505 workspace -->
-    <Color x:Key="Palette.Canvas.Pixel">#000000</Color>
-    <!-- Visible drawing cells -->
+    <!-- Elevated dark gray "bezel" clearly visible against the #0A0A0A workspace -->
+    <Color x:Key="Palette.Canvas.Pixel">#0A0A0A</Color>
+    <!-- Better contrast drawing cells -->
     <Color x:Key="Palette.Canvas.Drawing">#FF8200</Color>
     <!-- Flipper Orange ink -->
-    <Color x:Key="Palette.Canvas.Grid">#262626</Color>
-    <!-- Etched grid lines -->
+    <Color x:Key="Palette.Canvas.Grid">#333333</Color>
+    <!-- More visible etched grid lines -->
     <Color x:Key="Palette.Canvas.Crosshair">#80FFFFFF</Color>
     <!-- Clear translucent white -->
 
@@ -84,23 +85,25 @@
     <!-- Orange brush fill -->
 
     <!-- Controls -->
-    <Color x:Key="Palette.Control.Background">#1A1A1A</Color>
-    <Color x:Key="Palette.Control.Thumb">#333333</Color>
-    <Color x:Key="Palette.Control.ScrollBar">#0A0A0A</Color>
-    <Color x:Key="Palette.Control.TextBox">#0A0A0A</Color>
-    <!-- Inset pitch-black inputs -->
-    <Color x:Key="Palette.Control.CheckBoxBorder">#404040</Color>
+    <Color x:Key="Palette.Control.Background">#242424</Color>
+    <!-- Better contrast control background -->
+    <Color x:Key="Palette.Control.Thumb">#4A4A4A</Color>
+    <!-- More visible scrollbar thumb -->
+    <Color x:Key="Palette.Control.ScrollBar">#121212</Color>
+    <Color x:Key="Palette.Control.TextBox">#1A1A1A</Color>
+    <!-- Better contrast input boxes -->
+    <Color x:Key="Palette.Control.CheckBoxBorder">#4A4A4A</Color>
 
     <!-- Code / Syntax (Hacker / Terminal styling) -->
     <Color x:Key="Palette.Code.Keyword">#FF8200</Color>
     <!-- Flipper Orange -->
     <Color x:Key="Palette.Code.Literal">#32D74B</Color>
     <!-- Terminal Green -->
-    <Color x:Key="Palette.Code.Comment">#6B6B6B</Color>
-    <!-- Dim Gray -->
+    <Color x:Key="Palette.Code.Comment">#808080</Color>
+    <!-- Better contrast gray -->
     <Color x:Key="Palette.Code.Identifier">#F5F5F5</Color>
     <!-- Pure White -->
-    <Color x:Key="Palette.Code.Punctuation">#A3A3A3</Color>
+    <Color x:Key="Palette.Code.Punctuation">#B3B3B3</Color>
 
     <!-- Hardware Previews -->
     <Color x:Key="Palette.Preview.Base">#000000</Color>
