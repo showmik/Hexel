@@ -66,6 +66,9 @@ namespace Hexprite
         private ViewModels.MainViewModel? _subscribedDoc;
         private const string DebugLogPath = @"H:\dev\Hexel\debug-4d8f4c.log";
 
+        private int _minTrackWidth;
+        private int _minTrackHeight;
+
         // ── Constructor ───────────────────────────────────────────────────
 
         public MainWindow(ViewModels.ShellViewModel shell)
@@ -1012,10 +1015,51 @@ namespace Hexprite
                     mmi.ptMaxPosition = new POINT { x = work.left - mon.left, y = work.top - mon.top };
                     mmi.ptMaxSize = new POINT { x = work.right - work.left, y = work.bottom - work.top };
                 }
+
+                // ── USE CACHED VALUES FOR ZERO-OVERHEAD RESIZING ──
+                if (_minTrackWidth > 0 && _minTrackHeight > 0)
+                {
+                    mmi.ptMinTrackSize.x = _minTrackWidth;
+                    mmi.ptMinTrackSize.y = _minTrackHeight;
+                }
+
                 Marshal.StructureToPtr(mmi, lParam, true);
                 handled = true;
             }
             return IntPtr.Zero;
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            var handle = new WindowInteropHelper(this).Handle;
+            HwndSource.FromHwnd(handle)?.AddHook(WndProc);
+
+            // Calculate the physical pixels required for MinWidth/MinHeight once
+            UpdateMinTrackSize();
+        }
+
+        protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+        {
+            base.OnDpiChanged(oldDpi, newDpi);
+            // Recalculate if the user moves the app to a different monitor
+            UpdateMinTrackSize();
+        }
+
+        private void UpdateMinTrackSize()
+        {
+            var source = PresentationSource.FromVisual(this);
+            if (source?.CompositionTarget != null)
+            {
+                Matrix transform = source.CompositionTarget.TransformToDevice;
+                _minTrackWidth = (int)(this.MinWidth * transform.M11);
+                _minTrackHeight = (int)(this.MinHeight * transform.M22);
+            }
+            else
+            {
+                _minTrackWidth = (int)this.MinWidth;
+                _minTrackHeight = (int)this.MinHeight;
+            }
         }
     }
 }

@@ -6,7 +6,7 @@
         xmlns:views="clr-namespace:Hexprite.Views"
         Title="Hexprite"
         MinHeight="650"
-        MinWidth="950"
+        MinWidth="550"
         Height="780"
         Width="1150"
         Background="{DynamicResource Brush.Surface.Base}"
@@ -16,7 +16,7 @@
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
+        WindowStyle="SingleBorderWindow"
         AllowsTransparency="False"
         core:WindowChromeHelper.ForceRoundedCorners="True">
 
@@ -109,146 +109,250 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-        <!-- ═══════════════════════════════════════════════════════════════
-             CUSTOM TITLE BAR (menu + caption buttons)
-             ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="0"
-                Background="{DynamicResource Brush.Surface.MenuBar}">
-            <Grid Margin="0,0,0,1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- ═══════════════════════════════════════════════════════════════
+     CUSTOM TITLE BAR (menu + caption buttons)
+     ═══════════════════════════════════════════════════════════════ -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource Brush.Surface.MenuBar}">
+                <DockPanel Margin="0,0,0,1"
+                           LastChildFill="True">
 
-                <!-- App icon -->
-                <Border Grid.Column="0" Margin="10,0,6,0"
-                        Width="20" Height="20" CornerRadius="5"
-                        VerticalAlignment="Center"
-                        WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Border.Background>
-                        <ImageBrush ImageSource="pack://application:,,,/Assets/AppIcon.png" Stretch="UniformToFill" />
-                    </Border.Background>
-                </Border>
+                    <!-- 1. CAPTION BUTTONS: Docked Right FIRST so they are never clipped -->
+                    <StackPanel DockPanel.Dock="Right"
+                                Orientation="Horizontal"
+                                MinWidth="10"
+                                HorizontalAlignment="Right"
+                                WindowChrome.IsHitTestVisibleInChrome="True">
+                        <Button Click="CaptionMinimize_Click"
+                                ToolTip="Minimize"
+                                Width="44"
+                                Height="34"
+                                Style="{StaticResource CaptionButtonStyle}">
+                            <TextBlock Text="&#xE921;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="10" />
+                        </Button>
+                        <Button Click="CaptionMaximize_Click"
+                                ToolTip="Maximize"
+                                Width="44"
+                                Height="34"
+                                Style="{StaticResource CaptionButtonStyle}">
+                            <TextBlock x:Name="MaximizeIcon"
+                                       Text="&#xE922;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="10" />
+                        </Button>
+                        <Button Click="CaptionClose_Click"
+                                ToolTip="Close"
+                                Width="44"
+                                Height="34"
+                                Style="{StaticResource CaptionCloseButtonStyle}">
+                            <TextBlock Text="&#xE8BB;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="10" />
+                        </Button>
+                    </StackPanel>
 
-                <!-- Menu bar -->
-                <Menu Grid.Column="1" WindowChrome.IsHitTestVisibleInChrome="True"
-                      Margin="0,0,6,0"
-                      VerticalAlignment="Center">
-                    <MenuItem Header="_File">
-                        <MenuItem Header="_New Canvas" Command="{Binding NewCanvasCommand}" InputGestureText="Ctrl+N"/>
-                        <MenuItem Header="_Open" Command="{Binding OpenCommand}" InputGestureText="Ctrl+O"/>
-                        <MenuItem Header="_Import from Code…" Command="{Binding ImportFromCodeMenuCommand}" InputGestureText="Ctrl+Shift+I"/>
-                        <MenuItem Header="_Import Bitmap…" Command="{Binding ImportBitmapMenuCommand}"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="_Save" Command="{Binding SaveCommand}" InputGestureText="Ctrl+S"/>
-                        <MenuItem Header="Save _As..." Command="{Binding SaveAsCommand}" InputGestureText="Ctrl+Shift+S"/>
-                        <MenuItem Header="Copy _Export Code" Command="{Binding CopyExportCodeMenuCommand}"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="_Close Tab" Command="{Binding CloseTabCommand}" InputGestureText="Ctrl+W"/>
-                    </MenuItem>
-                    <MenuItem Header="_Edit">
-                        <MenuItem Header="_Undo" Command="{Binding ActiveDocument.UndoCommand}" InputGestureText="Ctrl+Z"/>
-                        <MenuItem Header="_Redo" Command="{Binding ActiveDocument.RedoCommand}" InputGestureText="Ctrl+Y"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="_Invert" Command="{Binding ActiveDocument.InvertCommand}"/>
-                        <MenuItem Header="_Clear Canvas" Command="{Binding ActiveDocument.ClearCommand}"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="Cu_t" Command="{Binding ActiveDocument.CutSelectionCommand}" InputGestureText="Ctrl+X"/>
-                        <MenuItem Header="_Copy" Command="{Binding ActiveDocument.CopySelectionCommand}" InputGestureText="Ctrl+C"/>
-                        <MenuItem Header="_Paste" Command="{Binding ActiveDocument.PasteCommand}" InputGestureText="Ctrl+V"/>
-                    </MenuItem>
-                    <MenuItem Header="_Image">
-                        <MenuItem Header="Canvas _Size..." Command="{Binding ResizeCanvasCommand}"/>
-                        <MenuItem Header="_Rotate Canvas">
-                            <MenuItem Header="90° _Clockwise" Command="{Binding ActiveDocument.RotateCanvasCWCommand}"/>
-                            <MenuItem Header="90° Counter_clockwise" Command="{Binding ActiveDocument.RotateCanvasCCWCommand}"/>
-                            <MenuItem Header="_180°" Command="{Binding ActiveDocument.RotateCanvas180Command}"/>
-                        </MenuItem>
-                        <MenuItem Header="_Flip Canvas">
-                            <MenuItem Header="_Horizontal" Command="{Binding ActiveDocument.FlipCanvasHorizontalCommand}"/>
-                            <MenuItem Header="_Vertical" Command="{Binding ActiveDocument.FlipCanvasVerticalCommand}"/>
-                        </MenuItem>
-                    </MenuItem>
-                    <MenuItem Header="_Selection">
-                        <MenuItem Header="Cu_t" Command="{Binding ActiveDocument.CutSelectionCommand}" InputGestureText="Ctrl+X"/>
-                        <MenuItem Header="_Copy" Command="{Binding ActiveDocument.CopySelectionCommand}" InputGestureText="Ctrl+C"/>
-                        <MenuItem Header="_Paste" Command="{Binding ActiveDocument.PasteCommand}" InputGestureText="Ctrl+V"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="_Transform" Command="{Binding ActiveDocument.BeginSelectionTransformCommand}" InputGestureText="Ctrl+T"/>
-                        <MenuItem Header="_Flip Selection">
-                            <MenuItem Header="_Horizontal" Command="{Binding ActiveDocument.FlipSelectionHorizontalCommand}"/>
-                            <MenuItem Header="_Vertical" Command="{Binding ActiveDocument.FlipSelectionVerticalCommand}"/>
-                        </MenuItem>
-                        <MenuItem Header="_Delete Selection" Command="{Binding ActiveDocument.DeleteSelectionCommand}" InputGestureText="Del"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="D_eselect" Command="{Binding ActiveDocument.DeselectCommand}" InputGestureText="Ctrl+D"/>
-                    </MenuItem>
-                    <MenuItem Header="_View">
-                        <MenuItem Header="Show _Grid" IsCheckable="True" IsChecked="{Binding ActiveDocument.ShowGridLines}"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="Zoom _In" Command="{x:Static NavigationCommands.IncreaseZoom}" InputGestureText="Ctrl++"/>
-                        <MenuItem Header="Zoom _Out" Command="{x:Static NavigationCommands.DecreaseZoom}" InputGestureText="Ctrl+-"/>
-                        <MenuItem Header="_Reset Zoom" Command="{x:Static NavigationCommands.Zoom}" InputGestureText="Ctrl+0"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="_Theme">
-                            <MenuItem Header="_Dark" IsCheckable="True" IsChecked="{Binding IsDarkTheme, Mode=OneWay}"
-                                      Command="{Binding SwitchThemeCommand}" CommandParameter="Dark"/>
-                            <MenuItem Header="_Dim" IsCheckable="True" IsChecked="{Binding IsDimTheme, Mode=OneWay}"
-                                      Command="{Binding SwitchThemeCommand}" CommandParameter="Dim"/>
-                            <MenuItem Header="_Light" IsCheckable="True" IsChecked="{Binding IsLightTheme, Mode=OneWay}"
-                                      Command="{Binding SwitchThemeCommand}" CommandParameter="Light"/>
-                            <MenuItem Header="_Flipper" IsCheckable="True" IsChecked="{Binding IsFlipperTheme, Mode=OneWay}"
-                                      Command="{Binding SwitchThemeCommand}" CommandParameter="Flipper"/>
-                        </MenuItem>
-                    </MenuItem>
-                    <MenuItem Header="_Window">
-                        <MenuItem Header="Tool _Sidebar" IsCheckable="True" IsChecked="{Binding IsToolSidebarVisible, Mode=TwoWay}"/>
-                        <MenuItem Header="_Layers Panel" IsCheckable="True" IsChecked="{Binding IsLayersPanelVisible, Mode=TwoWay}"/>
-                        <MenuItem Header="_Right Sidebar" IsCheckable="True" IsChecked="{Binding IsRightSidebarVisible, Mode=TwoWay}"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="_Timeline" IsCheckable="True" IsChecked="{Binding IsTimelineVisible, Mode=TwoWay}"/>
-                        <MenuItem Header="_Status Bar" IsCheckable="True" IsChecked="{Binding IsStatusBarVisible, Mode=TwoWay}"/>
-                    </MenuItem>
-                    <MenuItem Header="_Help">
-                        <MenuItem Header="_Documentation" Command="{Binding OpenDocumentationCommand}" InputGestureText="F1"/>
-                        <MenuItem Header="_Privacy Settings..." Command="{Binding OpenPrivacySettingsCommand}"/>
-                        <MenuItem Header="Send _Feedback..." Command="{Binding SendFeedbackCommand}"/>
-                        <MenuItem Header="_Report a Bug..." Command="{Binding ReportBugCommand}"/>
-                        <Separator Style="{StaticResource MenuSeparatorStyle}"/>
-                        <MenuItem Header="_About Hexprite" Command="{Binding ShowAboutCommand}"/>
-                    </MenuItem>
-                </Menu>
-
-                <!-- Title -->
-                <TextBlock Grid.Column="2" Text="Hexprite"
-                           Foreground="{DynamicResource Brush.Text.Muted}"
-                           FontSize="11"
-                           FontWeight="SemiBold"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Center" IsHitTestVisible="False"/>
-
-                <!-- Caption buttons -->
-                <StackPanel Grid.Column="3" Orientation="Horizontal"
+                    <!-- 2. APP ICON: Docked Left -->
+                    <Border DockPanel.Dock="Left"
+                            Margin="10,0,6,0"
+                            Width="20"
+                            Height="20"
+                            CornerRadius="5"
+                            VerticalAlignment="Center"
                             WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Button Click="CaptionMinimize_Click" ToolTip="Minimize" Width="44" Height="34"
-                            Style="{StaticResource CaptionButtonStyle}">
-                        <TextBlock Text="&#xE921;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
-                    </Button>
-                    <Button Click="CaptionMaximize_Click" ToolTip="Maximize" Width="44" Height="34"
-                            Style="{StaticResource CaptionButtonStyle}">
-                        <TextBlock x:Name="MaximizeIcon" Text="&#xE922;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
-                    </Button>
-                    <Button Click="CaptionClose_Click" ToolTip="Close" Width="44" Height="34"
-                            Style="{StaticResource CaptionCloseButtonStyle}">
-                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
+                        <Border.Background>
+                            <ImageBrush ImageSource="pack://application:,,,/Assets/AppIcon.png"
+                                        Stretch="UniformToFill" />
+                        </Border.Background>
+                    </Border>
 
-        <!-- ═══════════════════════════════════════════════════════════════
+                    <!-- 3. MENU BAR: Docked Left (will clip if the window is too small) -->
+                    <Menu Grid.Column="1"
+                          WindowChrome.IsHitTestVisibleInChrome="True"
+                          Margin="0,0,6,0"
+                          VerticalAlignment="Center">
+                        <MenuItem Header="_File">
+                            <MenuItem Header="_New Canvas"
+                                      Command="{Binding NewCanvasCommand}"
+                                      InputGestureText="Ctrl+N" />
+                            <MenuItem Header="_Open"
+                                      Command="{Binding OpenCommand}"
+                                      InputGestureText="Ctrl+O" />
+                            <MenuItem Header="_Import from Code…"
+                                      Command="{Binding ImportFromCodeMenuCommand}"
+                                      InputGestureText="Ctrl+Shift+I" />
+                            <MenuItem Header="_Import Bitmap…"
+                                      Command="{Binding ImportBitmapMenuCommand}" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_Save"
+                                      Command="{Binding SaveCommand}"
+                                      InputGestureText="Ctrl+S" />
+                            <MenuItem Header="Save _As..."
+                                      Command="{Binding SaveAsCommand}"
+                                      InputGestureText="Ctrl+Shift+S" />
+                            <MenuItem Header="Copy _Export Code"
+                                      Command="{Binding CopyExportCodeMenuCommand}" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_Close Tab"
+                                      Command="{Binding CloseTabCommand}"
+                                      InputGestureText="Ctrl+W" />
+                        </MenuItem>
+                        <MenuItem Header="_Edit">
+                            <MenuItem Header="_Undo"
+                                      Command="{Binding ActiveDocument.UndoCommand}"
+                                      InputGestureText="Ctrl+Z" />
+                            <MenuItem Header="_Redo"
+                                      Command="{Binding ActiveDocument.RedoCommand}"
+                                      InputGestureText="Ctrl+Y" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_Invert"
+                                      Command="{Binding ActiveDocument.InvertCommand}" />
+                            <MenuItem Header="_Clear Canvas"
+                                      Command="{Binding ActiveDocument.ClearCommand}" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="Cu_t"
+                                      Command="{Binding ActiveDocument.CutSelectionCommand}"
+                                      InputGestureText="Ctrl+X" />
+                            <MenuItem Header="_Copy"
+                                      Command="{Binding ActiveDocument.CopySelectionCommand}"
+                                      InputGestureText="Ctrl+C" />
+                            <MenuItem Header="_Paste"
+                                      Command="{Binding ActiveDocument.PasteCommand}"
+                                      InputGestureText="Ctrl+V" />
+                        </MenuItem>
+                        <MenuItem Header="_Image">
+                            <MenuItem Header="Canvas _Size..."
+                                      Command="{Binding ResizeCanvasCommand}" />
+                            <MenuItem Header="_Rotate Canvas">
+                                <MenuItem Header="90° _Clockwise"
+                                          Command="{Binding ActiveDocument.RotateCanvasCWCommand}" />
+                                <MenuItem Header="90° Counter_clockwise"
+                                          Command="{Binding ActiveDocument.RotateCanvasCCWCommand}" />
+                                <MenuItem Header="_180°"
+                                          Command="{Binding ActiveDocument.RotateCanvas180Command}" />
+                            </MenuItem>
+                            <MenuItem Header="_Flip Canvas">
+                                <MenuItem Header="_Horizontal"
+                                          Command="{Binding ActiveDocument.FlipCanvasHorizontalCommand}" />
+                                <MenuItem Header="_Vertical"
+                                          Command="{Binding ActiveDocument.FlipCanvasVerticalCommand}" />
+                            </MenuItem>
+                        </MenuItem>
+                        <MenuItem Header="_Selection">
+                            <MenuItem Header="Cu_t"
+                                      Command="{Binding ActiveDocument.CutSelectionCommand}"
+                                      InputGestureText="Ctrl+X" />
+                            <MenuItem Header="_Copy"
+                                      Command="{Binding ActiveDocument.CopySelectionCommand}"
+                                      InputGestureText="Ctrl+C" />
+                            <MenuItem Header="_Paste"
+                                      Command="{Binding ActiveDocument.PasteCommand}"
+                                      InputGestureText="Ctrl+V" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_Transform"
+                                      Command="{Binding ActiveDocument.BeginSelectionTransformCommand}"
+                                      InputGestureText="Ctrl+T" />
+                            <MenuItem Header="_Flip Selection">
+                                <MenuItem Header="_Horizontal"
+                                          Command="{Binding ActiveDocument.FlipSelectionHorizontalCommand}" />
+                                <MenuItem Header="_Vertical"
+                                          Command="{Binding ActiveDocument.FlipSelectionVerticalCommand}" />
+                            </MenuItem>
+                            <MenuItem Header="_Delete Selection"
+                                      Command="{Binding ActiveDocument.DeleteSelectionCommand}"
+                                      InputGestureText="Del" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="D_eselect"
+                                      Command="{Binding ActiveDocument.DeselectCommand}"
+                                      InputGestureText="Ctrl+D" />
+                        </MenuItem>
+                        <MenuItem Header="_View">
+                            <MenuItem Header="Show _Grid"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding ActiveDocument.ShowGridLines}" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="Zoom _In"
+                                      Command="{x:Static NavigationCommands.IncreaseZoom}"
+                                      InputGestureText="Ctrl++" />
+                            <MenuItem Header="Zoom _Out"
+                                      Command="{x:Static NavigationCommands.DecreaseZoom}"
+                                      InputGestureText="Ctrl+-" />
+                            <MenuItem Header="_Reset Zoom"
+                                      Command="{x:Static NavigationCommands.Zoom}"
+                                      InputGestureText="Ctrl+0" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_Theme">
+                                <MenuItem Header="_Dark"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsDarkTheme, Mode=OneWay}"
+                                          Command="{Binding SwitchThemeCommand}"
+                                          CommandParameter="Dark" />
+                                <MenuItem Header="_Dim"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsDimTheme, Mode=OneWay}"
+                                          Command="{Binding SwitchThemeCommand}"
+                                          CommandParameter="Dim" />
+                                <MenuItem Header="_Light"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsLightTheme, Mode=OneWay}"
+                                          Command="{Binding SwitchThemeCommand}"
+                                          CommandParameter="Light" />
+                                <MenuItem Header="_Flipper"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsFlipperTheme, Mode=OneWay}"
+                                          Command="{Binding SwitchThemeCommand}"
+                                          CommandParameter="Flipper" />
+                            </MenuItem>
+                        </MenuItem>
+                        <MenuItem Header="_Window">
+                            <MenuItem Header="Tool _Sidebar"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding IsToolSidebarVisible, Mode=TwoWay}" />
+                            <MenuItem Header="_Layers Panel"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding IsLayersPanelVisible, Mode=TwoWay}" />
+                            <MenuItem Header="_Right Sidebar"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding IsRightSidebarVisible, Mode=TwoWay}" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_Timeline"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding IsTimelineVisible, Mode=TwoWay}" />
+                            <MenuItem Header="_Status Bar"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding IsStatusBarVisible, Mode=TwoWay}" />
+                        </MenuItem>
+                        <MenuItem Header="_Help">
+                            <MenuItem Header="_Documentation"
+                                      Command="{Binding OpenDocumentationCommand}"
+                                      InputGestureText="F1" />
+                            <MenuItem Header="_Privacy Settings..."
+                                      Command="{Binding OpenPrivacySettingsCommand}" />
+                            <MenuItem Header="Send _Feedback..."
+                                      Command="{Binding SendFeedbackCommand}" />
+                            <MenuItem Header="_Report a Bug..."
+                                      Command="{Binding ReportBugCommand}" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_About Hexprite"
+                                      Command="{Binding ShowAboutCommand}" />
+                        </MenuItem>
+                    </Menu>
+
+                    <!-- 4. TITLE: Fills remaining space in the middle -->
+                    <TextBlock Text="Hexprite"
+                               Foreground="{DynamicResource Brush.Text.Muted}"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               IsHitTestVisible="False" />
+
+                </DockPanel>
+            </Border>
+            
+            <!-- ═══════════════════════════════════════════════════════════════
              TAB BAR
              ═══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="1"
