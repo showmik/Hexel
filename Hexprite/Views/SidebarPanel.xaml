@@ -123,8 +123,8 @@
                             <Grid MinHeight="140">
                                 <Border HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        CornerRadius="9"
-                                        Padding="7"
+                                        CornerRadius="{Binding PreviewFrameOuterCornerRadius}"
+                                        Padding="{Binding PreviewFrameOuterPadding}"
                                         Background="{DynamicResource Brush.DisplayPreview.FrameOuterBg}"
                                         BorderBrush="{DynamicResource Brush.DisplayPreview.FrameOuterBorder}"
                                         BorderThickness="1">
@@ -137,24 +137,24 @@
                                     </Border.Effect>
 
                                     <!-- Inner bezel/frame -->
-                                    <Border CornerRadius="6"
-                                            Padding="5"
+                                    <Border CornerRadius="{Binding PreviewFrameInnerCornerRadius}"
+                                            Padding="{Binding PreviewFrameInnerPadding}"
                                             Background="{DynamicResource Brush.DisplayPreview.FrameInnerBg}"
                                             BorderBrush="{DynamicResource Brush.DisplayPreview.FrameInnerBorder}"
-                                            BorderThickness="0.9">
+                                            BorderThickness="{Binding PreviewFrameInnerBorderThickness}">
                                         <Grid>
                                             <!-- Subtle glass highlight -->
-                                            <Border CornerRadius="4"
+                                            <Border CornerRadius="{Binding PreviewFrameHighlightCornerRadius}"
                                                     BorderBrush="{DynamicResource Brush.DisplayPreview.FrameHighlight}"
                                                     BorderThickness="0,0,0,1"
                                                     IsHitTestVisible="False"
                                                     VerticalAlignment="Top"
-                                                    Height="9"
+                                                    Height="{Binding PreviewFrameHighlightHeight}"
                                                     Margin="1,1,1,0"/>
 
                                             <Border BorderBrush="{DynamicResource Brush.Surface.Base}"
-                                                    BorderThickness="2"
-                                                    CornerRadius="3"
+                                                    BorderThickness="{Binding PreviewFrameScreenBorderThickness}"
+                                                    CornerRadius="{Binding PreviewFrameScreenCornerRadius}"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center">
                                                 <Border.Style>

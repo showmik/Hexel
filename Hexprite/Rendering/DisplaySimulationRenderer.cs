@@ -86,7 +86,12 @@ namespace Hexprite.Rendering
                 _ => 0.55f
             };
 
-            float bloomSigma = (quality == PreviewQuality.High) ? 1.6f : 0f;
+            float bloomSigma = quality switch
+            {
+                PreviewQuality.High => 1.6f,
+                PreviewQuality.Balanced => 0.9f,
+                _ => 0f
+            };
 
             float blurStrength = preset switch
             {
@@ -110,6 +115,21 @@ namespace Hexprite.Rendering
                 r: SrgbToLinear(fgSrgb.R / 255f),
                 g: SrgbToLinear(fgSrgb.G / 255f),
                 b: SrgbToLinear(fgSrgb.B / 255f));
+
+            // OLED color temperature tinting
+            if (strength > 0f)
+            {
+                if (preset == DisplaySimulationPreset.Ssd1306OledBlue)
+                {
+                    fgLin.r *= 1f - 0.12f * strength;
+                    fgLin.g *= 1f - 0.06f * strength;
+                }
+                else if (preset == DisplaySimulationPreset.Ssd1306OledGreen)
+                {
+                    fgLin.r *= 1f - 0.15f * strength;
+                    fgLin.b *= 1f - 0.18f * strength;
+                }
+            }
 
             float cellW = outW / (float)srcW;
             float cellH = outH / (float)srcH;
@@ -143,7 +163,14 @@ namespace Hexprite.Rendering
             // Keep deterministic but gently reduce fragile details near cap/small cell sizes.
             float stabilityBias = Math.Clamp((0.8f + (0.2f * detailRegime)) * effectiveScaleFactor, 0.75f, 1f);
             blurStrength *= Math.Clamp(0.70f + (0.30f * detailRegime), 0.70f, 1f);
-            bloomStrength *= Math.Clamp(0.35f + (0.65f * detailRegime), 0.35f, 1f) * stabilityBias;
+            bloomStrength *= Math.Clamp(0.65f + (0.35f * detailRegime), 0.65f, 1f);
+
+            // E-paper ink has softer edges than emissive displays
+            if (preset == DisplaySimulationPreset.EPaper)
+            {
+                blurSigma *= 1.4f;
+                blurStrength = MathF.Max(blurStrength, 0.30f * strength);
+            }
 
             // When output pixels are near/below source-pixel size, the aperture model
             // can produce unstable artifacts during scale changes. In that range, use a
@@ -234,6 +261,32 @@ namespace Hexprite.Rendering
             if (bloomSigma > 0.0001f && bloomStrength > 0.0001f)
                 bloom = BlurSeparable(intensity, outW, outH, bloomSigma, pool);
 
+            // LCD backlight bleed: off-pixels are never truly black
+            float backlightFloor = preset == DisplaySimulationPreset.GenericLcd
+                ? 0.008f * strength : 0f;
+
+            // Pixel grid gap color (black matrix between pixels)
+            bool doGapOverlay = preset != DisplaySimulationPreset.EPaper
+                && cellMin >= 2.5f && strength > 0f;
+            float gapLR = 0f, gapLG = 0f, gapLB = 0f;
+            float gapIntensity = 0f;
+            if (doGapOverlay)
+            {
+                gapIntensity = strength * Math.Clamp(detailRegime * 1.2f, 0f, 1f);
+                if (preset == DisplaySimulationPreset.GenericLcd)
+                {
+                    gapLR = 0.003f; gapLG = 0.003f; gapLB = 0.003f;
+                }
+            }
+
+            // Vignetting (subtle radial darkening, mainly LCD)
+            float vignetteAmt = preset switch
+            {
+                DisplaySimulationPreset.GenericLcd => 0.06f * strength,
+                DisplaySimulationPreset.EPaper => 0f,
+                _ => 0.03f * strength
+            };
+
             for (int oy = 0; oy < outH; oy++)
             {
                 for (int ox = 0; ox < outW; ox++)
@@ -247,14 +300,20 @@ namespace Hexprite.Rendering
                     float lit = Math.Clamp(a + blurStrength * d, 0f, 1.35f);
                     float bloomLit = Math.Clamp(bloomStrength * b, 0f, 1.0f);
 
-                    // Optional: simple RGB stripe mask for High quality when pixels are large enough
+                    // RGB sub-pixel stripe mask (High: full, Balanced: mild)
                     float mr = 1f, mg = 1f, mb = 1f;
-                    if (quality == PreviewQuality.High && cellMin >= 3.0f && detailRegime > 0.75f && preset != DisplaySimulationPreset.EPaper)
+                    if (preset != DisplaySimulationPreset.EPaper)
                     {
-                        int stripe = ox % 3;
-                        if (stripe == 0) { mg = 0.9f; mb = 0.85f; }
-                        else if (stripe == 1) { mr = 0.85f; mb = 0.9f; }
-                        else { mr = 0.9f; mg = 0.85f; }
+                        bool doStripe = (quality == PreviewQuality.High && cellMin >= 3.0f && detailRegime > 0.6f)
+                            || (quality == PreviewQuality.Balanced && cellMin >= 4.0f && detailRegime > 0.8f);
+                        if (doStripe)
+                        {
+                            float subI = quality == PreviewQuality.High ? 1f : 0.5f;
+                            int stripe = ox % 3;
+                            if (stripe == 0) { mg = 1f - 0.10f * subI; mb = 1f - 0.15f * subI; }
+                            else if (stripe == 1) { mr = 1f - 0.15f * subI; mb = 1f - 0.10f * subI; }
+                            else { mr = 1f - 0.10f * subI; mg = 1f - 0.15f * subI; }
+                        }
                     }
 
                     // Texture/noise (mostly for e-paper, subtle elsewhere)
@@ -280,6 +339,39 @@ namespace Hexprite.Rendering
                     r = r + contrast * lit * (fr - r) + bloomLit * fr;
                     g = g + contrast * lit * (fg - g) + bloomLit * fg;
                     bl = bl + contrast * lit * (fb - bl) + bloomLit * fb;
+
+                    r = Math.Clamp(r, 0f, 1f);
+                    g = Math.Clamp(g, 0f, 1f);
+                    bl = Math.Clamp(bl, 0f, 1f);
+
+                    // LCD backlight bleed
+                    if (backlightFloor > 0f)
+                    {
+                        r = MathF.Max(r, backlightFloor);
+                        g = MathF.Max(g, backlightFloor);
+                        bl = MathF.Max(bl, backlightFloor);
+                    }
+
+                    // Pixel grid gap overlay (black matrix)
+                    if (doGapOverlay)
+                    {
+                        float rawAp = intensity[i];
+                        float gapT = (1f - rawAp) * gapIntensity;
+                        r = r * (1f - gapT) + gapLR * gapT;
+                        g = g * (1f - gapT) + gapLG * gapT;
+                        bl = bl * (1f - gapT) + gapLB * gapT;
+                    }
+
+                    // Vignetting
+                    if (vignetteAmt > 0f)
+                    {
+                        float nx = ox / (float)outW - 0.5f;
+                        float ny = oy / (float)outH - 0.5f;
+                        float vig = 1f - vignetteAmt * (nx * nx + ny * ny) * 4f;
+                        r *= vig;
+                        g *= vig;
+                        bl *= vig;
+                    }
 
                     r = Math.Clamp(r, 0f, 1f);
                     g = Math.Clamp(g, 0f, 1f);
@@ -328,11 +420,35 @@ namespace Hexprite.Rendering
                 g: SrgbToLinear(fgSrgb.G / 255f),
                 b: SrgbToLinear(fgSrgb.B / 255f));
 
+            // OLED color temperature tinting
+            if (strength > 0f)
+            {
+                if (preset == DisplaySimulationPreset.Ssd1306OledBlue)
+                {
+                    fgLin.r *= 1f - 0.12f * strength;
+                    fgLin.g *= 1f - 0.06f * strength;
+                }
+                else if (preset == DisplaySimulationPreset.Ssd1306OledGreen)
+                {
+                    fgLin.r *= 1f - 0.15f * strength;
+                    fgLin.b *= 1f - 0.18f * strength;
+                }
+            }
+
             float microBloomStrength = preset switch
             {
-                DisplaySimulationPreset.Ssd1306OledBlue or DisplaySimulationPreset.Ssd1306OledGreen => 0.18f * strength,
-                DisplaySimulationPreset.GenericLcd => 0.05f * strength,
+                DisplaySimulationPreset.Ssd1306OledBlue or DisplaySimulationPreset.Ssd1306OledGreen => 0.38f * strength,
+                DisplaySimulationPreset.GenericLcd => 0.14f * strength,
                 _ => 0.0f
+            };
+
+            float backlightFloor = preset == DisplaySimulationPreset.GenericLcd
+                ? 0.008f * strength : 0f;
+            float vignetteAmt = preset switch
+            {
+                DisplaySimulationPreset.GenericLcd => 0.06f * strength,
+                DisplaySimulationPreset.EPaper => 0f,
+                _ => 0.03f * strength
             };
 
             bool IsOnAt(int x, int y)
@@ -376,7 +492,7 @@ namespace Hexprite.Rendering
                         g = g + contrast * (fgLin.g - g);
                         b = b + contrast * (fgLin.b - b);
                         // Slightly lift lit pixels at native scale so the glow reads.
-                        float coreLift = microBloomStrength * 0.22f;
+                        float coreLift = microBloomStrength * 0.35f;
                         r += coreLift * fgLin.r;
                         g += coreLift * fgLin.g;
                         b += coreLift * fgLin.b;
@@ -405,11 +521,34 @@ namespace Hexprite.Rendering
                         }
                         if (ring1 > 0 || ring2 > 0)
                         {
-                            float halo = microBloomStrength * ((ring1 / 8f) * 0.85f + (ring2 / 16f) * 0.30f);
+                            float halo = microBloomStrength * ((ring1 / 8f) * 1.0f + (ring2 / 16f) * 0.50f);
                             r += halo * fgLin.r;
                             g += halo * fgLin.g;
                             b += halo * fgLin.b;
                         }
+                    }
+
+                    r = Math.Clamp(r, 0f, 1f);
+                    g = Math.Clamp(g, 0f, 1f);
+                    b = Math.Clamp(b, 0f, 1f);
+
+                    // LCD backlight bleed
+                    if (backlightFloor > 0f)
+                    {
+                        r = MathF.Max(r, backlightFloor);
+                        g = MathF.Max(g, backlightFloor);
+                        b = MathF.Max(b, backlightFloor);
+                    }
+
+                    // Vignetting
+                    if (vignetteAmt > 0f)
+                    {
+                        float nx = ox / (float)outW - 0.5f;
+                        float ny = oy / (float)outH - 0.5f;
+                        float vig = 1f - vignetteAmt * (nx * nx + ny * ny) * 4f;
+                        r *= vig;
+                        g *= vig;
+                        b *= vig;
                     }
 
                     r = Math.Clamp(r, 0f, 1f);
@@ -456,6 +595,30 @@ namespace Hexprite.Rendering
                 g: SrgbToLinear(fgSrgb.G / 255f),
                 b: SrgbToLinear(fgSrgb.B / 255f));
 
+            // OLED color temperature tinting
+            if (strength > 0f)
+            {
+                if (preset == DisplaySimulationPreset.Ssd1306OledBlue)
+                {
+                    fgLin.r *= 1f - 0.12f * strength;
+                    fgLin.g *= 1f - 0.06f * strength;
+                }
+                else if (preset == DisplaySimulationPreset.Ssd1306OledGreen)
+                {
+                    fgLin.r *= 1f - 0.15f * strength;
+                    fgLin.b *= 1f - 0.18f * strength;
+                }
+            }
+
+            float backlightFloor = preset == DisplaySimulationPreset.GenericLcd
+                ? 0.008f * strength : 0f;
+            float vignetteAmt = preset switch
+            {
+                DisplaySimulationPreset.GenericLcd => 0.06f * strength,
+                DisplaySimulationPreset.EPaper => 0f,
+                _ => 0.03f * strength
+            };
+
             for (int oy = 0; oy < outH; oy++)
             {
                 int sy = Math.Clamp((int)MathF.Round((oy + 0.5f) * invScaleY - 0.5f), 0, srcH - 1);
@@ -491,6 +654,29 @@ namespace Hexprite.Rendering
                         r = r + contrast * (fgLin.r - r);
                         g = g + contrast * (fgLin.g - g);
                         b = b + contrast * (fgLin.b - b);
+                    }
+
+                    r = Math.Clamp(r, 0f, 1f);
+                    g = Math.Clamp(g, 0f, 1f);
+                    b = Math.Clamp(b, 0f, 1f);
+
+                    // LCD backlight bleed
+                    if (backlightFloor > 0f)
+                    {
+                        r = MathF.Max(r, backlightFloor);
+                        g = MathF.Max(g, backlightFloor);
+                        b = MathF.Max(b, backlightFloor);
+                    }
+
+                    // Vignetting
+                    if (vignetteAmt > 0f)
+                    {
+                        float nx = ox / (float)outW - 0.5f;
+                        float ny = oy / (float)outH - 0.5f;
+                        float vig = 1f - vignetteAmt * (nx * nx + ny * ny) * 4f;
+                        r *= vig;
+                        g *= vig;
+                        b *= vig;
                     }
 
                     r = Math.Clamp(r, 0f, 1f);

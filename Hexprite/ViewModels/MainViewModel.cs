@@ -464,15 +464,16 @@ namespace Hexprite.ViewModels
             {
                 if (SpriteState == null) return PreviewScale;
 
-                double requestedW = SpriteState.Width * (double)PreviewScale;
-                double requestedH = SpriteState.Height * (double)PreviewScale;
-                double maxRequested = Math.Max(requestedW, requestedH);
+                int maxDim = Math.Max(SpriteState.Width, SpriteState.Height);
+                if (maxDim <= 0) return PreviewScale;
 
-                if (maxRequested <= MaxPreviewDimensionPx) return PreviewScale;
+                double requestedMax = maxDim * (double)PreviewScale;
+                if (requestedMax <= MaxPreviewDimensionPx) return PreviewScale;
 
-                // Reduce effective scale to fit the sidebar preview box.
-                double fitRatio = MaxPreviewDimensionPx / maxRequested;
-                return PreviewScale * fitRatio;
+                // Snap to the largest integer scale that fits.
+                // Non-integer scales cause uneven pixel-cell sizes in the
+                // aperture model, producing visible banding / shimmer.
+                return Math.Max(1, (int)Math.Floor(MaxPreviewDimensionPx / (double)maxDim));
             }
         }
 
@@ -502,6 +503,22 @@ namespace Hexprite.ViewModels
         public int PreviewHeight =>
             Math.Max(1, (int)Math.Round((SpriteState?.Height ?? 16) * PreviewScaleEffective));
 
+        // ── Display preview frame (bezel) dimensions ──────────────────────
+        // Scale the frame proportionally to the preview size so it shrinks
+        // at low zoom and stays slightly thinner than the old fixed values.
+        private double PreviewFrameScaleFactor =>
+            Math.Clamp(PreviewScaleEffective / 3.5, 0.4, 1.0);
+
+        public CornerRadius PreviewFrameOuterCornerRadius => new(8.0 * PreviewFrameScaleFactor);
+        public Thickness PreviewFrameOuterPadding => new(6.0 * PreviewFrameScaleFactor);
+        public CornerRadius PreviewFrameInnerCornerRadius => new(5.0 * PreviewFrameScaleFactor);
+        public Thickness PreviewFrameInnerPadding => new(4.0 * PreviewFrameScaleFactor);
+        public Thickness PreviewFrameInnerBorderThickness => new(Math.Max(0.4, 0.8 * PreviewFrameScaleFactor));
+        public CornerRadius PreviewFrameHighlightCornerRadius => new(3.5 * PreviewFrameScaleFactor);
+        public double PreviewFrameHighlightHeight => 8.0 * PreviewFrameScaleFactor;
+        public Thickness PreviewFrameScreenBorderThickness => new(Math.Max(0.5, 1.5 * PreviewFrameScaleFactor));
+        public CornerRadius PreviewFrameScreenCornerRadius => new(2.5 * PreviewFrameScaleFactor);
+
         private int _previewScale = 2;
         public int PreviewScale
         {
@@ -520,6 +537,7 @@ namespace Hexprite.ViewModels
                     OnPropertyChanged(nameof(CanIncreasePreviewScale));
                     OnPropertyChanged(nameof(CanDecreasePreviewScale));
                     OnPropertyChanged(nameof(PreviewScaleStatusText));
+                    NotifyPreviewFramePropertiesChanged();
                     EnsurePreviewSimBitmap();
                     UpdatePreviewSimulation();
                     SaveEditorPreferences();
@@ -529,6 +547,19 @@ namespace Hexprite.ViewModels
 
         public string PreviewScaleText =>
             $"({PreviewScale}× scale, fit {PreviewScaleEffective:F2}×)";
+
+        private void NotifyPreviewFramePropertiesChanged()
+        {
+            OnPropertyChanged(nameof(PreviewFrameOuterCornerRadius));
+            OnPropertyChanged(nameof(PreviewFrameOuterPadding));
+            OnPropertyChanged(nameof(PreviewFrameInnerCornerRadius));
+            OnPropertyChanged(nameof(PreviewFrameInnerPadding));
+            OnPropertyChanged(nameof(PreviewFrameInnerBorderThickness));
+            OnPropertyChanged(nameof(PreviewFrameHighlightCornerRadius));
+            OnPropertyChanged(nameof(PreviewFrameHighlightHeight));
+            OnPropertyChanged(nameof(PreviewFrameScreenBorderThickness));
+            OnPropertyChanged(nameof(PreviewFrameScreenCornerRadius));
+        }
 
         private DisplayType _previewDisplayType = DisplayType.Generic_White;
         public int PreviewDisplayTypeIndex
@@ -1936,6 +1967,7 @@ namespace Hexprite.ViewModels
             OnPropertyChanged(nameof(SelectionStrokeThickness));
             OnPropertyChanged(nameof(PreviewScaleText));
             OnPropertyChanged(nameof(CanvasDimensionText));
+            NotifyPreviewFramePropertiesChanged();
         }
 
         private void ApplySavedEditorPreferences()
