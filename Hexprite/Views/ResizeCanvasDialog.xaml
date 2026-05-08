@@ -41,7 +41,7 @@
                                FontSize="12" VerticalAlignment="Center"
                                Margin="12,0,0,0" IsHitTestVisible="False"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
-                        <Button Click="CaptionClose_Click" ToolTip="Close" Width="46" Height="34"
+                        <Button Click="CaptionClose_Click" ToolTip="Close" Width="44" Height="34"
                                 Style="{StaticResource CaptionCloseButtonStyle}">
                             <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
                         </Button>
@@ -72,7 +72,7 @@
             <TextBlock Text="Current"
                        Foreground="{DynamicResource Brush.Text.Muted}"
                        VerticalAlignment="Center"
-                       Width="70" />
+                       Width="60" />
             <TextBlock x:Name="TxtCurrentSize"
                        Text="16 × 16"
                        Foreground="{DynamicResource Brush.Text.Primary}"
@@ -84,7 +84,7 @@
             <TextBlock Text="Preset"
                        Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
-                       Width="70" />
+                       Width="60" />
             <ComboBox x:Name="PresetComboBox"
                       Width="210"
                       Height="28"
@@ -98,7 +98,7 @@
             <TextBlock Text="New Size"
                        Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
-                       Width="70" />
+                       Width="60" />
             <TextBox x:Name="TxtWidth"
                      Text="16"
                      Width="70" Height="28"
@@ -125,7 +125,7 @@
             <TextBlock Text="Anchor"
                        Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
-                       Width="70" />
+                       Width="60" />
             <Border Background="{DynamicResource Brush.Surface.Panel}"
                     CornerRadius="4"
                     Padding="3"
@@ -190,13 +190,13 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button Content="Cancel"
-                    Width="80" MinHeight="30"
+                    Width="90" MinHeight="30"
                     Style="{StaticResource ModernButtonStyle}"
                     Margin="0,0,8,0"
                     Click="Cancel_Click" />
             <Button Content="Resize"
-                    Width="80" MinHeight="30"
-                    Style="{StaticResource ModernButtonStyle}"
+                    Width="120" MinHeight="30"
+                    Style="{StaticResource AccentButtonStyle}"
                     Click="Resize_Click"
                     IsDefault="True" />
         </StackPanel>

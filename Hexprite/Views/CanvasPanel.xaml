@@ -93,10 +93,8 @@
 
                     <!-- Separator -->
                     <Rectangle Width="2"
-                               Fill="{DynamicResource Brush.Border.Base}"
-                               Margin="0,4,8,4"
-                               RadiusX="1"
-                               RadiusY="1" />
+                               Style="{StaticResource SeparatorRectangleStyle}"
+                               Margin="0,4,8,4" />
 
                     <!-- Brush Size label -->
                     <TextBlock Text="SIZE"
@@ -186,10 +184,8 @@
                         </StackPanel.Style>
 
                         <Rectangle Width="2"
-                                   Fill="{DynamicResource Brush.Border.Base}"
-                                   Margin="0,4,8,4"
-                                   RadiusX="1"
-                                   RadiusY="1" />
+                                   Style="{StaticResource SeparatorRectangleStyle}"
+                                   Margin="0,4,8,4" />
 
                         <TextBlock Text="ANGLE"
                                    Style="{StaticResource HeaderStyle}"
@@ -347,10 +343,8 @@
                     </Button>
 
                     <Rectangle Width="2"
-                               Fill="{DynamicResource Brush.Border.Base}"
-                               Margin="0,4,10,4"
-                               RadiusX="1"
-                               RadiusY="1" />
+                               Style="{StaticResource SeparatorRectangleStyle}"
+                               Margin="0,4,10,4" />
 
                     <TextBlock Text="&#xE9A6;"
                                FontFamily="Segoe MDL2 Assets"
@@ -583,10 +577,8 @@
                     </Button>
 
                     <Rectangle Width="2"
-                               Fill="{DynamicResource Brush.Border.Base}"
-                               Margin="12,4"
-                               RadiusX="1"
-                               RadiusY="1" />
+                               Style="{StaticResource SeparatorRectangleStyle}"
+                               Margin="12,4" />
 
                     <!-- Canvas Actions -->
                     <Button Command="{Binding InvertCommand}"

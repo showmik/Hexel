@@ -41,7 +41,7 @@
                                FontSize="12" VerticalAlignment="Center"
                                Margin="12,0,0,0" IsHitTestVisible="False"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
-                        <Button Click="CaptionClose_Click" ToolTip="Close" Width="46" Height="34"
+                        <Button Click="CaptionClose_Click" ToolTip="Close" Width="44" Height="34"
                                 Style="{StaticResource CaptionCloseButtonStyle}">
                             <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
                         </Button>
@@ -108,6 +108,7 @@
                        Text="Width"
                        Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
+                       Width="60"
                        Margin="0,0,8,0" />
             <TextBox x:Name="TxtWidth"
                      Grid.Column="1"
@@ -122,6 +123,7 @@
                        Text="Height"
                        Foreground="{DynamicResource Brush.Text.Primary}"
                        VerticalAlignment="Center"
+                       Width="60"
                        Margin="0,0,8,0" />
             <TextBox x:Name="TxtHeight"
                      Grid.Column="3"
@@ -154,7 +156,7 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button Content="Cancel"
-                    Width="80" MinHeight="30"
+                    Width="90" MinHeight="30"
                     Style="{StaticResource ModernButtonStyle}"
                     Margin="0,0,8,0"
                     Click="Cancel_Click" />

@@ -527,7 +527,7 @@
                                Margin="0,0,0,16"
                                LineHeight="18"/>
                     <Button Content="Import from Code…"
-                            Style="{StaticResource AccentButtonStyle}"
+                            Style="{StaticResource ModernButtonStyle}"
                             HorizontalAlignment="Stretch"
                             Click="ImportFromCode_Click"
                             ToolTip="Open the Import from Code dialog (Ctrl+Shift+I)"
