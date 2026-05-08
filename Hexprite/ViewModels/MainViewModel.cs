@@ -248,6 +248,7 @@ namespace Hexprite.ViewModels
 
         // ── Status message (data-bound, replaces direct label manipulation) ──
         private string _statusMessage = string.Empty;
+        private CancellationTokenSource? _statusCts;
         public string StatusMessage
         {
             get => _statusMessage;
@@ -257,14 +258,37 @@ namespace Hexprite.ViewModels
         /// <summary>
         /// Shows a temporary status message that auto-clears after a delay.
         /// Replaces the old CopyHexExecuted event + DispatcherTimer approach.
+        /// Fire-and-forget with exception handling to prevent async void crash behavior.
         /// </summary>
-        public async void ShowStatus(string message, int delayMs = 2000)
+        public void ShowStatus(string message, int delayMs = 2000)
         {
             StatusMessage = message;
-            await System.Threading.Tasks.Task.Delay(delayMs);
-            // Only clear if no newer message replaced this one
-            if (StatusMessage == message)
-                StatusMessage = string.Empty;
+
+            // Cancel any pending clear operation
+            _statusCts?.Cancel();
+            _statusCts = new CancellationTokenSource();
+            var token = _statusCts.Token;
+
+            _ = ClearStatusAsync(message, delayMs, token);
+        }
+
+        private async System.Threading.Tasks.Task ClearStatusAsync(string message, int delayMs, CancellationToken token)
+        {
+            try
+            {
+                await System.Threading.Tasks.Task.Delay(delayMs, token);
+                // Only clear if no newer message replaced this one
+                if (StatusMessage == message)
+                    StatusMessage = string.Empty;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when a new status message is shown
+            }
+            catch (Exception ex)
+            {
+                HandledErrorReporter.Error(ex, "MainViewModel.ClearStatusAsync");
+            }
         }
 
         // ── Status bar: Selection info ────────────────────────────────────

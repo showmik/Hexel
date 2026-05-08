@@ -64,7 +64,6 @@ namespace Hexprite
 
         // ── Currently-subscribed document (for event unwiring) ─────────────
         private ViewModels.MainViewModel? _subscribedDoc;
-        private const string DebugLogPath = @"H:\dev\Hexel\debug-4d8f4c.log";
 
         private int _minTrackWidth;
         private int _minTrackHeight;
@@ -210,9 +209,6 @@ namespace Hexprite
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            #region agent log
-            LogPanelWidths("initial-layout", "H1");
-            #endregion
         }
 
         private void PanelSplitter_DragStarted(object sender, DragStartedEventArgs e)
@@ -226,10 +222,6 @@ namespace Hexprite
                 _rightSidebarWidthBeforeDrag = RightSidebarColumn.ActualWidth;
                 _dragAccumulator = 0;
             }
-
-            #region agent log
-            LogPanelWidths($"splitter-start:{splitterName}", "H2");
-            #endregion
         }
 
         private void PanelSplitter_DragDelta(object sender, DragDeltaEventArgs e)
@@ -258,10 +250,6 @@ namespace Hexprite
             {
                 CanvasColumn.Width = new GridLength(1, GridUnitType.Star);
             }
-
-            #region agent log
-            LogPanelWidths($"splitter-delta:{splitterName}", "H3");
-            #endregion
         }
 
         private void PanelSplitter_DragCompleted(object sender, DragCompletedEventArgs e)
@@ -278,44 +266,6 @@ namespace Hexprite
             if (!CanvasColumn.Width.IsStar)
             {
                 CanvasColumn.Width = new GridLength(1, GridUnitType.Star);
-            }
-
-            #region agent log
-            LogPanelWidths($"splitter-complete:{splitterName}", "H4");
-            #endregion
-        }
-
-        private void LogPanelWidths(string message, string hypothesisId)
-        {
-            try
-            {
-                var payload = new
-                {
-                    sessionId = "4d8f4c",
-                    runId = "pre-fix",
-                    hypothesisId,
-                    location = "MainWindow.xaml.cs:panel-splitter",
-                    message,
-                    data = new
-                    {
-                        canvasColumnWidth = CanvasColumn.ActualWidth,
-                        layersColumnWidth = LayersColumn.ActualWidth,
-                        rightSidebarColumnWidth = RightSidebarColumn.ActualWidth,
-                        layersPanelWidth = LayersPanel.ActualWidth,
-                        rightSidebarPanelWidth = RightSidebarPanel.ActualWidth,
-                        windowWidth = ActualWidth
-                    },
-                    timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-                };
-
-                #region agent log
-                string line = JsonSerializer.Serialize(payload) + Environment.NewLine;
-                File.AppendAllText(DebugLogPath, line);
-                #endregion
-            }
-            catch
-            {
-                // Intentionally swallowed for debug-only telemetry.
             }
         }
 

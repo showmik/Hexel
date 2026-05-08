@@ -76,17 +76,6 @@ namespace Hexprite.Services
             queue.Enqueue(index);
         }
 
-        /// <summary>
-        /// Enqueues a neighbor pixel if it hasn't been visited and matches the target state.
-        /// Prevents the same pixel from being enqueued multiple times.
-        /// </summary>
-        private static void EnqueueIfTarget(Queue<int> queue, bool[] visited, bool[] pixels, bool targetState, int index)
-        {
-            if (index < 0 || visited[index] || pixels[index] != targetState) return;
-            visited[index] = true;
-            queue.Enqueue(index);
-        }
-
         public bool[,] GetFloodFillMask(SpriteState state, int startX, int startY, out int minX, out int minY, out int maxX, out int maxY)
         {
             minX = startX;
