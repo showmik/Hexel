@@ -100,7 +100,7 @@
                     Command="{Binding ImportFromCodeMenuCommand}" />
     </Window.InputBindings>
 
-    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Brush.Border.Base}">
+    <Border Style="{StaticResource MainWindowBorderStyle}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -640,16 +640,7 @@
                            Margin="0,0,0,8"/>
                 <Grid HorizontalAlignment="Center" Margin="0,0,0,10">
                     <Grid.Resources>
-                        <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Separator}" />
-                            <Setter Property="BorderThickness" Value="1" />
-                            <Setter Property="HorizontalAlignment" Value="Center" />
-                            <Setter Property="HorizontalContentAlignment" Value="Center" />
-                            <Setter Property="Margin" Value="4" />
-                            <Setter Property="Padding" Value="14,8" />
-                            <Setter Property="MinWidth" Value="88" />
-                        </Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource QuickStartButtonStyle}" />
                     </Grid.Resources>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

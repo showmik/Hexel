@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:core="clr-namespace:Hexprite.Core">
 
     <!-- ═══════════════════════════════════════════════════════════════
          SPACING RESOURCES (standardized margins and padding)
@@ -1419,6 +1420,106 @@
                         </Border.Effect>
                         <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Dialog Window Border — simple border for non-resizable dialogs
+         ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="DialogWindowBorderStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}" />
+        <Setter Property="BorderThickness" Value="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Main Window Border — handles WindowChrome overhang when maximized
+         ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="MainWindowBorderStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}" />
+        <Setter Property="BorderThickness" Value="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" Value="Maximized">
+                <!-- Counters the standard ~8px WindowChrome overhang when maximized -->
+                <Setter Property="Padding" Value="8" />
+                <Setter Property="BorderThickness" Value="0" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Quick Start Button — preset size buttons on welcome screen
+         ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="QuickStartButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Separator}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="MinWidth" Value="88" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Code Editor Border — for code input areas (ImportFromCodeDialog)
+         ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="CodeEditorBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Brush.Surface.Base}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="2" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Separator Rectangle — vertical/horizontal divider line
+         ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="SeparatorRectangleStyle" TargetType="Rectangle">
+        <Setter Property="Fill" Value="{DynamicResource Brush.Border.Separator}" />
+        <Setter Property="RadiusX" Value="1" />
+        <Setter Property="RadiusY" Value="1" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Hyperlink — accent-colored link style
+         ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="HyperlinkStyle" TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Base}" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Layer List Item — ListBoxItem style for LayersPanel
+         ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="LayerListItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="RowBg"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource Brush.Surface.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource Brush.Surface.Active}" />
+                            <Setter TargetName="RowBg" Property="BorderBrush" Value="{DynamicResource Brush.Border.Separator}" />
+                            <Setter TargetName="RowBg" Property="BorderThickness" Value="1" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

@@ -22,7 +22,7 @@
                       UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
 
-    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Brush.Border.Base}">
+    <Border Style="{StaticResource DialogWindowBorderStyle}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -76,11 +76,7 @@
 
         <!-- Code input -->
         <Border Grid.Row="2"
-                Background="{DynamicResource Brush.Surface.Base}"
-                CornerRadius="6"
-                BorderBrush="{DynamicResource Brush.Border.Base}"
-                BorderThickness="1"
-                Padding="2"
+                Style="{StaticResource CodeEditorBorderStyle}"
                 Margin="0,0,0,14">
             <TextBox x:Name="TxtCode"
                      AcceptsReturn="True"

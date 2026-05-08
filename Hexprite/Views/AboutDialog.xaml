@@ -21,7 +21,7 @@
                       UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
 
-    <Border BorderThickness="{x:Static core:WindowChromeHelper.FallbackBorderThickness}" BorderBrush="{DynamicResource Brush.Border.Base}">
+    <Border Style="{StaticResource DialogWindowBorderStyle}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -137,13 +137,9 @@
                 <TextBlock Grid.Column="1"
                            FontSize="12">
                     <Hyperlink x:Name="WebsiteLink"
+                               Style="{StaticResource HyperlinkStyle}"
                                NavigateUri="https://hexprite.com"
                                RequestNavigate="Hyperlink_RequestNavigate">
-                        <Hyperlink.Style>
-                            <Style TargetType="Hyperlink">
-                                <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Base}" />
-                            </Style>
-                        </Hyperlink.Style>
                         https://hexprite.com
                     </Hyperlink>
                 </TextBlock>

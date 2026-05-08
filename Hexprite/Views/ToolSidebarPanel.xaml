@@ -92,10 +92,8 @@
 
             <!-- Separator between draw and select tools -->
             <Rectangle Height="1"
-                       Fill="{DynamicResource Brush.Border.Separator}"
-                       Margin="4,6"
-                       RadiusX="1"
-                       RadiusY="1" />
+                       Style="{StaticResource SeparatorRectangleStyle}"
+                       Margin="4,6" />
 
             <RadioButton x:Name="RbMarquee"
                          Style="{StaticResource VerticalToolButtonStyle}"
