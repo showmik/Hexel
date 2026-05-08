@@ -267,6 +267,44 @@ namespace Hexprite.ViewModels
                 StatusMessage = string.Empty;
         }
 
+        // ── Status bar: Selection info ────────────────────────────────────
+        private string _selectionInfo = string.Empty;
+        public string SelectionInfo
+        {
+            get => _selectionInfo;
+            private set => SetProperty(ref _selectionInfo, value);
+        }
+
+        // ── Status bar: Layer hover info ─────────────────────────────────
+        private string _layerHoverInfo = string.Empty;
+        public string LayerHoverInfo
+        {
+            get => _layerHoverInfo;
+            set => SetProperty(ref _layerHoverInfo, value);
+        }
+
+        // ── Status bar: Keyboard modifiers ────────────────────────────────
+        private bool _isShiftPressed;
+        public bool IsShiftPressed
+        {
+            get => _isShiftPressed;
+            set => SetProperty(ref _isShiftPressed, value);
+        }
+
+        private bool _isCtrlPressed;
+        public bool IsCtrlPressed
+        {
+            get => _isCtrlPressed;
+            set => SetProperty(ref _isCtrlPressed, value);
+        }
+
+        private bool _isAltPressed;
+        public bool IsAltPressed
+        {
+            get => _isAltPressed;
+            set => SetProperty(ref _isAltPressed, value);
+        }
+
         // ── Export settings ───────────────────────────────────────────────
         private ExportSettings _exportSettings = new();
         public ExportSettings ExportSettings
@@ -934,6 +972,7 @@ namespace Hexprite.ViewModels
                     rv.NotifyCanExecuteChanged();
                 if (BeginSelectionTransformCommand is RelayCommand rt)
                     rt.NotifyCanExecuteChanged();
+                UpdateSelectionInfo();
             };
 
             // ── Initialization ────────────────────────────────────────────
@@ -2239,6 +2278,29 @@ namespace Hexprite.ViewModels
             }
         }
 #endif
+
+        // ── Status bar helpers ────────────────────────────────────────────
+
+        public void ClearLayerHoverInfo()
+        {
+            LayerHoverInfo = string.Empty;
+        }
+
+        private void UpdateSelectionInfo()
+        {
+            if (!_selectionService.HasActiveSelection)
+            {
+                SelectionInfo = string.Empty;
+                return;
+            }
+
+            int width = _selectionService.MaxX - _selectionService.MinX + 1;
+            int height = _selectionService.MaxY - _selectionService.MinY + 1;
+
+            SelectionInfo = $"Sel: {width}×{height}";
+        }
+
+        // ── Theme helpers ───────────────────────────────────────────────
 
         private static double GetRelativeLuminance(Color c)
         {

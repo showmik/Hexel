@@ -384,5 +384,28 @@ namespace Hexprite.Views
             ClearLayerDragFx();
             e.Handled = true;
         }
+
+        // ── Status bar: Layer hover info ─────────────────────────────────
+
+        private void LayerItem_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (ViewModel == null || sender is not FrameworkElement fe) return;
+            if (fe.DataContext is not LayerItemViewModel item) return;
+
+            int index = LayerList.Items.IndexOf(item);
+            if (index < 0) return;
+
+            var indicators = new System.Collections.Generic.List<string>();
+            if (!item.IsVisible) indicators.Add("[Hidden]");
+            if (item.IsLocked) indicators.Add("[Locked]");
+
+            string indicatorStr = indicators.Count > 0 ? " " + string.Join(" ", indicators) : "";
+            ViewModel.LayerHoverInfo = $"Layer {index + 1}: {item.Name}{indicatorStr}";
+        }
+
+        private void LayerItem_MouseLeave(object sender, MouseEventArgs e)
+        {
+            ViewModel?.ClearLayerHoverInfo();
+        }
     }
 }

@@ -109,7 +109,9 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="4,3,4,3">
+                            <Grid Margin="4,3,4,3"
+                                  MouseEnter="LayerItem_MouseEnter"
+                                  MouseLeave="LayerItem_MouseLeave">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />

@@ -391,7 +391,7 @@ namespace Hexprite
 
         private void OnHistoryRestored(object? s, EventArgs e)
         {
-            _selectionOverlay.Clear();
+            _selectionOverlay.Update();
             ReleaseDragCapture();
         }
 
@@ -515,6 +515,9 @@ namespace Hexprite
             base.OnPreviewKeyDown(e);
             if (ViewModel == null || _selection == null) return;
 
+            // Update modifier key state for status bar
+            UpdateModifierKeyState();
+
             if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
             {
                 if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
@@ -593,6 +596,9 @@ namespace Hexprite
             base.OnPreviewKeyUp(e);
             if (ViewModel == null || _selection == null) return;
 
+            // Update modifier key state for status bar
+            UpdateModifierKeyState();
+
             if (e.Key == Key.LeftShift || e.Key == Key.RightShift || e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
             {
                 if (ViewModel.IsDrawingLine || ViewModel.IsDrawingRectangle || ViewModel.IsDrawingEllipse ||
@@ -602,6 +608,14 @@ namespace Hexprite
                         Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
                 }
             }
+        }
+
+        private void UpdateModifierKeyState()
+        {
+            if (ViewModel == null) return;
+            ViewModel.IsShiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            ViewModel.IsCtrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            ViewModel.IsAltPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
         }
 
         // ── Drag position update ──────────────────────────────────────────
