@@ -17,6 +17,26 @@ namespace Hexprite.Rendering
         private static float LinearToSrgb(float c)
             => c <= 0.0031308f ? (12.92f * c) : (1.055f * MathF.Pow(c, 1f / 2.4f) - 0.055f);
 
+        /// <summary>
+        /// Applies OLED color temperature tinting to foreground color.
+        /// Blue OLED reduces red/green; Green OLED reduces red/blue.
+        /// </summary>
+        private static void ApplyOledColorTinting(ref (float r, float g, float b) fgLin, DisplaySimulationPreset preset, float strength)
+        {
+            if (strength <= 0f) return;
+
+            if (preset == DisplaySimulationPreset.Ssd1306OledBlue)
+            {
+                fgLin.r *= 1f - 0.12f * strength;
+                fgLin.g *= 1f - 0.06f * strength;
+            }
+            else if (preset == DisplaySimulationPreset.Ssd1306OledGreen)
+            {
+                fgLin.r *= 1f - 0.15f * strength;
+                fgLin.b *= 1f - 0.18f * strength;
+            }
+        }
+
         private static uint PackBgra(byte a, byte r, byte g, byte b)
             => (uint)((a << 24) | (r << 16) | (g << 8) | b);
 
@@ -116,20 +136,7 @@ namespace Hexprite.Rendering
                 g: SrgbToLinear(fgSrgb.G / 255f),
                 b: SrgbToLinear(fgSrgb.B / 255f));
 
-            // OLED color temperature tinting
-            if (strength > 0f)
-            {
-                if (preset == DisplaySimulationPreset.Ssd1306OledBlue)
-                {
-                    fgLin.r *= 1f - 0.12f * strength;
-                    fgLin.g *= 1f - 0.06f * strength;
-                }
-                else if (preset == DisplaySimulationPreset.Ssd1306OledGreen)
-                {
-                    fgLin.r *= 1f - 0.15f * strength;
-                    fgLin.b *= 1f - 0.18f * strength;
-                }
-            }
+            ApplyOledColorTinting(ref fgLin, preset, strength);
 
             float cellW = outW / (float)srcW;
             float cellH = outH / (float)srcH;
@@ -420,20 +427,7 @@ namespace Hexprite.Rendering
                 g: SrgbToLinear(fgSrgb.G / 255f),
                 b: SrgbToLinear(fgSrgb.B / 255f));
 
-            // OLED color temperature tinting
-            if (strength > 0f)
-            {
-                if (preset == DisplaySimulationPreset.Ssd1306OledBlue)
-                {
-                    fgLin.r *= 1f - 0.12f * strength;
-                    fgLin.g *= 1f - 0.06f * strength;
-                }
-                else if (preset == DisplaySimulationPreset.Ssd1306OledGreen)
-                {
-                    fgLin.r *= 1f - 0.15f * strength;
-                    fgLin.b *= 1f - 0.18f * strength;
-                }
-            }
+            ApplyOledColorTinting(ref fgLin, preset, strength);
 
             float microBloomStrength = preset switch
             {
@@ -595,20 +589,7 @@ namespace Hexprite.Rendering
                 g: SrgbToLinear(fgSrgb.G / 255f),
                 b: SrgbToLinear(fgSrgb.B / 255f));
 
-            // OLED color temperature tinting
-            if (strength > 0f)
-            {
-                if (preset == DisplaySimulationPreset.Ssd1306OledBlue)
-                {
-                    fgLin.r *= 1f - 0.12f * strength;
-                    fgLin.g *= 1f - 0.06f * strength;
-                }
-                else if (preset == DisplaySimulationPreset.Ssd1306OledGreen)
-                {
-                    fgLin.r *= 1f - 0.15f * strength;
-                    fgLin.b *= 1f - 0.18f * strength;
-                }
-            }
+            ApplyOledColorTinting(ref fgLin, preset, strength);
 
             float backlightFloor = preset == DisplaySimulationPreset.GenericLcd
                 ? 0.008f * strength : 0f;
