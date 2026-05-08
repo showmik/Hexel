@@ -275,20 +275,25 @@ namespace Hexprite.ViewModels
             private set => SetProperty(ref _exportSettings, value);
         }
 
+        /// <summary>
+        /// Helper to set an ExportSettings property with change notification and code regeneration.
+        /// </summary>
+        private void SetExportSetting<T>(System.Func<T> getter, System.Action<T> setter, string propertyName, T value, string[]? additionalProperties = null)
+        {
+            if (!EqualityComparer<T>.Default.Equals(getter(), value))
+            {
+                setter(value);
+                OnPropertyChanged(propertyName);
+                additionalProperties?.ToList().ForEach(OnPropertyChanged);
+                UpdateTextOutputs();
+            }
+        }
+
         // Convenience proxy: binds directly in the sidebar without deep binding paths
         public ExportFormat ExportFormat
         {
             get => _exportSettings.Format;
-            set 
-            { 
-                if (_exportSettings.Format != value) 
-                { 
-                    _exportSettings.Format = value; 
-                    OnPropertyChanged(); 
-                    OnPropertyChanged(nameof(IsCommaSeparatorEnabled));
-                    UpdateTextOutputs(); 
-                } 
-            }
+            set => SetExportSetting(() => _exportSettings.Format, v => _exportSettings.Format = v, nameof(ExportFormat), value, [nameof(IsCommaSeparatorEnabled)]);
         }
 
         public bool IsCommaSeparatorEnabled => ExportFormat == ExportFormat.RawHex || ExportFormat == ExportFormat.RawBinary;
@@ -296,15 +301,7 @@ namespace Hexprite.ViewModels
         public string SpriteName
         {
             get => _exportSettings.SpriteName;
-            set
-            {
-                if (_exportSettings.SpriteName != value)
-                {
-                    _exportSettings.SpriteName = value;
-                    OnPropertyChanged();
-                    UpdateTextOutputs();
-                }
-            }
+            set => SetExportSetting(() => _exportSettings.SpriteName, v => _exportSettings.SpriteName = v, nameof(SpriteName), value);
         }
 
         /// <summary>
@@ -323,43 +320,43 @@ namespace Hexprite.ViewModels
         public bool IncludeUsageComment
         {
             get => _exportSettings.IncludeUsageComment;
-            set { if (_exportSettings.IncludeUsageComment != value) { _exportSettings.IncludeUsageComment = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set => SetExportSetting(() => _exportSettings.IncludeUsageComment, v => _exportSettings.IncludeUsageComment = v, nameof(IncludeUsageComment), value);
         }
 
         public bool IncludeDimensionConstants
         {
             get => _exportSettings.IncludeDimensionConstants;
-            set { if (_exportSettings.IncludeDimensionConstants != value) { _exportSettings.IncludeDimensionConstants = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set => SetExportSetting(() => _exportSettings.IncludeDimensionConstants, v => _exportSettings.IncludeDimensionConstants = v, nameof(IncludeDimensionConstants), value);
         }
 
         public bool UseCommaSeparator
         {
             get => _exportSettings.UseCommaSeparator;
-            set { if (_exportSettings.UseCommaSeparator != value) { _exportSettings.UseCommaSeparator = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set => SetExportSetting(() => _exportSettings.UseCommaSeparator, v => _exportSettings.UseCommaSeparator = v, nameof(UseCommaSeparator), value);
         }
 
         public int BytesPerLine
         {
             get => _exportSettings.BytesPerLine;
-            set { if (_exportSettings.BytesPerLine != value) { _exportSettings.BytesPerLine = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set => SetExportSetting(() => _exportSettings.BytesPerLine, v => _exportSettings.BytesPerLine = v, nameof(BytesPerLine), value);
         }
 
         public bool UppercaseHex
         {
             get => _exportSettings.UppercaseHex;
-            set { if (_exportSettings.UppercaseHex != value) { _exportSettings.UppercaseHex = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set => SetExportSetting(() => _exportSettings.UppercaseHex, v => _exportSettings.UppercaseHex = v, nameof(UppercaseHex), value);
         }
 
         public bool IncludeRowComments
         {
             get => _exportSettings.IncludeRowComments;
-            set { if (_exportSettings.IncludeRowComments != value) { _exportSettings.IncludeRowComments = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set => SetExportSetting(() => _exportSettings.IncludeRowComments, v => _exportSettings.IncludeRowComments = v, nameof(IncludeRowComments), value);
         }
 
         public bool IncludeArraySize
         {
             get => _exportSettings.IncludeArraySize;
-            set { if (_exportSettings.IncludeArraySize != value) { _exportSettings.IncludeArraySize = value; OnPropertyChanged(); UpdateTextOutputs(); } }
+            set => SetExportSetting(() => _exportSettings.IncludeArraySize, v => _exportSettings.IncludeArraySize = v, nameof(IncludeArraySize), value);
         }
 
         // ── Export output ────────────────────────────────────────────────────
