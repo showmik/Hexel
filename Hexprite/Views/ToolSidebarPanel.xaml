@@ -7,8 +7,7 @@
              d:DesignHeight="450" d:DesignWidth="100">
     <Border Background="{DynamicResource Brush.Surface.ToolSidebar}"
             Padding="8,16"
-            Margin="20,20,0,0"
-            CornerRadius="12"
+            CornerRadius="8"
             VerticalAlignment="Top">
         <Border.Effect>
             <DropShadowEffect Color="{DynamicResource Palette.Common.Shadow}"

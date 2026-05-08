@@ -49,8 +49,7 @@
                     <TextBlock Text="SHAPE"
                                Style="{StaticResource HeaderStyle}"
                                VerticalAlignment="Center"
-                               Margin="0,0,8,0"
-                               FontSize="11" />
+                               Margin="0,0,8,0" />
 
                     <!-- Circle shape button -->
                     <RadioButton x:Name="RbBrushCircle" x:FieldModifier="public"
@@ -103,8 +102,7 @@
                     <TextBlock Text="SIZE"
                                Style="{StaticResource HeaderStyle}"
                                VerticalAlignment="Center"
-                               Margin="0,0,8,0"
-                               FontSize="11" />
+                               Margin="0,0,8,0" />
                     <Button Content="-"
                             Width="24"
                             Height="24"
@@ -196,8 +194,7 @@
                         <TextBlock Text="ANGLE"
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"
-                                   Margin="0,0,8,0"
-                                   FontSize="11" />
+                                   Margin="0,0,8,0" />
                         <Slider x:Name="BrushAngleSlider" x:FieldModifier="public"
                                 Width="80"
                                 Minimum="0"
@@ -382,8 +379,7 @@
                     <TextBlock Text="ZOOM"
                                Style="{StaticResource HeaderStyle}"
                                VerticalAlignment="Center"
-                               Margin="0,0,10,0"
-                               FontSize="11" />
+                               Margin="0,0,10,0" />
                     <Button Content="-"
                             Width="28"
                             Height="28"

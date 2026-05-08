@@ -436,10 +436,10 @@
                                       MaxWidth="760" />
                 </Grid.ColumnDefinitions>
 
-                <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Row="0" Grid.Column="0" Margin="0,6,8,8" />
+                <views:ToolSidebarPanel x:Name="ToolSidebar" Grid.Row="0" Grid.Column="0" Margin="0,8,8,8" />
 
                 <views:CanvasPanel x:Name="Canvas" Grid.Row="0" Grid.Column="1" 
-                                   Margin="8,6,8,8"
+                                   Margin="8,8,8,8"
                                    ZoomInClicked="BtnZoomIn_Click"
                                    ZoomOutClicked="BtnZoomOut_Click"
                                    ZoomResetClicked="BtnZoomReset_Click" />
@@ -477,7 +477,7 @@
 
                 <views:SidebarPanel x:Name="RightSidebarPanel" Grid.RowSpan="2" Grid.Column="5" Margin="0" />
 
-                <views:TimelinePanel x:Name="TimelinePanel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,8,0" />
+                <views:TimelinePanel x:Name="TimelinePanel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,8,8" />
             </Grid>
         </Grid>
         <!-- /Main content -->

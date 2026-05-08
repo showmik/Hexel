@@ -7,7 +7,7 @@
              d:DesignHeight="450"
              d:DesignWidth="360">
     <Border Background="Transparent"
-            Padding="10,8,4,10">
+            Padding="10,8,10,10">
         <Border Background="{DynamicResource Brush.Surface.Overlay}"
                 BorderBrush="{DynamicResource Brush.Border.Base}"
                 BorderThickness="1"
