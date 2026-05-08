@@ -70,35 +70,37 @@
                            Margin="0,0,0,14" />
 
                 <StackPanel Grid.Row="1" Margin="0,0,0,10">
-                    <TextBlock Text="Summary" Margin="0,0,0,4"/>
-                    <TextBox x:Name="SummaryTextBox" MinHeight="32" MaxLength="200" />
+                    <TextBlock Text="Summary" Margin="0,0,0,4" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    <TextBox x:Name="SummaryTextBox" MinHeight="32" MaxLength="200" Style="{StaticResource ModernTextBoxStyle}" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="2" Margin="0,0,0,10">
-                    <TextBlock Text="Steps to reproduce" Margin="0,0,0,4"/>
-                    <TextBox x:Name="StepsTextBox" Height="78" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    <TextBlock Text="Steps to reproduce" Margin="0,0,0,4" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    <TextBox x:Name="StepsTextBox" Height="78" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Style="{StaticResource ModernTextBoxStyle}" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="3" Margin="0,0,0,10">
-                    <TextBlock Text="Expected behavior" Margin="0,0,0,4"/>
-                    <TextBox x:Name="ExpectedTextBox" Height="56" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    <TextBlock Text="Expected behavior" Margin="0,0,0,4" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    <TextBox x:Name="ExpectedTextBox" Height="56" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Style="{StaticResource ModernTextBoxStyle}" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="4" Margin="0,0,0,10">
-                    <TextBlock Text="Actual behavior" Margin="0,0,0,4"/>
-                    <TextBox x:Name="ActualTextBox" Height="56" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    <TextBlock Text="Actual behavior" Margin="0,0,0,4" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    <TextBox x:Name="ActualTextBox" Height="56" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Style="{StaticResource ModernTextBoxStyle}" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="5" Margin="0,0,0,8">
-                    <TextBlock Text="Contact email (optional)" Margin="0,0,0,4"/>
-                    <TextBox x:Name="EmailTextBox" MinHeight="32" MaxLength="200" />
+                    <TextBlock Text="Contact email (optional)" Margin="0,0,0,4" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    <TextBox x:Name="EmailTextBox" MinHeight="32" MaxLength="200" Style="{StaticResource ModernTextBoxStyle}" />
                     <CheckBox x:Name="ShareEmailCheckBox"
                               Margin="0,6,0,0"
-                              Content="Include this email in the report so we can contact you" />
+                              Content="Include this email in the report so we can contact you"
+                              Foreground="{DynamicResource Brush.Text.Primary}" />
                     <CheckBox x:Name="IncludeLogsCheckBox"
                               Margin="0,10,0,4"
                               IsChecked="True"
-                              Content="Include recent local logs to help diagnose the issue" />
+                              Content="Include recent local logs to help diagnose the issue"
+                              Foreground="{DynamicResource Brush.Text.Primary}" />
                     <TextBlock Text="Only include logs if you are comfortable sharing their contents."
                                Foreground="{DynamicResource Brush.Text.Muted}"
                                FontSize="11"

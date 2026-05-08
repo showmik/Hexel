@@ -108,7 +108,7 @@
                     <Button Content="Close"
                             Width="90"
                             MinHeight="30"
-                            Style="{StaticResource AccentButtonStyle}"
+                            Style="{StaticResource ModernButtonStyle}"
                             IsDefault="True"
                             IsCancel="True"
                             Click="Close_Click" />

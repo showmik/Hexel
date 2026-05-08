@@ -131,16 +131,13 @@
                     <TextBox x:Name="BrushSizeTextBox" x:FieldModifier="public"
                              Text="{Binding BrushSize, UpdateSourceTrigger=LostFocus}"
                              Width="36"
-                             Padding="0,2"
                              VerticalAlignment="Center"
                              HorizontalContentAlignment="Center"
                              VerticalContentAlignment="Center"
                              FontSize="12"
                              FontWeight="Bold"
                              Foreground="{DynamicResource Brush.Accent.Base}"
-                             Background="{DynamicResource Brush.Surface.Base}"
-                             BorderBrush="{DynamicResource Brush.Border.Base}"
-                             BorderThickness="1"
+                             Style="{StaticResource ModernTextBoxStyle}"
                              PreviewTextInput="NumericTextBox_PreviewTextInput"
                              LostFocus="BrushSizeTextBox_LostFocus"
                              ToolTip="Brush size (1-64)" />
@@ -152,12 +149,12 @@
 
                     <CheckBox Content="Pixel-Perfect"
                               IsChecked="{Binding IsPixelPerfectEnabled}"
-                              Foreground="{DynamicResource Brush.Text.Muted}"
+                              Foreground="{DynamicResource Brush.Text.Primary}"
                               VerticalAlignment="Center"
                               Margin="10,0,0,0"
                               ToolTip="Remove staircase corners while freehand drawing with a 1px pencil.">
                         <CheckBox.Style>
-                            <Style TargetType="CheckBox">
+                            <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <MultiDataTrigger>
@@ -211,22 +208,19 @@
                                 VerticalAlignment="Center"
                                 ToolTip="Brush rotation angle (0-359°)" />
                         <TextBox x:Name="BrushAngleTextBox" x:FieldModifier="public"
-                                 Text="{Binding BrushAngle, UpdateSourceTrigger=LostFocus}"
-                                 Width="36"
-                                 Padding="0,2"
-                                 VerticalAlignment="Center"
-                                 Margin="4,0,0,0"
-                                 HorizontalContentAlignment="Center"
-                                 VerticalContentAlignment="Center"
-                                 FontSize="12"
-                                 FontWeight="Bold"
-                                 Foreground="{DynamicResource Brush.Accent.Base}"
-                                 Background="{DynamicResource Brush.Surface.Base}"
-                                 BorderBrush="{DynamicResource Brush.Border.Base}"
-                                 BorderThickness="1"
-                                 PreviewTextInput="NumericTextBox_PreviewTextInput"
-                                 LostFocus="BrushAngleTextBox_LostFocus"
-                                 ToolTip="Brush angle (0-359°)" />
+                             Text="{Binding BrushAngle, UpdateSourceTrigger=LostFocus}"
+                             Width="36"
+                             VerticalAlignment="Center"
+                             Margin="4,0,0,0"
+                             HorizontalContentAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             FontSize="12"
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource Brush.Accent.Base}"
+                             Style="{StaticResource ModernTextBoxStyle}"
+                             PreviewTextInput="NumericTextBox_PreviewTextInput"
+                             LostFocus="BrushAngleTextBox_LostFocus"
+                             ToolTip="Brush angle (0-359°)" />
                         <TextBlock Text="°"
                                    Foreground="{DynamicResource Brush.Text.Muted}"
                                    VerticalAlignment="Center"
@@ -350,7 +344,8 @@
                                        VerticalAlignment="Center"
                                        Margin="0,0,6,0" />
                             <TextBlock Text="Transform"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.Text.Primary}" />
                         </StackPanel>
                     </Button>
 
