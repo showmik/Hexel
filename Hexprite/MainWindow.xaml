@@ -206,11 +206,6 @@
                                       Command="{Binding ActiveDocument.RedoCommand}"
                                       InputGestureText="Ctrl+Y" />
                             <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                            <MenuItem Header="_Invert"
-                                      Command="{Binding ActiveDocument.InvertCommand}" />
-                            <MenuItem Header="_Clear Canvas"
-                                      Command="{Binding ActiveDocument.ClearCommand}" />
-                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
                             <MenuItem Header="Cu_t"
                                       Command="{Binding ActiveDocument.CutSelectionCommand}"
                                       InputGestureText="Ctrl+X" />
@@ -220,6 +215,17 @@
                             <MenuItem Header="_Paste"
                                       Command="{Binding ActiveDocument.PasteCommand}"
                                       InputGestureText="Ctrl+V" />
+                            <MenuItem Header="Select _All"
+                                      Command="{Binding ActiveDocument.SelectAllCommand}"
+                                      InputGestureText="Ctrl+A" />
+                            <MenuItem Header="D_eselect"
+                                      Command="{Binding ActiveDocument.DeselectCommand}"
+                                      InputGestureText="Ctrl+D" />
+                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                            <MenuItem Header="_Invert"
+                                      Command="{Binding ActiveDocument.InvertCommand}" />
+                            <MenuItem Header="_Clear Canvas"
+                                      Command="{Binding ActiveDocument.ClearCommand}" />
                         </MenuItem>
                         <MenuItem Header="_Image">
                             <MenuItem Header="Canvas _Size..."
@@ -239,17 +245,7 @@
                                           Command="{Binding ActiveDocument.FlipCanvasVerticalCommand}" />
                             </MenuItem>
                         </MenuItem>
-                        <MenuItem Header="_Selection">
-                            <MenuItem Header="Cu_t"
-                                      Command="{Binding ActiveDocument.CutSelectionCommand}"
-                                      InputGestureText="Ctrl+X" />
-                            <MenuItem Header="_Copy"
-                                      Command="{Binding ActiveDocument.CopySelectionCommand}"
-                                      InputGestureText="Ctrl+C" />
-                            <MenuItem Header="_Paste"
-                                      Command="{Binding ActiveDocument.PasteCommand}"
-                                      InputGestureText="Ctrl+V" />
-                            <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                        <MenuItem Header="_Select">
                             <MenuItem Header="_Transform"
                                       Command="{Binding ActiveDocument.BeginSelectionTransformCommand}"
                                       InputGestureText="Ctrl+T" />
