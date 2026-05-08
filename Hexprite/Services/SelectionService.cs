@@ -46,7 +46,35 @@ namespace Hexprite.Services
 
         // ── Event ─────────────────────────────────────────────────────────
         public event EventHandler? SelectionChanged;
-        private void Notify() => SelectionChanged?.Invoke(this, EventArgs.Empty);
+        private void Notify()
+        {
+            ValidateState();
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        [System.Diagnostics.Conditional("DEBUG")]
+        private void ValidateState()
+        {
+            // Dragging requires an active selection
+            if (IsDragging && !HasActiveSelection)
+                throw new InvalidOperationException("Invalid state: IsDragging=true but HasActiveSelection=false");
+
+            // Floating requires an active selection
+            if (IsFloating && !HasActiveSelection)
+                throw new InvalidOperationException("Invalid state: IsFloating=true but HasActiveSelection=false");
+
+            // Transforming requires floating state
+            if (IsTransforming && !IsFloating)
+                throw new InvalidOperationException("Invalid state: IsTransforming=true but IsFloating=false");
+
+            // Cannot be selecting and dragging simultaneously
+            if (IsSelecting && IsDragging)
+                throw new InvalidOperationException("Invalid state: IsSelecting=true and IsDragging=true");
+
+            // Cannot be selecting and transforming simultaneously
+            if (IsSelecting && IsTransforming)
+                throw new InvalidOperationException("Invalid state: IsSelecting=true and IsTransforming=true");
+        }
 
         // ── State for Boolean Operations ──────────────────────────────────
         private SelectionMode _currentMode = SelectionMode.Replace;

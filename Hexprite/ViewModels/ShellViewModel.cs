@@ -153,6 +153,7 @@ namespace Hexprite.ViewModels
             ICodeGeneratorService codeGen,
             IDrawingService drawingService,
             IClipboardService clipboardService,
+            IPixelClipboardService pixelClipboard,
             IDialogService dialogService,
             IThemeService themeService,
             IBugReportService bugReportService,
@@ -161,7 +162,7 @@ namespace Hexprite.ViewModels
             _codeGen = codeGen;
             _drawingService = drawingService;
             _clipboardService = clipboardService;
-            _pixelClipboard = new PixelClipboardService();
+            _pixelClipboard = pixelClipboard;
             _dialogService = dialogService;
             _themeService = themeService;
             _bugReportService = bugReportService;

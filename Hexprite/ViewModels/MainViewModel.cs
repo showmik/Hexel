@@ -18,31 +18,6 @@ using System.Windows.Media.Imaging;
 
 namespace Hexprite.ViewModels
 {
-    public enum DisplayType
-    {
-        Generic_White,
-        SSD1306_Blue,
-        SSD1306_Green,
-        ePaper,
-        FlipperZero
-    }
-
-    public enum DisplaySimulationPreset
-    {
-        Flat = 0,
-        GenericLcd = 1,
-        Ssd1306OledBlue = 2,
-        Ssd1306OledGreen = 3,
-        EPaper = 4,
-    }
-
-    public enum PreviewQuality
-    {
-        Fast = 0,
-        Balanced = 1,
-        High = 2
-    }
-
     public class MainViewModel : ObservableObject, IBitmapBufferContext
     {
         // ── Services ──────────────────────────────────────────────────────

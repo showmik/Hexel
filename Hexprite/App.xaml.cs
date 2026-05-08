@@ -70,6 +70,7 @@ namespace Hexprite
             services.AddSingleton<IThemeService, ThemeService>();
             services.AddSingleton<IBugReportService, BugReportService>();
             services.AddSingleton<IUserFeedbackService, UserFeedbackService>();
+            services.AddSingleton<IPixelClipboardService, PixelClipboardService>();
 
             // ShellViewModel is the app-level VM that manages tabs
             services.AddSingleton<ShellViewModel>();
